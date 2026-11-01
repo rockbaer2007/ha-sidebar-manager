@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Window} from 'happy-dom';
+import {normalizeManager,layoutEntries,safeUrl,saveManager,newId} from '../src/manager-model.js';
+import {MANAGER_STRINGS} from '../src/manager-i18n.js';
+const example=()=>normalizeManager({version:1,groups:[{id:'rail',name:'Rail',collapsed:true}],order:['map','home'],items:{map:{group:'rail'},missing:{title:'Preserved'},'sm-link-doc':{title:'Docs',url:'https://example.com',bottom:true}}});
+test('IDs work on LAN HTTP without crypto.randomUUID',()=>{const old=crypto.randomUUID;try{crypto.randomUUID=undefined;assert.match(newId('group'),/^group-[0-9a-f]{32}$/);}finally{crypto.randomUUID=old;}});
+test('missing panels survive validation and export without being deleted',()=>{const r=example();assert.equal(r.items.missing.title,'Preserved');assert.equal(layoutEntries(r,[{key:'home'},{key:'map'}]).filter(e=>e.key==='missing').length,0);assert.equal(normalizeManager(JSON.parse(JSON.stringify(r))).items.missing.title,'Preserved');});
+test('groups, collapsed members, custom links and pinned items have deterministic order',()=>{const list=layoutEntries(example(),[{key:'home'},{key:'map'}]);assert.deepEqual(list.map(e=>e.key||e.id),['home','rail','map','sm-link-doc']);assert.equal(list[2].collapsed,true);});
+test('group icons default to folders and preserve valid custom MDI icons',()=>{const r=example();assert.equal(r.groups[0].icon,'mdi:folder-outline');r.groups[0].icon='mdi:train';assert.equal(normalizeManager(r).groups[0].icon,'mdi:train');r.groups[0].icon='javascript:bad';assert.equal(normalizeManager(r).groups[0].icon,'mdi:folder-outline');});
+test('reject executable, protocol-relative and credential links; retain internal and HTTP(S)',()=>{for(const u of ['javascript:alert(1)','data:text/html,x','//evil.test','/\\evil.test','https://u:p@example.com',' /home'])assert.equal(safeUrl(u),null,u);assert.equal(safeUrl('/config'),'/config');assert.equal(safeUrl('https://example.com'),'https://example.com/');});
+test('future schema and malformed groups fail closed',()=>{assert.throws(()=>normalizeManager({version:2,groups:[],items:{}}));assert.throws(()=>normalizeManager({version:1,groups:[{id:'constructor',name:'x'}],items:{}}));});
+test('unrelated manager metadata survives save, no write after concurrent edit',async()=>{const base=example(),draft=example();draft.items.map.bottom=true;let stored={...base,metadata:{future:'keep'}},writes=0;await saveManager({base,draft,read:async()=>stored,write:async v=>{stored=v;writes++;},backup:async()=>{}});assert.equal(stored.metadata.future,'keep');await assert.rejects(saveManager({base,draft,read:async()=>stored,write:async()=>writes++,backup:async()=>{}}),/conflict/);assert.equal(writes,1);});
+test('blocked backup prevents writes and lost acknowledgement is verified',async()=>{const base=normalizeManager(null),draft=example();let stored=null,writes=0;await assert.rejects(saveManager({base,draft,read:async()=>stored,write:async()=>writes++,backup:async()=>{throw Error('quota');}}));assert.equal(writes,0);await saveManager({base,draft,read:async()=>stored,write:async v=>{stored=v;throw Error('disconnect');},backup:async()=>{}});assert.deepEqual(normalizeManager(stored),draft);});
+test('all manager UI strings are complete in DE EN FR',()=>{for(const locale of ['en','fr'])assert.deepEqual(Object.keys(MANAGER_STRINGS[locale]).sort(),Object.keys(MANAGER_STRINGS.de).sort());});
+test('manager dialog edits remain a draft until Save and Cancel never calls persistence',async()=>{
+ const win=new Window({url:'https://ha.example.invalid/'});globalThis.HTMLElement=win.HTMLElement;globalThis.document=win.document;
+ const {ManagerDialog}=await import('../src/manager-dialog.js');win.customElements.define('test-manager-dialog',ManagerDialog);
+ const dialog=win.document.createElement('test-manager-dialog');win.document.body.append(dialog);let writes=0;
+ dialog.show({hass:{language:'de'},record:example(),entries:[{key:'map',label:'Map'}],save:async()=>writes++});
+ const buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Gruppe hinzufügen').click();assert.equal(dialog.draft.groups.length,2);assert.equal(writes,0);buttons.find(b=>b.textContent==='Abbrechen').click();assert.equal(writes,0);
+});

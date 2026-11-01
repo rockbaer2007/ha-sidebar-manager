@@ -1,0 +1,12 @@
+node_modules/
+dist/*
+!dist/ha-sidebar-manager.js
+.local/
+*.zip
+*.log
+PRUEFUNG.txt
+STAND.txt
+tools/deploy-177.mjs
+tools/verify-177.mjs
+tools/install-local-177.mjs
+tools/verify-local-177.mjs
