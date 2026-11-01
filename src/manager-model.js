@@ -20,7 +20,8 @@ export function normalizeManager(raw){
     items[key]=item;
   }
   const order=[...new Set((raw?.order||[]).filter(safeKey))];
-  return {version:1,groups,items,order};
+  const menuOrder=[...new Set((raw?.menuOrder||[]).filter(v=>safeKey(v)&&(v.startsWith('p:')||v.startsWith('g:')&&seen.has(v.slice(2)))))];
+  return {version:1,groups,items,order,menuOrder};
 }
 // A disappearing HA panel is never removed from the stored configuration.
 export function layoutEntries(record,available){
@@ -28,14 +29,17 @@ export function layoutEntries(record,available){
   const entries=available.map((e,i)=>({...e,...r.items[e.key],key:e.key,rank:rank.has(e.key)?rank.get(e.key):r.order.length+i}));
   for(const [key,item]of Object.entries(r.items))if(item.url&&!entries.some(e=>e.key===key))entries.push({...item,key,rank:rank.get(key)??1e6});
   entries.sort((a,b)=>a.rank-b.rank);
-  const result=[];
+  const result=[],menuRank=new Map(r.menuOrder.map((k,i)=>[k,i]));
   for(const bottom of [false,true]){
+    const blocks=[];
     for(const group of [null,...r.groups]){
       const members=entries.filter(e=>(e.group||'')===(group?.id||'')&&((group?group.bottom:!!e.bottom)===bottom)&&!e.hidden);
       if(!members.length)continue;
-      if(group)result.push({kind:'group',...group});
-      for(const item of members)result.push({kind:'item',...item,collapsed:!!group?.collapsed});
+      if(group)blocks.push({token:'g:'+group.id,rows:[{kind:'group',...group},...members.map(item=>({kind:'item',...item,collapsed:!!group.collapsed}))]});
+      else for(const item of members)blocks.push({token:'p:'+item.key,rows:[{kind:'item',...item,collapsed:false}]});
     }
+    blocks.sort((a,b)=>(menuRank.get(a.token)??1e9)-(menuRank.get(b.token)??1e9));
+    for(const block of blocks)result.push(...block.rows);
   }
   return result;
 }

@@ -43,14 +43,14 @@ export function attachManagerButton(nativeDialog){
  let button=content.querySelector('[data-sm-open]');if(!button){button=el('button');button.dataset.smOpen='';button.type='button';button.style.cssText='margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer';button.onclick=()=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar);};content.prepend(button);}
  if(loaded)attachNativeGroups(nativeDialog,{record:config,identity,getIdentity:()=>identity,read:()=>read(nativeDialog.hass),write:value=>request(nativeDialog.hass,'frontend/set_user_data',MANAGER_KEY,value),backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+nativeDialog.hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}});
  const title=managerStrings(nativeDialog.hass).open;if(button.textContent!==title)button.textContent=title;button.disabled=!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
- const editor=nativeDialog.shadowRoot.querySelector('ha-items-display-editor');
- for(const badge of editor?.shadowRoot?.querySelectorAll('[data-sm-move]')||[]){updateMoveBadge(badge,nativeDialog.hass);if(nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog))badge.disabled=true;}
+ const editors=[...nativeDialog.shadowRoot.querySelectorAll('ha-items-display-editor')];
+ for(const badge of editors.flatMap(e=>[...e.shadowRoot?.querySelectorAll('[data-sm-move]')||[]])){updateMoveBadge(badge,nativeDialog.hass);if(nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog))badge.disabled=true;}
 }
 export function endManagerDialog(dialog){editDialogs.delete(dialog);endNativeGroups(dialog);}
 function updateMoveBadge(button,hass){
  const key=button.dataset.smMove,group=config.groups.find(g=>g.id===config.items[key]?.group),name=group?.name||managerStrings(hass).none;
  if(button.textContent!==name)button.textContent=name;
- button.title=managerStrings(hass).move+': '+name;button.setAttribute('aria-label',managerStrings(hass).move+' '+button.dataset.smLabel+': '+name);button.disabled=!loaded;
+ button.title=managerStrings(hass).move+': '+name;button.setAttribute('aria-label',managerStrings(hass).move+' '+button.dataset.smLabel+': '+name);button.disabled=!loaded||[...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog)));
 }
 export function moveEntryButton(hass,key,label){
  const button=el('button');button.type='button';button.dataset.smMove=key;button.dataset.smLabel=label||key;

@@ -102,7 +102,8 @@ function markDirty(session) {
 }
 function makeButton(session,item) {
   const key=item.value;
-  let button=session.buttons.get(key);
+  const cacheKey=(item.smMixed?'mixed:':'')+key;
+  let button=session.buttons.get(cacheKey);
   if(!button) {
     button=document.createElement("button");button.type="button";
     button.className="ugso-sidebar-color";button.dataset.panel=key;
@@ -125,7 +126,7 @@ function makeButton(session,item) {
         markDirty(session);
       }});
     });
-    session.buttons.set(key,button);
+    session.buttons.set(cacheKey,button);
   }
   button.setAttribute("aria-label",`${strings(session.dialog.hass).edit} ${item.label}`);
   button.title=button.getAttribute("aria-label");button.disabled=!!session.saving;
@@ -151,9 +152,13 @@ function syncRows(session) {
       session.observer.observe(editor.shadowRoot,{childList:true,subtree:true});
     }
   }
-  for(const item of editor.items || [])makeButton(session,item);
-  for(const row of editor.shadowRoot?.querySelectorAll("ha-md-list-item") || []) {
-    const c=rgba(session.draft.colors[row.value]);
+  const displayEditors=[...session.dialog.shadowRoot.querySelectorAll('ha-items-display-editor')];
+  for(const display of displayEditors)if(display.shadowRoot)session.observer?.observe(display.shadowRoot,{childList:true,subtree:true});
+  for(const item of displayEditors.flatMap(e=>e.items||[]))if(!item.value.startsWith('sm-group:'))makeButton(session,item);
+  for(const row of displayEditors.flatMap(e=>[...e.shadowRoot?.querySelectorAll("ha-md-list-item")||[]])) {
+    if(row.querySelector('[data-sm-group]'))continue;
+    const panel=row.querySelector('[data-panel]')?.dataset.panel||row.value;
+    const c=rgba(session.draft.colors[panel]);
     for(const target of row.querySelectorAll("[slot=headline],.icon"))cssColor(target,c);
   }
 }

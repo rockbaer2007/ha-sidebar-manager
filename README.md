@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.2 — local preview
+# Sidebar Manager 0.1.3 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -12,7 +12,7 @@ Groups have a name, initial collapsed state and optional bottom placement. Exist
 
 Folders have their own color picker with opacity, applied to the folder icon and name. **Theme color** clears the override. The Manager's Save button confirms the choice.
 
-The native **Edit sidebar** dialog also lists folders under **Submenus**, with icon, color, arrows and a drag handle. Dragging changes their order relative to each other. Save in that HA dialog commits it; Cancel discards it. Keyboard users can use the arrows or focus the handle and press Up/Down. Save or cancel pending folder order before opening the group editor. Folder IDs are never added to HA's native panel order.
+The native **Edit sidebar** dialog lists all folders together with the main entries. Use the same native drag handle to place any folder between main entries. There are no extra Up/Down buttons. The native keyboard sorting remains available (Alt+Up/Down on a row). Save commits the mixed order; Cancel discards it. Folder membership is unchanged, so a folder and its children move as one block in the sidebar. Pinned-bottom groups stay in the bottom section. Folder IDs never enter HA's stored native panel order.
 
 ## Storage and recovery
 
@@ -32,7 +32,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.2/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.3/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.
@@ -41,7 +41,7 @@ This local package includes a HACS-style `hacs.json` and a bundled single JS fil
 
 ## Development
 
-Local 0.1.2 verification on .177 (HA 2026.10.4): submenu arrows, actual mouse dragging, Cancel and persistence after reload passed. Temporary groups removed; Test/Test2, original colors, native preferences and Test für APP preserved. 42 automated tests pass. See `docs/TESTING.md`.
+Local verification on .177 (HA 2026.10.4), with 47 automated tests. See `docs/TESTING.md` for the actual checks and preservation of Test/Test2, colors, native preferences and Test für APP.
 
 Node 22 or newer: `npm ci`, `npm run check`, `npm run build`, `npm test`.
 

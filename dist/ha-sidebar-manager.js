@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.2 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.3 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.2";
+  var VERSION = "0.1.3";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -197,7 +197,7 @@
         }
       });
       const plane = $(".sv");
-      const move2 = (e) => {
+      const move = (e) => {
         const rect = plane.getBoundingClientRect();
         this.hsv[1] = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         this.hsv[2] = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
@@ -205,10 +205,10 @@
       };
       plane.addEventListener("pointerdown", (e) => {
         plane.setPointerCapture(e.pointerId);
-        move2(e);
+        move(e);
       });
       plane.addEventListener("pointermove", (e) => {
-        if (plane.hasPointerCapture(e.pointerId)) move2(e);
+        if (plane.hasPointerCapture(e.pointerId)) move(e);
       });
       plane.addEventListener("keydown", (e) => {
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
@@ -315,21 +315,25 @@
       items[key] = item;
     }
     const order = [...new Set((raw?.order || []).filter(safeKey))];
-    return { version: 1, groups, items, order };
+    const menuOrder = [...new Set((raw?.menuOrder || []).filter((v) => safeKey(v) && (v.startsWith("p:") || v.startsWith("g:") && seen.has(v.slice(2)))))];
+    return { version: 1, groups, items, order, menuOrder };
   }
   function layoutEntries(record, available) {
     const r = normalizeManager(record), rank = new Map(r.order.map((k, i) => [k, i]));
     const entries2 = available.map((e, i) => ({ ...e, ...r.items[e.key], key: e.key, rank: rank.has(e.key) ? rank.get(e.key) : r.order.length + i }));
     for (const [key, item] of Object.entries(r.items)) if (item.url && !entries2.some((e) => e.key === key)) entries2.push({ ...item, key, rank: rank.get(key) ?? 1e6 });
     entries2.sort((a, b) => a.rank - b.rank);
-    const result = [];
+    const result = [], menuRank = new Map(r.menuOrder.map((k, i) => [k, i]));
     for (const bottom of [false, true]) {
+      const blocks = [];
       for (const group of [null, ...r.groups]) {
         const members = entries2.filter((e) => (e.group || "") === (group?.id || "") && (group ? group.bottom : !!e.bottom) === bottom && !e.hidden);
         if (!members.length) continue;
-        if (group) result.push({ kind: "group", ...group });
-        for (const item of members) result.push({ kind: "item", ...item, collapsed: !!group?.collapsed });
+        if (group) blocks.push({ token: "g:" + group.id, rows: [{ kind: "group", ...group }, ...members.map((item) => ({ kind: "item", ...item, collapsed: !!group.collapsed }))] });
+        else for (const item of members) blocks.push({ token: "p:" + item.key, rows: [{ kind: "item", ...item, collapsed: false }] });
       }
+      blocks.sort((a, b) => (menuRank.get(a.token) ?? 1e9) - (menuRank.get(b.token) ?? 1e9));
+      for (const block of blocks) result.push(...block.rows);
     }
     return result;
   }
@@ -380,9 +384,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
-  Object.assign(MANAGER_STRINGS.de, { submenus: "Untermenüs", moveGroup: "Untermenü verschieben", groupOrderHint: "Am Ziehgriff verschieben oder die Pfeile verwenden. Erst Speichern übernimmt die neue Reihenfolge.", saveOrderFirst: "Gruppenfolge geändert. Bitte zuerst hier Speichern oder Abbrechen, bevor Sie Gruppen bearbeiten." });
-  Object.assign(MANAGER_STRINGS.en, { submenus: "Submenus", moveGroup: "Move submenu", groupOrderHint: "Drag the handle or use the arrows. Save applies the new order.", saveOrderFirst: "Group order changed. Save or Cancel here before editing groups." });
-  Object.assign(MANAGER_STRINGS.fr, { submenus: "Sous-menus", moveGroup: "Déplacer le sous-menu", groupOrderHint: "Déplacez la poignée ou utilisez les flèches. Enregistrer applique le nouvel ordre.", saveOrderFirst: "Ordre des groupes modifié. Enregistrez ou annulez ici avant de modifier les groupes." });
+  Object.assign(MANAGER_STRINGS.de, { submenus: "Untermenü", moveGroup: "Untermenü verschieben", groupOrderHint: "Haupteinträge und Untermenüs am Ziehgriff gemeinsam sortieren. Erst Speichern übernimmt die Reihenfolge.", saveOrderFirst: "Reihenfolge geändert. Bitte zuerst hier Speichern oder Abbrechen, bevor Sie Gruppen bearbeiten." });
+  Object.assign(MANAGER_STRINGS.en, { submenus: "Submenu", moveGroup: "Move submenu", groupOrderHint: "Sort main entries and submenus together using their drag handles. Save applies the order.", saveOrderFirst: "Order changed. Save or Cancel here before editing groups." });
+  Object.assign(MANAGER_STRINGS.fr, { submenus: "Sous-menu", moveGroup: "Déplacer le sous-menu", groupOrderHint: "Triez les entrées principales et les sous-menus ensemble avec leur poignée. Enregistrer applique cet ordre.", saveOrderFirst: "Ordre modifié. Enregistrez ou annulez ici avant de modifier les groupes." });
 
   // src/manager-dialog.js
   var el = (tag, text2) => {
@@ -598,7 +602,8 @@
 
   // src/native-groups.js
   var sessions = /* @__PURE__ */ new WeakMap();
-  var DIRTY_KEY = MANAGER_KEY + ":group-order";
+  var DIRTY_KEY = MANAGER_KEY + ":menu-order";
+  var groupKey = (id) => "sm-group:" + id;
   var el2 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
@@ -608,117 +613,119 @@
   var nativeGroupsBusy = (dialog) => !!sessions.get(dialog)?.saving;
   function endNativeGroups(dialog) {
     const s = sessions.get(dialog);
-    s?.section.remove();
+    if (s) {
+      s.observer?.disconnect();
+      s.native.style.display = s.display;
+      s.section.remove();
+    }
     sessions.delete(dialog);
   }
-  function move(dialog, s, id, target) {
+  function mixedMenuOrder(record, nativeOrder, items) {
+    const valid = new Set(items.map((i) => i.value)), groups = new Set(record.groups.map((g) => groupKey(g.id)));
+    const fromToken = (t) => t.startsWith("g:") ? groupKey(t.slice(2)) : t.startsWith("p:") ? t.slice(2) : "";
+    const values = record.menuOrder.map(fromToken).filter((v) => valid.has(v) || groups.has(v));
+    return [.../* @__PURE__ */ new Set([...values, ...nativeOrder.filter((v) => valid.has(v)), ...items.map((i) => i.value), ...groups])];
+  }
+  function render(dialog, s) {
+    const t = managerStrings(dialog.hass), nativeItems = s.native.items || [];
+    const signature = stable({ groups: s.draft.groups, menu: s.order, items: nativeItems.map((i) => [i.value, i.label, i.iconPath, i.disableHiding, i.disableSorting]), hidden: s.hidden, dirty: s.dirty, saving: s.saving, lang: t.groupOrderHint });
+    if (!s.renderer) {
+      s.renderer = (item) => {
+        const group = s.draft.groups.find((g) => groupKey(g.id) === item.value);
+        if (!group) return s.native.actionsRenderer?.(item);
+        const label = el2("span", t.submenus);
+        label.style.cssText = "font:12px var(--ha-font-family,Arial);color:var(--secondary-text-color);margin-inline:8px";
+        const button = el2("button");
+        button.type = "button";
+        button.title = t.groupColor;
+        button.setAttribute("aria-label", t.groupColor + " " + group.name);
+        button.dataset.smGroup = group.id;
+        button.style.cssText = "width:32px;min-width:32px;height:32px;padding:4px;border:1px solid var(--divider-color);border-radius:7px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:8px 8px;cursor:pointer";
+        const fill = el2("span");
+        fill.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
+        fill.style.background = rgba(group.color) || "transparent";
+        button.append(fill);
+        button.disabled = s.dirty || s.saving;
+        button.onpointerdown = (e) => e.stopPropagation();
+        button.onkeydown = (e) => e.stopPropagation();
+        button.onclick = (e) => {
+          e.stopPropagation();
+          if (!s.dirty && !s.saving) s.options.editGroup(group.id);
+        };
+        return [label, button];
+      };
+      s.editor.actionsRenderer = s.renderer;
+    }
+    if (s.actionSource !== s.native.actionsRenderer) {
+      s.actionSource = s.native.actionsRenderer;
+      s.editor.requestUpdate?.();
+    }
+    if (s.signature !== signature) {
+      s.signature = signature;
+      s.hint.textContent = s.dirty ? t.saveOrderFirst : t.groupOrderHint;
+      s.editor.items = [...nativeItems.map((i) => ({ ...i, smMixed: true })), ...s.draft.groups.map((g) => ({ value: groupKey(g.id), label: g.name, icon: g.icon, disableHiding: true }))];
+      s.editor.value = { order: s.order, hidden: [...s.hidden] };
+    }
+    s.editor.hass = dialog.hass;
+    s.editor.inert = !!s.saving;
+    for (const row of s.editor.shadowRoot?.querySelectorAll("ha-md-list-item") || []) {
+      const g = s.draft.groups.find((g2) => g2.id === row.querySelector("[data-sm-group]")?.dataset.smGroup);
+      if (!g) continue;
+      for (const n of row.querySelectorAll("[slot=headline],.icon")) n.style.color = rgba(g.color) || "";
+    }
+  }
+  function changed(dialog, s, event) {
+    event.stopPropagation();
     if (s.saving) return;
-    const from = s.draft.groups.findIndex((g) => g.id === id);
-    if (from < 0 || target < 0 || target >= s.draft.groups.length || from === target) return;
-    s.draft.groups.splice(target, 0, s.draft.groups.splice(from, 1)[0]);
-    s.dirty = stable(s.base.groups.map((g) => g.id)) !== stable(s.draft.groups.map((g) => g.id));
+    const value = event.detail?.value;
+    if (!value || !Array.isArray(value.order) || !Array.isArray(value.hidden)) return;
+    const nativeKeys = new Set((s.native.items || []).map((i) => i.value)), groupIds = new Map(s.draft.groups.map((g) => [groupKey(g.id), g.id]));
+    const priorNativeOrder = s.order.filter((v) => nativeKeys.has(v)), priorHidden = s.hidden;
+    const order = value.order.filter((v) => nativeKeys.has(v) || groupIds.has(v));
+    const tokens = order.map((v) => groupIds.has(v) ? "g:" + groupIds.get(v) : "p:" + v);
+    const unseen = s.draft.menuOrder.filter((v) => !tokens.includes(v));
+    s.order = order;
+    s.draft.menuOrder = [...tokens, ...unseen];
+    s.dirty = stable(s.draft.menuOrder) !== stable(s.base.menuOrder);
     dialog._dirtyStateContext.setState(s.dirty, DIRTY_KEY);
+    const nativeValue = { order: order.filter((v) => nativeKeys.has(v)), hidden: value.hidden.filter((v) => nativeKeys.has(v)) };
+    s.hidden = nativeValue.hidden;
+    if (stable(nativeValue) !== stable({ order: priorNativeOrder, hidden: priorHidden })) {
+      s.native.dispatchEvent(new CustomEvent("value-changed", { detail: { value: nativeValue }, bubbles: true, composed: true }));
+    }
     s.signature = null;
     render(dialog, s);
     dialog.requestUpdate?.();
   }
-  function render(dialog, s) {
-    const t = managerStrings(dialog.hass), signature = stable({ groups: s.draft.groups, dirty: s.dirty, saving: s.saving, title: t.submenus });
-    if (s.signature === signature) return;
-    s.signature = signature;
-    const style = el2("style");
-    style.textContent = ".sm-native-groups{border-top:1px solid var(--divider-color);margin-top:14px;padding-top:10px}.sm-native-groups h3{font-size:14px;margin:4px 0}.sm-native-groups p{font-size:12px;color:var(--secondary-text-color);line-height:1.4}.sm-native-group-row{display:flex;align-items:center;gap:7px;min-height:46px;border-radius:6px}.sm-native-group-row>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sm-native-group-row ha-icon{--mdc-icon-size:24px;margin-inline:8px 4px;flex:none}.sm-native-group-row button{box-sizing:border-box;width:30px;min-width:30px;height:30px;padding:3px;color:var(--secondary-text-color);border:1px solid var(--divider-color);border-radius:6px;background:var(--card-background-color);font:inherit;cursor:pointer}.sm-native-group-row button:disabled{opacity:.35;cursor:default}.sm-native-group-row .grip{cursor:grab;touch-action:none;font-size:20px}.sm-native-group-row .swatch{width:32px;min-width:32px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px}.swatch span{display:block;width:100%;height:100%;border-radius:3px}";
-    const list = el2("div");
-    list.setAttribute("role", "list");
-    list.setAttribute("aria-label", t.submenus);
-    s.draft.groups.forEach((group, index) => {
-      const row = el2("div");
-      row.className = "sm-native-group-row";
-      row.dataset.smGroupRow = group.id;
-      row.setAttribute("role", "listitem");
-      const icon = el2("ha-icon");
-      icon.icon = group.icon;
-      icon.style.color = rgba(group.color) || "";
-      const name = el2("span", group.name);
-      name.title = group.name;
-      name.style.color = rgba(group.color) || "";
-      const button = (text2, title, fn) => {
-        const b = el2("button", text2);
-        b.type = "button";
-        b.title = title;
-        b.setAttribute("aria-label", title + " " + group.name);
-        b.onclick = fn;
-        return b;
-      };
-      const swatch = button("", t.groupColor, () => {
-        if (!s.dirty && !s.saving) s.options.editGroup(group.id);
-      });
-      swatch.className = "swatch";
-      swatch.disabled = s.dirty;
-      const fill = el2("span");
-      fill.style.background = rgba(group.color) || "transparent";
-      swatch.append(fill);
-      const up = button("↑", t.up, () => move(dialog, s, group.id, index - 1)), down = button("↓", t.down, () => move(dialog, s, group.id, index + 1));
-      up.disabled = index === 0;
-      down.disabled = index === s.draft.groups.length - 1;
-      const grip = button("≡", t.moveGroup, () => {
-      });
-      grip.className = "grip";
-      grip.onkeydown = (e) => {
-        if (!["ArrowUp", "ArrowDown"].includes(e.key)) return;
-        e.preventDefault();
-        move(dialog, s, group.id, index + (e.key === "ArrowUp" ? -1 : 1));
-        [...s.section.querySelectorAll("[data-sm-group-row]")].find((r) => r.dataset.smGroupRow === group.id)?.querySelector(".grip")?.focus();
-      };
-      grip.onpointerdown = (e) => {
-        if (s.saving || e.button !== 0) return;
-        e.preventDefault();
-        grip.setPointerCapture?.(e.pointerId);
-        s.drag = { id: group.id, target: index };
-      };
-      grip.onpointermove = (e) => {
-        if (!s.drag) return;
-        const hit = [...list.children].find((row2) => {
-          const r = row2.getBoundingClientRect();
-          return e.clientX >= r.left && e.clientX < r.right && e.clientY >= r.top && e.clientY < r.bottom;
-        });
-        if (!hit) return;
-        s.drag.target = s.draft.groups.findIndex((g) => g.id === hit.dataset.smGroupRow);
-        for (const r of list.children) r.style.outline = r === hit ? "1px solid var(--primary-color)" : "";
-      };
-      grip.onpointerup = () => {
-        const drag = s.drag;
-        s.drag = null;
-        for (const r of list.children) r.style.outline = "";
-        if (drag) move(dialog, s, drag.id, drag.target);
-      };
-      grip.onpointercancel = () => {
-        s.drag = null;
-        for (const r of list.children) r.style.outline = "";
-      };
-      row.append(icon, name, swatch, up, down, grip);
-      list.append(row);
-    });
-    s.section.className = "sm-native-groups";
-    s.section.replaceChildren(style, el2("h3", t.submenus), el2("p", s.dirty ? t.saveOrderFirst : t.groupOrderHint), list);
-    s.section.inert = !!s.saving;
-  }
   function attachNativeGroups(dialog, options) {
-    const content = dialog.shadowRoot?.querySelector(".content");
-    if (!content || !dialog._open) return;
+    const content = dialog.shadowRoot?.querySelector(".content"), native = content?.querySelector("ha-items-display-editor");
+    if (!content || !native || !dialog._open) return;
     let s = sessions.get(dialog);
     const record = normalizeManager(options.record);
     if (!s) {
       const section = el2("section");
-      content.append(section);
-      s = { section, base: clone(record), draft: clone(record), dirty: false, saving: false, identity: options.identity, options };
+      section.className = "sm-native-groups";
+      const hint = el2("p");
+      hint.style.cssText = "font-size:12px;color:var(--secondary-text-color);line-height:1.4;margin:6px 0";
+      const editor = el2("ha-items-display-editor");
+      section.append(hint, editor);
+      native.after(section);
+      s = { section, hint, editor, native, display: native.style.display, base: clone(record), draft: clone(record), dirty: false, saving: false, identity: options.identity, options };
+      s.order = mixedMenuOrder(record, dialog._order || [], native.items || []);
+      s.hidden = [...native.value?.hidden || dialog._hidden || []];
+      native.style.display = "none";
       sessions.set(dialog, s);
       dialog._dirtyStateContext.setState(false, DIRTY_KEY);
+      editor.addEventListener("value-changed", (e) => changed(dialog, s, e));
+      s.observer = new MutationObserver(() => render(dialog, s));
+      if (editor.shadowRoot) s.observer.observe(editor.shadowRoot, { childList: true, subtree: true });
     }
     if (!s.dirty && !s.saving) {
       s.base = clone(record);
       s.draft = clone(record);
       s.identity = options.identity;
+      s.order = mixedMenuOrder(record, dialog._order || [], native.items || []);
+      s.hidden = [...native.value?.hidden || dialog._hidden || []];
     }
     s.options = options;
     render(dialog, s);
@@ -883,8 +890,8 @@
     const title = managerStrings(nativeDialog.hass).open;
     if (button.textContent !== title) button.textContent = title;
     button.disabled = !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
-    const editor = nativeDialog.shadowRoot.querySelector("ha-items-display-editor");
-    for (const badge of editor?.shadowRoot?.querySelectorAll("[data-sm-move]") || []) {
+    const editors = [...nativeDialog.shadowRoot.querySelectorAll("ha-items-display-editor")];
+    for (const badge of editors.flatMap((e) => [...e.shadowRoot?.querySelectorAll("[data-sm-move]") || []])) {
       updateMoveBadge(badge, nativeDialog.hass);
       if (nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog)) badge.disabled = true;
     }
@@ -898,7 +905,7 @@
     if (button.textContent !== name) button.textContent = name;
     button.title = managerStrings(hass).move + ": " + name;
     button.setAttribute("aria-label", managerStrings(hass).move + " " + button.dataset.smLabel + ": " + name);
-    button.disabled = !loaded;
+    button.disabled = !loaded || [...editDialogs].some((dialog) => dialog.isConnected && (nativeGroupsDirty(dialog) || nativeGroupsBusy(dialog)));
   }
   function moveEntryButton(hass, key, label) {
     const button = el3("button");
@@ -1174,7 +1181,8 @@
   }
   function makeButton(session, item) {
     const key = item.value;
-    let button = session.buttons.get(key);
+    const cacheKey = (item.smMixed ? "mixed:" : "") + key;
+    let button = session.buttons.get(cacheKey);
     if (!button) {
       button = document.createElement("button");
       button.type = "button";
@@ -1204,7 +1212,7 @@
           markDirty(session);
         } });
       });
-      session.buttons.set(key, button);
+      session.buttons.set(cacheKey, button);
     }
     button.setAttribute("aria-label", `${strings(session.dialog.hass).edit} ${item.label}`);
     button.title = button.getAttribute("aria-label");
@@ -1224,17 +1232,21 @@
       session.previousRenderer = editor.actionsRenderer;
       editor.actionsRenderer = (item) => {
         const field = makeButton(session, item);
-        const move2 = moveEntryButton(session.dialog.hass, item.value, item.label);
-        return session.previousRenderer ? [session.previousRenderer(item), move2, field] : [move2, field];
+        const move = moveEntryButton(session.dialog.hass, item.value, item.label);
+        return session.previousRenderer ? [session.previousRenderer(item), move, field] : [move, field];
       };
       if (editor.shadowRoot) {
         session.observer = new MutationObserver(() => syncRows(session));
         session.observer.observe(editor.shadowRoot, { childList: true, subtree: true });
       }
     }
-    for (const item of editor.items || []) makeButton(session, item);
-    for (const row of editor.shadowRoot?.querySelectorAll("ha-md-list-item") || []) {
-      const c = rgba(session.draft.colors[row.value]);
+    const displayEditors = [...session.dialog.shadowRoot.querySelectorAll("ha-items-display-editor")];
+    for (const display of displayEditors) if (display.shadowRoot) session.observer?.observe(display.shadowRoot, { childList: true, subtree: true });
+    for (const item of displayEditors.flatMap((e) => e.items || [])) if (!item.value.startsWith("sm-group:")) makeButton(session, item);
+    for (const row of displayEditors.flatMap((e) => [...e.shadowRoot?.querySelectorAll("ha-md-list-item") || []])) {
+      if (row.querySelector("[data-sm-group]")) continue;
+      const panel = row.querySelector("[data-panel]")?.dataset.panel || row.value;
+      const c = rgba(session.draft.colors[panel]);
       for (const target of row.querySelectorAll("[slot=headline],.icon")) cssColor(target, c);
     }
   }

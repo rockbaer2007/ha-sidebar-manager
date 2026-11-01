@@ -1,6 +1,6 @@
 # Local verification — 2026-11-01
 
-Unpublished Sidebar Manager 0.1.2. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
+Unpublished Sidebar Manager 0.1.3. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
 
 ## Safety
 
@@ -13,7 +13,7 @@ Unpublished Sidebar Manager 0.1.2. Live target exclusively `.177`, Home Assistan
 
 ## Automated checks
 
-`npm run check`, `npm run build`, `npm test`: 42 tests pass. These cover the existing color validation, native save separation, conflict detection, backup failures, uncertain acknowledgements, compensation and picker controls, plus the manager's schema, safe URLs, retention of missing panels, deterministic layout, per-language keys, cancellation, group icons/colors/opacity/theme reset and HTTP-compatible IDs. Native submenu ordering has separate dirty state, cancellation, failed-save compensation and controls frozen during any combined save. No custom folder IDs enter HA's native panel order.
+`npm run check`, `npm run build`, `npm test`: 47 tests pass. These cover color validation, native save separation, conflicts, backup failures, uncertain acknowledgements, compensation, picker controls, schema, safe URLs, missing panels, deterministic layout, locale keys, cancellation, icons/colors/opacity and HTTP-compatible IDs. The mixed native editor forwards only real panel IDs to HA. Tests cover interleaved folder blocks, hidden controls, missing anchors, deleted folders, cancellation, failed-save compensation and frozen controls during saving. Folder-only moves preserve an empty native order meaning HA defaults.
 
 ## Actual .177 verification
 
@@ -22,7 +22,12 @@ Unpublished Sidebar Manager 0.1.2. Live target exclusively `.177`, Home Assistan
 - Two own SM Sort folders created. Arrow movement enables Save; Cancel followed by reopening restores the stored order.
 - Actual mouse drag swaps the two own folders. Native Save persists their order after browser reload.
 - Own sort folders removed afterward; user-created Test/Test2, Home/Map assignments, native settings and colors preserved.
-- Retention after this fresh backup: pending removal of oldest full backup `468fd9bd`; four full backups remain until the required action-time approval. PC and app-update backups retained.
+- Retention after the fresh backup completed with concrete user approval: only oldest `468fd9bd` permanently deleted. Exactly three full backups remain: `1cf6590c`, `4c40757b`, `a74b1275`, plus the separate 119.18 MB app-update backup. PC backups retained.
+- 0.1.3: Test folder dragged directly below Overview in the common native list, then Cancel. Original positions retained.
+- Own SM Position folder and internal link created. Native drag and keyboard sorting exercised; saved between Test für APP and Energy. Browser reload confirmed this exact folder block in the actual sidebar. Both test objects then removed; Test/Test2 assignments and previous native data preserved.
+- PC snapshot before the common-list change: `C:/Users/rockb/source/backups/sidebar-manager-vor-gemeinsamer-sortierung-20261101`. Fresh full HA backup above covers this continuation; no further full backup created for local iterations.
+- A first mixed-order iteration explicitly stored the default native panel order on a folder-only move. Corrected by comparing effective panel order, covered by a regression test, and compensated only the exact default preference added by our test after saving its complete snapshot. Final native settings/colors match the original again.
+- Final mixed editor: Map color picker shows the saved HEX/opacity and cancels correctly. Media visibility changes in the draft and is restored by Cancel.
 
 - Native color fields and manager entry point load; existing colors still displayed.
 - Create a group and assign the existing ATLAS entry. Rename and replace its display icon.

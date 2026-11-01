@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — unpublished local preview
+
+- All folders and main entries share the native drag-and-drop list; folders can be placed between main entries, without extra arrow buttons.
+- Separate mixed-order storage preserves membership and never passes generated folder IDs into HA's saved native panel order.
+- Native color/visibility controls remain available; native keyboard sorting is retained.
+
 ## 0.1.2 — unpublished local preview
 
 - Native sidebar editor lists folders under Submenus with icons, color buttons and drag/keyboard/arrow sorting.
