@@ -8,6 +8,7 @@ Unpublished Sidebar Manager 0.1.1. Live target exclusively `.177`, Home Assistan
 - PC backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-aufbau-20261101-204603`.
 - Fresh complete HA backup `4c40757b`, 174.30 MB, including settings/history, apps, share, media and SSL. HA assigned the default name `Custom backup 2026.10.4`.
 - Original configuration, complete user preferences, Test für APP configuration and Lovelace resources backed up separately on the PC.
+- Retention completed after the user's explicit action-time approval: only old full backup `291c811d` (173.44 MB) deleted. The HA overview confirms exactly three manual full backups plus the separate app-update backup (119.18 MB). PC backups remain untouched.
 - New local module replaces only the existing color-module entry. The old module remains available for rollback.
 
 ## Automated checks
