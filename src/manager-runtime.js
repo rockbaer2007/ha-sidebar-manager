@@ -1,4 +1,4 @@
-import {clone,stable} from './core.js';
+import {clone,stable,rgba} from './core.js';
 import {MANAGER_KEY,normalizeManager,layoutEntries,saveManager} from './manager-model.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {managerStrings} from './manager-i18n.js';
@@ -71,7 +71,7 @@ function applyLayout(sidebar){
  for(const entry of layout){
   if(entry.kind==='group'){
    keep.add(entry.id);let head=s.headers.get(entry.id);if(!head){head=el('button');head.type='button';head.dataset.smGroup=entry.id;const icon=el('ha-icon'),label=el('span');label.className='sm-group-label';head.append(icon,label);head.onclick=()=>{const g=config.groups.find(g=>g.id===entry.id);collapsed.set(entry.id,!(collapsed.get(entry.id)??g?.collapsed));refreshManager();};slot.append(head);s.headers.set(entry.id,head);}
-   const isCollapsed=collapsed.get(entry.id)??entry.collapsed;const title=(isCollapsed?'▸ ':'▾ ')+entry.name;if(head.lastElementChild.textContent!==title)head.lastElementChild.textContent=title;head.firstElementChild.icon=entry.icon;head.title=entry.name;head.setAttribute('aria-label',entry.name);head.setAttribute('aria-expanded',String(!isCollapsed));head.style.order=String(order++);head.toggleAttribute('data-sm-bottom',entry.bottom&&!bottomSeen);if(entry.bottom)bottomSeen=true;
+   const isCollapsed=collapsed.get(entry.id)??entry.collapsed;const title=(isCollapsed?'▸ ':'▾ ')+entry.name;if(head.lastElementChild.textContent!==title)head.lastElementChild.textContent=title;head.firstElementChild.icon=entry.icon;head.style.color=rgba(entry.color)||'';head.firstElementChild.style.color=rgba(entry.color)||'';head.title=entry.name;head.setAttribute('aria-label',entry.name);head.setAttribute('aria-expanded',String(!isCollapsed));head.style.order=String(order++);head.toggleAttribute('data-sm-bottom',entry.bottom&&!bottomSeen);if(entry.bottom)bottomSeen=true;
   }else{
    const row=rows.find(r=>r.id==='sidebar-panel-'+entry.key);if(!row)continue;row.style.order=String(order++);const g=config.groups.find(g=>g.id===entry.group);row.toggleAttribute('data-sm-hidden',!!entry.hidden||!!(g&&(collapsed.get(g.id)??g.collapsed)));const bottom=g?g.bottom:entry.bottom;row.toggleAttribute('data-sm-bottom',!!bottom&&!bottomSeen);if(bottom)bottomSeen=true;
   }

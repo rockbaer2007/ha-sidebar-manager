@@ -1,5 +1,5 @@
 import {normalizeManager,newId} from './manager-model.js';
-import {clone} from './core.js';
+import {clone,rgba} from './core.js';
 import {managerStrings} from './manager-i18n.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
 export class ManagerDialog extends HTMLElement{
@@ -17,6 +17,15 @@ export class ManagerDialog extends HTMLElement{
   n.oninput=()=>change(type==='checkbox'?n.checked:n.value);return l;
  }
  move(array,index,delta){if(index+delta<0||index+delta>=array.length)return;[array[index],array[index+delta]]=[array[index+delta],array[index]];this.renderBody();}
+ groupColor(group){
+  const button=this.button(this.t.groupColor+' '+group.name,()=>{
+   const picker=document.createElement('ugso-sidebar-color-picker');document.body.append(picker);
+   picker.show({label:group.name,color:group.color,hass:this.hass,onChange:color=>{group.color=color;paint();}});
+  });
+  button.style.cssText='width:36px;height:36px;min-width:36px;padding:5px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px';
+  const swatch=el('span');swatch.style.cssText='display:block;width:100%;height:100%;border-radius:3px';button.replaceChildren(swatch);
+  const paint=()=>{swatch.style.background=rgba(group.color)||'transparent';button.title=this.t.groupColor+': '+group.name;};paint();return button;
+ }
  render(){
   const style=el('style');style.textContent=`:host{font:14px var(--ha-font-family,Arial,sans-serif);color:var(--primary-text-color,#222)}*{box-sizing:border-box}dialog{color:inherit;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#888);border-radius:16px;width:min(1050px,94vw);max-height:90dvh;padding:0}dialog::backdrop{background:#0008}header,footer{padding:16px 20px;display:flex;gap:8px;align-items:center;background:var(--secondary-background-color,#eee)}h2{font-size:20px;margin:0;flex:1}h3{margin:14px 0 8px}main{padding:0 20px 16px;overflow:auto;max-height:calc(90dvh - 150px)}p{line-height:1.5}.cards{display:grid;gap:8px}.row{border:1px solid var(--divider-color,#aaa);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>strong{width:100%;overflow-wrap:anywhere}.row small{width:100%;opacity:.7}.row label{display:flex;gap:6px;align-items:center}.row label:has(input[type=text]){flex:1;min-width:160px}input,select,textarea{background:var(--primary-background-color,#fff);color:inherit;border:1px solid var(--divider-color,#888);border-radius:5px;padding:7px;font:inherit;min-width:0}input[type=text]{width:100%}button{font:inherit;border:1px solid var(--divider-color,#aaa);border-radius:7px;padding:8px 12px;min-height:36px;background:var(--secondary-background-color,#eee);color:inherit;cursor:pointer}button:hover{border-color:var(--primary-color,#03a9f4)}footer{justify-content:flex-end;flex-wrap:wrap}footer button{min-width:115px}.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}textarea{width:100%;height:120px}.status{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:wait}input[type=checkbox]{accent-color:var(--primary-color,#03a9f4)}@media(max-width:600px){main{padding:0 10px 10px}.row{gap:8px}.row label:has(input[type=text]){min-width:100%;}.row select{max-width:150px}header,footer{padding:12px}footer button{min-width:100px}}`;
   this.modal=el('dialog');this.modal.setAttribute('aria-label',this.t.title);
@@ -26,7 +35,7 @@ export class ManagerDialog extends HTMLElement{
  renderBody(){
   const t=this.t;this.main.replaceChildren(el('p',t.intro));this.main.append(el('h3',t.groups));
   const groups=el('div');groups.className='cards';
-  this.draft.groups.forEach((g,i)=>{const row=el('div');row.className='row';row.append(this.input(t.name,g.name,v=>g.name=v),this.input(t.icon,g.icon,v=>g.icon=v),this.input(t.collapsed,g.collapsed,v=>g.collapsed=v,'checkbox'),this.input(t.bottom,g.bottom,v=>g.bottom=v,'checkbox'),this.button(t.up,()=>this.move(this.draft.groups,i,-1),'↑'),this.button(t.down,()=>this.move(this.draft.groups,i,1),'↓'),this.button(t.remove,()=>{this.draft.groups.splice(i,1);for(const item of Object.values(this.draft.items))if(item.group===g.id)item.group='';this.renderBody();},'×'));groups.append(row);});
+  this.draft.groups.forEach((g,i)=>{const row=el('div');row.className='row';row.append(this.input(t.name,g.name,v=>g.name=v),this.input(t.icon,g.icon,v=>g.icon=v),this.groupColor(g),this.input(t.collapsed,g.collapsed,v=>g.collapsed=v,'checkbox'),this.input(t.bottom,g.bottom,v=>g.bottom=v,'checkbox'),this.button(t.up,()=>this.move(this.draft.groups,i,-1),'↑'),this.button(t.down,()=>this.move(this.draft.groups,i,1),'↓'),this.button(t.remove,()=>{this.draft.groups.splice(i,1);for(const item of Object.values(this.draft.items))if(item.group===g.id)item.group='';this.renderBody();},'×'));groups.append(row);});
   this.main.append(groups,this.button(t.addGroup,()=>{this.draft.groups.push({id:newId('group'),name:t.newGroup,icon:'mdi:folder-outline',collapsed:false,bottom:false});this.renderBody();}));
   this.main.append(el('h3',t.items));const items=el('div');items.className='cards';
   const keys=[...new Set([...this.draft.order,...this.entries.map(e=>e.key),...Object.keys(this.draft.items)])];

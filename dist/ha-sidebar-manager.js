@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.0 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.1 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.0";
+  var VERSION = "0.1.1";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -302,7 +302,7 @@
     for (const g of raw?.groups || []) {
       if (!safeKey(g.id) || !text(g.name) || seen.has(g.id)) throw Error("invalid_group");
       seen.add(g.id);
-      groups.push({ id: g.id, name: text(g.name), icon: /^mdi:[a-z0-9-]+$/.test(g.icon || "") ? g.icon : "mdi:folder-outline", collapsed: !!g.collapsed, bottom: !!g.bottom });
+      groups.push({ id: g.id, name: text(g.name), icon: /^mdi:[a-z0-9-]+$/.test(g.icon || "") ? g.icon : "mdi:folder-outline", color: normalizeColor(g.color), collapsed: !!g.collapsed, bottom: !!g.bottom });
     }
     for (const [key, v] of Object.entries(raw?.items || {})) {
       if (!safeKey(key) || !v || typeof v !== "object") throw Error("invalid_item");
@@ -353,9 +353,9 @@
     en: { title: "Sidebar Manager", open: "Manage groups and links", intro: "Colors, visibility and ordering remain in the HA dialog. Organize groups, pinned entries and custom links here. Changes apply only after Save.", groups: "Groups", addGroup: "Add group", name: "Name", collapsed: "Initially collapsed", bottom: "Pin to bottom", remove: "Remove", up: "Move up", down: "Move down", items: "Entries", group: "Group", none: "No group", label: "Display name", icon: "Icon (mdi:…)", addLink: "Add link", url: "Address", hidden: "Hide", save: "Save", cancel: "Cancel", export: "Export backup", import: "Import backup", importHint: "Paste JSON backup", restore: "Load backup", saved: "Saved. Settings are synced per HA user.", error: "Save not confirmed. Your draft is preserved. Check the connection or reopen the dialog.", conflict: "Settings changed elsewhere. Export your draft, close and reopen.", invalid: "Invalid backup or address. Only internal paths and HTTP(S) are allowed.", missing: "Currently unavailable in HA – setting preserved.", newGroup: "New group", newLink: "New link", busy: "Saving …", source: "Presentation only; HA dashboards and access permissions remain unchanged.", color: "Color", reset: "Reset custom layout", resetHint: "Resets only the open Manager draft; Save applies it." },
     fr: { title: "Sidebar Manager", open: "Gérer les groupes et les liens", intro: "Couleurs, visibilité et ordre restent dans la fenêtre HA. Gérez ici les groupes, les entrées épinglées et les liens. Les changements sont appliqués après Enregistrer.", groups: "Groupes", addGroup: "Ajouter un groupe", name: "Nom", collapsed: "Replié au départ", bottom: "Épingler en bas", remove: "Supprimer", up: "Monter", down: "Descendre", items: "Entrées", group: "Groupe", none: "Sans groupe", label: "Nom affiché", icon: "Icône (mdi:…)", addLink: "Ajouter un lien", url: "Adresse", hidden: "Masquer", save: "Enregistrer", cancel: "Annuler", export: "Exporter la sauvegarde", import: "Importer une sauvegarde", importHint: "Coller la sauvegarde JSON", restore: "Charger la sauvegarde", saved: "Enregistré. Réglages synchronisés par utilisateur HA.", error: "Enregistrement non confirmé. Votre brouillon est conservé. Vérifiez la connexion ou rouvrez la fenêtre.", conflict: "Réglages modifiés ailleurs. Exportez le brouillon, fermez puis rouvrez.", invalid: "Sauvegarde ou adresse invalide. Seuls les chemins internes et HTTP(S) sont autorisés.", missing: "Actuellement indisponible dans HA – réglage conservé.", newGroup: "Nouveau groupe", newLink: "Nouveau lien", busy: "Enregistrement …", source: "Affichage uniquement ; tableaux de bord et autorisations HA restent inchangés.", color: "Couleur", reset: "Réinitialiser la présentation", resetHint: "Réinitialise seulement le brouillon Manager ; Enregistrer applique la modification." }
   };
-  Object.assign(MANAGER_STRINGS.de, { none: "Hauptmenü", move: "In Ordner verschieben" });
-  Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder" });
-  Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier" });
+  Object.assign(MANAGER_STRINGS.de, { none: "Hauptmenü", move: "In Ordner verschieben", groupColor: "Ordnerfarbe" });
+  Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
+  Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
 
   // src/manager-dialog.js
@@ -411,6 +411,26 @@
       [array[index], array[index + delta]] = [array[index + delta], array[index]];
       this.renderBody();
     }
+    groupColor(group) {
+      const button = this.button(this.t.groupColor + " " + group.name, () => {
+        const picker = document.createElement("ugso-sidebar-color-picker");
+        document.body.append(picker);
+        picker.show({ label: group.name, color: group.color, hass: this.hass, onChange: (color) => {
+          group.color = color;
+          paint();
+        } });
+      });
+      button.style.cssText = "width:36px;height:36px;min-width:36px;padding:5px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px";
+      const swatch = el("span");
+      swatch.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
+      button.replaceChildren(swatch);
+      const paint = () => {
+        swatch.style.background = rgba(group.color) || "transparent";
+        button.title = this.t.groupColor + ": " + group.name;
+      };
+      paint();
+      return button;
+    }
     render() {
       const style = el("style");
       style.textContent = `:host{font:14px var(--ha-font-family,Arial,sans-serif);color:var(--primary-text-color,#222)}*{box-sizing:border-box}dialog{color:inherit;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#888);border-radius:16px;width:min(1050px,94vw);max-height:90dvh;padding:0}dialog::backdrop{background:#0008}header,footer{padding:16px 20px;display:flex;gap:8px;align-items:center;background:var(--secondary-background-color,#eee)}h2{font-size:20px;margin:0;flex:1}h3{margin:14px 0 8px}main{padding:0 20px 16px;overflow:auto;max-height:calc(90dvh - 150px)}p{line-height:1.5}.cards{display:grid;gap:8px}.row{border:1px solid var(--divider-color,#aaa);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>strong{width:100%;overflow-wrap:anywhere}.row small{width:100%;opacity:.7}.row label{display:flex;gap:6px;align-items:center}.row label:has(input[type=text]){flex:1;min-width:160px}input,select,textarea{background:var(--primary-background-color,#fff);color:inherit;border:1px solid var(--divider-color,#888);border-radius:5px;padding:7px;font:inherit;min-width:0}input[type=text]{width:100%}button{font:inherit;border:1px solid var(--divider-color,#aaa);border-radius:7px;padding:8px 12px;min-height:36px;background:var(--secondary-background-color,#eee);color:inherit;cursor:pointer}button:hover{border-color:var(--primary-color,#03a9f4)}footer{justify-content:flex-end;flex-wrap:wrap}footer button{min-width:115px}.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}textarea{width:100%;height:120px}.status{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:wait}input[type=checkbox]{accent-color:var(--primary-color,#03a9f4)}@media(max-width:600px){main{padding:0 10px 10px}.row{gap:8px}.row label:has(input[type=text]){min-width:100%;}.row select{max-width:150px}header,footer{padding:12px}footer button{min-width:100px}}`;
@@ -435,7 +455,7 @@
       this.draft.groups.forEach((g, i) => {
         const row = el("div");
         row.className = "row";
-        row.append(this.input(t.name, g.name, (v) => g.name = v), this.input(t.icon, g.icon, (v) => g.icon = v), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
+        row.append(this.input(t.name, g.name, (v) => g.name = v), this.input(t.icon, g.icon, (v) => g.icon = v), this.groupColor(g), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
           this.draft.groups.splice(i, 1);
           for (const item of Object.values(this.draft.items)) if (item.group === g.id) item.group = "";
           this.renderBody();
@@ -796,6 +816,8 @@
         const title = (isCollapsed ? "▸ " : "▾ ") + entry.name;
         if (head.lastElementChild.textContent !== title) head.lastElementChild.textContent = title;
         head.firstElementChild.icon = entry.icon;
+        head.style.color = rgba(entry.color) || "";
+        head.firstElementChild.style.color = rgba(entry.color) || "";
         head.title = entry.name;
         head.setAttribute("aria-label", entry.name);
         head.setAttribute("aria-expanded", String(!isCollapsed));

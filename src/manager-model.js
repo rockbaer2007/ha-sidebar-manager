@@ -1,4 +1,4 @@
-import {clone, stable} from './core.js';
+import {clone, stable,normalizeColor} from './core.js';
 export const MANAGER_KEY='ugso_sidebar_manager_v1';
 // randomUUID is restricted to secure contexts; HA is also used over LAN HTTP.
 export function newId(prefix){return prefix+'-'+Array.from(crypto.getRandomValues(new Uint32Array(4)),v=>v.toString(16).padStart(8,'0')).join('');}
@@ -12,7 +12,7 @@ export function safeUrl(value){
 export function normalizeManager(raw){
   if(raw!=null&&(raw.version!==1||!Array.isArray(raw.groups)||!raw.items||Array.isArray(raw.items)||typeof raw.items!=='object'))throw Error('unsupported_record');
   const groups=[],seen=new Set(),items=Object.create(null);
-  for(const g of raw?.groups||[]){if(!safeKey(g.id)||!text(g.name)||seen.has(g.id))throw Error('invalid_group');seen.add(g.id);groups.push({id:g.id,name:text(g.name),icon:/^mdi:[a-z0-9-]+$/.test(g.icon||'')?g.icon:'mdi:folder-outline',collapsed:!!g.collapsed,bottom:!!g.bottom});}
+  for(const g of raw?.groups||[]){if(!safeKey(g.id)||!text(g.name)||seen.has(g.id))throw Error('invalid_group');seen.add(g.id);groups.push({id:g.id,name:text(g.name),icon:/^mdi:[a-z0-9-]+$/.test(g.icon||'')?g.icon:'mdi:folder-outline',color:normalizeColor(g.color),collapsed:!!g.collapsed,bottom:!!g.bottom});}
   for(const [key,v]of Object.entries(raw?.items||{})){
     if(!safeKey(key)||!v||typeof v!=='object')throw Error('invalid_item');
     const item={title:text(v.title),icon:/^mdi:[a-z0-9-]+$/.test(v.icon||'')?v.icon:'',group:seen.has(v.group)?v.group:'',bottom:!!v.bottom,hidden:!!v.hidden};

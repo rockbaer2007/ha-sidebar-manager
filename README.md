@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.0 — local preview
+# Sidebar Manager 0.1.1 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -9,6 +9,8 @@ One Home Assistant frontend extension for per-entry colors/opacity, groups, coll
 Open Home Assistant's **Edit sidebar** dialog by holding the sidebar heading. The color fields, visibility controls and native ordering remain available. **Manage groups and links** opens Sidebar Manager. Its Save button commits the manager layout independently; color/order edits in the underlying HA dialog still require that dialog's Save button. Cancel discards the respective open draft.
 
 Groups have a name, initial collapsed state and optional bottom placement. Existing items can be assigned to groups, renamed for display, given an MDI icon, hidden or pinned. Arrow buttons change custom layout order. Group headers act as separators and can be collapsed with mouse, touch or keyboard. Pinned entries appear after normal entries within the scrollable main navigation, not in HA's protected profile/notification area. Own links accept internal paths and HTTP(S) URLs only. These presentation settings never change dashboard configuration or access permissions.
+
+Folders have their own color picker with opacity, applied to the folder icon and name. **Theme color** clears the override. The Manager's Save button confirms the choice.
 
 ## Storage and recovery
 
@@ -28,7 +30,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.0/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.1/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.

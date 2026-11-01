@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — unpublished local preview
+
+- Folder colors and opacity use the existing picker; apply to group names and icons, with reset to the HA theme.
+- Existing layouts without a folder color retain their theme appearance.
+- Existing per-entry colors and all native HA preferences remain unchanged.
+
 ## 0.1.0 — unpublished local preview
 
 - Sidebar Colors retained as the color foundation, including its existing per-user data key.

@@ -1,4 +1,4 @@
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.1";
 export const STORE_KEY = "ugso_sidebar_colors_v1";
 
 export function supportedVersion(version) {
