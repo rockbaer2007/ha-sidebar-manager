@@ -4,11 +4,13 @@ import {managerStrings} from './manager-i18n.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
 export class ManagerDialog extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});}
- show({hass,record,entries,save,focusKey}){
+ show({hass,record,entries,save,focusKey,focusGroup}){
   this.hass=hass;this.t=managerStrings(hass);this.draft=clone(normalizeManager(record));this.entries=entries;this.saveRecord=save;this.busy=false;this.render();
   this.modal.showModal();this.modal.addEventListener('cancel',e=>{e.preventDefault();if(!this.busy)this.remove();});
   const target=[...this.shadowRoot.querySelectorAll('.row[data-key]')].find(row=>row.dataset.key===focusKey);
   if(target){target.style.outline='2px solid var(--primary-color,#03a9f4)';target.scrollIntoView({block:'center'});target.querySelector('select')?.focus();}
+  const groupRow=[...this.shadowRoot.querySelectorAll('.cards:first-of-type .row')][this.draft.groups.findIndex(g=>g.id===focusGroup)];
+  if(groupRow){groupRow.scrollIntoView({block:'center'});groupRow.querySelector('input')?.focus();}
  }
  button(label,fn,icon){const b=el('button',icon||label);b.type='button';b.title=label;b.setAttribute('aria-label',label);b.onclick=fn;return b;}
  input(label,value,change,type='text'){

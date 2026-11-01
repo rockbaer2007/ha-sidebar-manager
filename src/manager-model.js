@@ -48,3 +48,16 @@ export async function saveManager({base,draft,read,write,backup}){
   try{await write(next);}catch{if(stable(await read())!==stable(next))throw Error('save_uncertain');}
   if(stable(await read())!==stable(next))throw Error('save_uncertain');
 }
+// Keep a layout write reversible until the colors/native HA save has succeeded.
+// Never compensate over a newer write from another browser.
+export async function saveManagerWithFollowup(options,followup){
+  let before,written;
+  await saveManager({...options,backup:async value=>{before=clone(value);await options.backup(value);},write:async value=>{written=clone(value);await options.write(value);}});
+  try{return await followup();}catch(error){
+    if(written!==undefined){
+      if(stable(await options.read())!==stable(written))throw Error('rollback_conflict');
+      try{await options.write(before);}catch{if(stable(await options.read())!==stable(before))throw Error('rollback_uncertain');}
+    }
+    throw error;
+  }
+}

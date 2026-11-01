@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
-import {normalizeManager,layoutEntries,safeUrl,saveManager,newId} from '../src/manager-model.js';
+import {normalizeManager,layoutEntries,safeUrl,saveManager,newId,saveManagerWithFollowup} from '../src/manager-model.js';
 import {MANAGER_STRINGS} from '../src/manager-i18n.js';
 const example=()=>normalizeManager({version:1,groups:[{id:'rail',name:'Rail',collapsed:true}],order:['map','home'],items:{map:{group:'rail'},missing:{title:'Preserved'},'sm-link-doc':{title:'Docs',url:'https://example.com',bottom:true}}});
 test('IDs work on LAN HTTP without crypto.randomUUID',()=>{const old=crypto.randomUUID;try{crypto.randomUUID=undefined;assert.match(newId('group'),/^group-[0-9a-f]{32}$/);}finally{crypto.randomUUID=old;}});
@@ -14,6 +14,8 @@ test('future schema and malformed groups fail closed',()=>{assert.throws(()=>nor
 test('unrelated manager metadata survives save, no write after concurrent edit',async()=>{const base=example(),draft=example();draft.items.map.bottom=true;let stored={...base,metadata:{future:'keep'}},writes=0;await saveManager({base,draft,read:async()=>stored,write:async v=>{stored=v;writes++;},backup:async()=>{}});assert.equal(stored.metadata.future,'keep');await assert.rejects(saveManager({base,draft,read:async()=>stored,write:async()=>writes++,backup:async()=>{}}),/conflict/);assert.equal(writes,1);});
 test('blocked backup prevents writes and lost acknowledgement is verified',async()=>{const base=normalizeManager(null),draft=example();let stored=null,writes=0;await assert.rejects(saveManager({base,draft,read:async()=>stored,write:async()=>writes++,backup:async()=>{throw Error('quota');}}));assert.equal(writes,0);await saveManager({base,draft,read:async()=>stored,write:async v=>{stored=v;throw Error('disconnect');},backup:async()=>{}});assert.deepEqual(normalizeManager(stored),draft);});
 test('all manager UI strings are complete in DE EN FR',()=>{for(const locale of ['en','fr'])assert.deepEqual(Object.keys(MANAGER_STRINGS[locale]).sort(),Object.keys(MANAGER_STRINGS.de).sort());});
+test('failed native save compensates only the confirmed group-order write',async()=>{const base=example(),draft=example();draft.groups[0].name='Changed';let stored={...base,metadata:'keep'};const before=structuredClone(stored);await assert.rejects(saveManagerWithFollowup({base,draft,read:async()=>stored,write:async value=>stored=value,backup:async()=>{}},async()=>{throw Error('native_failed');}),/native_failed/);assert.deepEqual(stored,before);});
+test('group-order compensation preserves another client\'s newer layout',async()=>{const base=example(),draft=example();draft.groups[0].name='Changed';let stored=base;await assert.rejects(saveManagerWithFollowup({base,draft,read:async()=>stored,write:async value=>stored=value,backup:async()=>{}},async()=>{stored={...stored,anotherClient:'new'};throw Error('native_failed');}),/rollback_conflict/);assert.equal(stored.anotherClient,'new');});
 test('manager dialog edits remain a draft until Save and Cancel never calls persistence',async()=>{
  const win=new Window({url:'https://ha.example.invalid/'});globalThis.HTMLElement=win.HTMLElement;globalThis.document=win.document;
  const {ManagerDialog}=await import('../src/manager-dialog.js');win.customElements.define('test-manager-dialog',ManagerDialog);

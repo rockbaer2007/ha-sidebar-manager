@@ -1,6 +1,6 @@
 import { VERSION, STORE_KEY, supportedVersion, normalizeRecord, normalizeColor, rgba, stable, clone, saveColorDraft } from "./core.js";
 import { SidebarColorPicker, strings } from "./color-picker.js";
-import {attachManager,attachManagerButton,moveEntryButton} from './manager-runtime.js';
+import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave} from './manager-runtime.js';
 import {ManagerDialog} from './manager-dialog.js';
 
 const FLAG = Symbol.for("ugso.sidebar.manager.loaded");
@@ -177,6 +177,7 @@ async function beginDialog(dialog) {
   }catch{message(session,strings(hass).unavailable,true);}
 }
 function endDialog(dialog) {
+  endManagerDialog(dialog);
   const session=sessions.get(dialog);
   if(!session)return;
   session.picker?.finish();session.observer?.disconnect();
@@ -202,7 +203,7 @@ async function saveDialog(dialog, original, args, originalClose) {
   try {
     const nativeChanged=!!dialog._migrateToUserData || stable(session.nativeBase)!==stable({order:dialog._order,hidden:dialog._hidden});
     if(nativeChanged && stable(await readRecord(hass,"sidebar"))!==stable(session.nativeStored))throw new Error("conflict");
-    await saveColorDraft({base:session.base,draft:session.draft,
+    await withNativeGroupsSave(dialog,()=>saveColorDraft({base:session.base,draft:session.draft,
       read:()=>readRecord(hass),write:value=>writeRecord(hass,value),nativeChanged,
       backup:async before=>{
         // Backup contains only sidebar preferences, never tokens or other user data.
@@ -213,7 +214,7 @@ async function saveDialog(dialog, original, args, originalClose) {
         if(dialog.hass.user.id!==session.userId || dialog.hass.connection!==hass.connection)throw new Error("conflict");
         await original.apply(dialog,args);
         if(dialog._error || dialog.isDirtyState)throw new Error("native_save_failed");
-      }});
+      }}));
     saved=clone(session.draft);dialog._markDirtyStateClean();
     session.saving=false;endDialog(dialog);originalClose.call(dialog);
   }catch(error){

@@ -1,6 +1,6 @@
 # Local verification — 2026-11-01
 
-Unpublished Sidebar Manager 0.1.1. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. The initial 0.1.0 package and source snapshot are retained.
+Unpublished Sidebar Manager 0.1.2. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
 
 ## Safety
 
@@ -13,9 +13,16 @@ Unpublished Sidebar Manager 0.1.1. Live target exclusively `.177`, Home Assistan
 
 ## Automated checks
 
-`npm run check`, `npm run build`, `npm test`: 36 tests pass. These cover the existing color validation, native save separation, conflict detection, backup failures, uncertain acknowledgements, compensation and picker controls, plus the manager's schema, safe URLs, retention of missing panels, deterministic layout, per-language keys, cancellation, group icons/colors/opacity/theme reset and HTTP-compatible IDs.
+`npm run check`, `npm run build`, `npm test`: 42 tests pass. These cover the existing color validation, native save separation, conflict detection, backup failures, uncertain acknowledgements, compensation and picker controls, plus the manager's schema, safe URLs, retention of missing panels, deterministic layout, per-language keys, cancellation, group icons/colors/opacity/theme reset and HTTP-compatible IDs. Native submenu ordering has separate dirty state, cancellation, failed-save compensation and controls frozen during any combined save. No custom folder IDs enter HA's native panel order.
 
 ## Actual .177 verification
+
+- Before 0.1.2: PC snapshot `C:/Users/rockb/source/backups/sidebar-manager-vor-gruppenliste-20261101` and full HA backup `1cf6590c`, "Sidebar Manager vor Untermenü-Liste 0.1.2", 174.57 MB.
+- Native Submenus section shows the saved Test/Test2 groups without making the dialog dirty.
+- Two own SM Sort folders created. Arrow movement enables Save; Cancel followed by reopening restores the stored order.
+- Actual mouse drag swaps the two own folders. Native Save persists their order after browser reload.
+- Own sort folders removed afterward; user-created Test/Test2, Home/Map assignments, native settings and colors preserved.
+- Retention after this fresh backup: pending removal of oldest full backup `468fd9bd`; four full backups remain until the required action-time approval. PC and app-update backups retained.
 
 - Native color fields and manager entry point load; existing colors still displayed.
 - Create a group and assign the existing ATLAS entry. Rename and replace its display icon.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — unpublished local preview
+
+- Native sidebar editor lists folders under Submenus with icons, color buttons and drag/keyboard/arrow sorting.
+- Native Save/Cancel handles the folder-order draft separately from native HA panel IDs.
+- Compensates a confirmed folder-order write if subsequent color/native save fails, without overwriting newer client changes.
+
 ## 0.1.1 — unpublished local preview
 
 - Folder colors and opacity use the existing picker; apply to group names and icons, with reset to the HA theme.

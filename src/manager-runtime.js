@@ -2,6 +2,8 @@ import {clone,stable,rgba} from './core.js';
 import {MANAGER_KEY,normalizeManager,layoutEntries,saveManager} from './manager-model.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {managerStrings} from './manager-i18n.js';
+import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,nativeGroupsBusy} from './native-groups.js';
+export {withNativeGroupsSave} from './native-groups.js';
 let config=normalizeManager(null),hassRef,identity,off,epoch=0,loaded=false;
 const instances=new Set(),state=new WeakMap();
 const editDialogs=new Set();
@@ -18,11 +20,12 @@ async function connect(hass){
  identity={id,connection:hass.connection};const current=++epoch;off?.();loaded=false;config=normalizeManager(null);collapsed.clear();refreshManager();
  try{const value=normalizeManager(await read(hass));if(current!==epoch)return;config=value;loaded=true;refreshManager();const un=await hass.connection.subscribeMessage(e=>{if(current!==epoch)return;try{config=normalizeManager(e.value);loaded=true;collapsed.clear();refreshManager();}catch{console.warn('[Sidebar Manager] Unsupported stored layout; no automatic write.');}},{type:'frontend/subscribe_user_data',key:MANAGER_KEY});if(current===epoch)off=un;else un();}catch{console.warn('[Sidebar Manager] Layout unavailable; stored data left untouched.');}
 }
-export function openManager(sidebar,focusKey){
+export function openManager(sidebar,focusKey,focusGroup){
+ if([...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog))))return;
  const hass=sidebar.hass;if(!loaded||hass.user.id!==identity?.id)return;
  if(document.querySelector('ugso-sidebar-manager-dialog'))return;
  const base=clone(config),owner=identity,currentEpoch=epoch,dialog=el('ugso-sidebar-manager-dialog');document.body.append(dialog);
- dialog.show({hass,record:base,entries:entries(sidebar),focusKey,save:async draft=>{
+ dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,save:async draft=>{
   if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');
   await saveManager({base,draft,read:()=>read(hass),write:value=>{if(identity!==owner)throw Error('conflict');return request(hass,'frontend/set_user_data',MANAGER_KEY,value);},backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before}))});
   config=clone(draft);collapsed.clear();refreshManager();
@@ -35,12 +38,15 @@ export function attachManager(sidebar){
 }
 export function attachManagerButton(nativeDialog){
  editDialogs.add(nativeDialog);
+ if(!nativeDialog._open)return;
  const content=nativeDialog.shadowRoot?.querySelector('.content');if(!content)return;
  let button=content.querySelector('[data-sm-open]');if(!button){button=el('button');button.dataset.smOpen='';button.type='button';button.style.cssText='margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer';button.onclick=()=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar);};content.prepend(button);}
- const title=managerStrings(nativeDialog.hass).open;if(button.textContent!==title)button.textContent=title;button.disabled=!loaded;
+ if(loaded)attachNativeGroups(nativeDialog,{record:config,identity,getIdentity:()=>identity,read:()=>read(nativeDialog.hass),write:value=>request(nativeDialog.hass,'frontend/set_user_data',MANAGER_KEY,value),backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+nativeDialog.hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}});
+ const title=managerStrings(nativeDialog.hass).open;if(button.textContent!==title)button.textContent=title;button.disabled=!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
  const editor=nativeDialog.shadowRoot.querySelector('ha-items-display-editor');
- for(const badge of editor?.shadowRoot?.querySelectorAll('[data-sm-move]')||[])updateMoveBadge(badge,nativeDialog.hass);
+ for(const badge of editor?.shadowRoot?.querySelectorAll('[data-sm-move]')||[]){updateMoveBadge(badge,nativeDialog.hass);if(nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog))badge.disabled=true;}
 }
+export function endManagerDialog(dialog){editDialogs.delete(dialog);endNativeGroups(dialog);}
 function updateMoveBadge(button,hass){
  const key=button.dataset.smMove,group=config.groups.find(g=>g.id===config.items[key]?.group),name=group?.name||managerStrings(hass).none;
  if(button.textContent!==name)button.textContent=name;

@@ -4,7 +4,7 @@ import {build} from "esbuild";
 const root=resolve(import.meta.dirname,"..");
 await mkdir(resolve(root,"dist"),{recursive:true});
 // Source modules stay separate; no CDN, runtime dependency or external request.
-for(const name of ["core.js","color-picker.js","sidebar-colors.js","manager-model.js","manager-runtime.js","manager-dialog.js","manager-i18n.js"])
+for(const name of ["core.js","color-picker.js","sidebar-colors.js","manager-model.js","manager-runtime.js","manager-dialog.js","manager-i18n.js","native-groups.js"])
   await copyFile(resolve(root,"src",name),resolve(root,"dist",name));
 const pkg=JSON.parse(await readFile(resolve(root,"package.json"),"utf8"));
 await build({entryPoints:[resolve(root,"src/sidebar-colors.js")],

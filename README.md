@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.1 — local preview
+# Sidebar Manager 0.1.2 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -11,6 +11,8 @@ Open Home Assistant's **Edit sidebar** dialog by holding the sidebar heading. Th
 Groups have a name, initial collapsed state and optional bottom placement. Existing items can be assigned to groups, renamed for display, given an MDI icon, hidden or pinned. Arrow buttons change custom layout order. Group headers act as separators and can be collapsed with mouse, touch or keyboard. Pinned entries appear after normal entries within the scrollable main navigation, not in HA's protected profile/notification area. Own links accept internal paths and HTTP(S) URLs only. These presentation settings never change dashboard configuration or access permissions.
 
 Folders have their own color picker with opacity, applied to the folder icon and name. **Theme color** clears the override. The Manager's Save button confirms the choice.
+
+The native **Edit sidebar** dialog also lists folders under **Submenus**, with icon, color, arrows and a drag handle. Dragging changes their order relative to each other. Save in that HA dialog commits it; Cancel discards it. Keyboard users can use the arrows or focus the handle and press Up/Down. Save or cancel pending folder order before opening the group editor. Folder IDs are never added to HA's native panel order.
 
 ## Storage and recovery
 
@@ -30,7 +32,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.1/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.2/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.
@@ -38,6 +40,8 @@ Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`.
 This local package includes a HACS-style `hacs.json` and a bundled single JS file, but no GitHub repository or release has been created. No catalog inclusion is claimed.
 
 ## Development
+
+Local 0.1.2 verification on .177 (HA 2026.10.4): submenu arrows, actual mouse dragging, Cancel and persistence after reload passed. Temporary groups removed; Test/Test2, original colors, native preferences and Test für APP preserved. 42 automated tests pass. See `docs/TESTING.md`.
 
 Node 22 or newer: `npm ci`, `npm run check`, `npm run build`, `npm test`.
 

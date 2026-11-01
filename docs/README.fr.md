@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.1 — aperçu local
+# Sidebar Manager 0.1.2 — aperçu local
 
 Extension indépendante pour Home Assistant : couleurs et opacité, groupes repliables, entrées épinglées, liens personnalisés, noms et icônes MDI. La langue DE/EN/FR suit automatiquement HA. Aucune publication.
 
@@ -18,12 +18,16 @@ L'export/import JSON couvre l'organisation (groupes, liens, noms, icônes, masqu
 
 ## Installation et retour
 
-Charger un seul module : `/local/ugso-sidebar-manager/0.1.1/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
+Charger un seul module : `/local/ugso-sidebar-manager/0.1.2/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
 
 Les dossiers possèdent un sélecteur de couleur avec opacité, appliquée à leur icône et leur nom. « Couleur du thème » retire la couleur personnalisée. Enregistrer dans le Manager confirme le choix.
+
+La fenêtre HA « Modifier la barre latérale » affiche aussi les dossiers sous « Sous-menus », avec icône, couleur, flèches et poignée. Glisser change leur ordre entre eux ; Enregistrer dans cette fenêtre HA confirme, Annuler abandonne. Les flèches ou les touches Haut/Bas sur la poignée permettent aussi le tri. Enregistrez ou annulez un ordre modifié avant d'ouvrir l'éditeur des groupes. Les identifiants de dossiers ne sont jamais insérés dans l'ordre natif des panneaux HA.
 
 Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA. Les données Manager restent séparées ; couleurs et réglages natifs sont conservés.
 
 ## Limites
+
+0.1.2 vérifiée sur .177 (HA 2026.10.4) : tri des sous-menus par flèches et glisser à la souris, annulation et conservation après rechargement. Dossiers de test supprimés ; Test/Test2, couleurs, réglages natifs et Test für APP conservés. Les 42 tests automatisés réussissent. Détails dans `TESTING.md`.
 
 Cible minimale HA 2026.10.3 ; vérification réelle uniquement sur .177 avec 2026.10.4. Pas encore d'import YAML Organizer, de présentations par appareil, de CSS libre ou d'actions à modèles. Réglages d'en-tête/largeur et migration automatique Organizer restent à faire. Structure HACS préparée localement, sans publication. Voir `TESTING.md` pour les vérifications.

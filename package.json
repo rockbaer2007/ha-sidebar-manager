@@ -1,6 +1,6 @@
 {
   "name": "ha-sidebar-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Sidebar Manager: colors, groups, pinned entries and custom links in Home Assistant",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/sidebar-colors.js && node --check src/core.js && node --check src/color-picker.js && node --check src/manager-model.js && node --check src/manager-runtime.js && node --check src/manager-dialog.js",
+    "check": "node --check src/sidebar-colors.js && node --check src/core.js && node --check src/color-picker.js && node --check src/manager-model.js && node --check src/manager-runtime.js && node --check src/manager-dialog.js && node --check src/native-groups.js",
     "build": "node tools/build.mjs"
   },
   "devDependencies": {

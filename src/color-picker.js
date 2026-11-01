@@ -4,24 +4,24 @@ export const STRINGS = {
   de: { color:"Farbe", alpha:"Deckkraft", hue:"Farbton", plane:"Sättigung und Helligkeit", hex:"HEX-Farbe",
     theme:"Theme-Farbe", done:"Übernehmen", cancel:"Abbrechen", edit:"Farbe für", saved:"Farben pro Benutzer synchronisiert",
     unavailable:"Seitenleistenfarben konnten nicht geladen werden. Dialog schließen und erneut öffnen.",
-    conflict:"Farben wurden auf einem anderen Gerät geändert. Bitte schließen und neu öffnen.",
-    error:"Farben konnten nicht sicher gespeichert werden. Entwurf bleibt offen. Bitte Verbindung prüfen.",
+    conflict:"Einstellungen wurden auf einem anderen Gerät geändert. Bitte schließen und neu öffnen.",
+    error:"Änderungen konnten nicht sicher gespeichert werden. Entwurf bleibt offen. Bitte Verbindung prüfen.",
     incompatible:"Seitenleistenfarben: Diese HA-Oberfläche wird noch nicht unterstützt.",
-    busy:"Farben werden gespeichert …", transparent:"Vollständig transparent", reset:"Auf Theme-Farbe zurücksetzen" },
+    busy:"Änderungen werden gespeichert …", transparent:"Vollständig transparent", reset:"Auf Theme-Farbe zurücksetzen" },
   en: { color:"Color", alpha:"Opacity", hue:"Hue", plane:"Saturation and brightness", hex:"HEX color",
     theme:"Theme color", done:"Apply", cancel:"Cancel", edit:"Color for", saved:"Colors synced per user",
     unavailable:"Sidebar colors could not be loaded. Close and reopen this dialog.",
-    conflict:"Colors changed on another device. Please close and reopen this dialog.",
-    error:"Colors could not be saved safely. Your draft remains open. Please check the connection.",
+    conflict:"Settings changed on another device. Please close and reopen this dialog.",
+    error:"Changes could not be saved safely. Your draft remains open. Please check the connection.",
     incompatible:"Sidebar colors: This HA interface is not supported yet.",
-    busy:"Saving colors …", transparent:"Fully transparent", reset:"Reset to theme color" },
+    busy:"Saving changes …", transparent:"Fully transparent", reset:"Reset to theme color" },
   fr: { color:"Couleur", alpha:"Opacité", hue:"Teinte", plane:"Saturation et luminosité", hex:"Couleur HEX",
     theme:"Couleur du thème", done:"Appliquer", cancel:"Annuler", edit:"Couleur de", saved:"Couleurs synchronisées par utilisateur",
     unavailable:"Impossible de charger les couleurs. Fermez puis rouvrez cette fenêtre.",
-    conflict:"Les couleurs ont changé sur un autre appareil. Fermez puis rouvrez cette fenêtre.",
-    error:"Enregistrement des couleurs non confirmé. Votre brouillon reste ouvert. Vérifiez la connexion.",
+    conflict:"Les réglages ont changé sur un autre appareil. Fermez puis rouvrez cette fenêtre.",
+    error:"Enregistrement des modifications non confirmé. Votre brouillon reste ouvert. Vérifiez la connexion.",
     incompatible:"Couleurs du menu : cette interface HA n’est pas encore prise en charge.",
-    busy:"Enregistrement des couleurs …", transparent:"Entièrement transparent", reset:"Rétablir la couleur du thème" }
+    busy:"Enregistrement des modifications …", transparent:"Entièrement transparent", reset:"Rétablir la couleur du thème" }
 };
 export const strings = hass => STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || STRINGS.en;
 

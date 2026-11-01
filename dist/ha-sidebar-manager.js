@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.1 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.2 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.1";
+  var VERSION = "0.1.2";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -97,10 +97,10 @@
       edit: "Farbe für",
       saved: "Farben pro Benutzer synchronisiert",
       unavailable: "Seitenleistenfarben konnten nicht geladen werden. Dialog schließen und erneut öffnen.",
-      conflict: "Farben wurden auf einem anderen Gerät geändert. Bitte schließen und neu öffnen.",
-      error: "Farben konnten nicht sicher gespeichert werden. Entwurf bleibt offen. Bitte Verbindung prüfen.",
+      conflict: "Einstellungen wurden auf einem anderen Gerät geändert. Bitte schließen und neu öffnen.",
+      error: "Änderungen konnten nicht sicher gespeichert werden. Entwurf bleibt offen. Bitte Verbindung prüfen.",
       incompatible: "Seitenleistenfarben: Diese HA-Oberfläche wird noch nicht unterstützt.",
-      busy: "Farben werden gespeichert …",
+      busy: "Änderungen werden gespeichert …",
       transparent: "Vollständig transparent",
       reset: "Auf Theme-Farbe zurücksetzen"
     },
@@ -116,10 +116,10 @@
       edit: "Color for",
       saved: "Colors synced per user",
       unavailable: "Sidebar colors could not be loaded. Close and reopen this dialog.",
-      conflict: "Colors changed on another device. Please close and reopen this dialog.",
-      error: "Colors could not be saved safely. Your draft remains open. Please check the connection.",
+      conflict: "Settings changed on another device. Please close and reopen this dialog.",
+      error: "Changes could not be saved safely. Your draft remains open. Please check the connection.",
       incompatible: "Sidebar colors: This HA interface is not supported yet.",
-      busy: "Saving colors …",
+      busy: "Saving changes …",
       transparent: "Fully transparent",
       reset: "Reset to theme color"
     },
@@ -135,10 +135,10 @@
       edit: "Couleur de",
       saved: "Couleurs synchronisées par utilisateur",
       unavailable: "Impossible de charger les couleurs. Fermez puis rouvrez cette fenêtre.",
-      conflict: "Les couleurs ont changé sur un autre appareil. Fermez puis rouvrez cette fenêtre.",
-      error: "Enregistrement des couleurs non confirmé. Votre brouillon reste ouvert. Vérifiez la connexion.",
+      conflict: "Les réglages ont changé sur un autre appareil. Fermez puis rouvrez cette fenêtre.",
+      error: "Enregistrement des modifications non confirmé. Votre brouillon reste ouvert. Vérifiez la connexion.",
       incompatible: "Couleurs du menu : cette interface HA n’est pas encore prise en charge.",
-      busy: "Enregistrement des couleurs …",
+      busy: "Enregistrement des modifications …",
       transparent: "Entièrement transparent",
       reset: "Rétablir la couleur du thème"
     }
@@ -197,7 +197,7 @@
         }
       });
       const plane = $(".sv");
-      const move = (e) => {
+      const move2 = (e) => {
         const rect = plane.getBoundingClientRect();
         this.hsv[1] = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         this.hsv[2] = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
@@ -205,10 +205,10 @@
       };
       plane.addEventListener("pointerdown", (e) => {
         plane.setPointerCapture(e.pointerId);
-        move(e);
+        move2(e);
       });
       plane.addEventListener("pointermove", (e) => {
-        if (plane.hasPointerCapture(e.pointerId)) move(e);
+        if (plane.hasPointerCapture(e.pointerId)) move2(e);
       });
       plane.addEventListener("keydown", (e) => {
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
@@ -346,6 +346,29 @@
     }
     if (stable(await read2()) !== stable(next)) throw Error("save_uncertain");
   }
+  async function saveManagerWithFollowup(options, followup) {
+    let before, written;
+    await saveManager({ ...options, backup: async (value) => {
+      before = clone(value);
+      await options.backup(value);
+    }, write: async (value) => {
+      written = clone(value);
+      await options.write(value);
+    } });
+    try {
+      return await followup();
+    } catch (error) {
+      if (written !== void 0) {
+        if (stable(await options.read()) !== stable(written)) throw Error("rollback_conflict");
+        try {
+          await options.write(before);
+        } catch {
+          if (stable(await options.read()) !== stable(before)) throw Error("rollback_uncertain");
+        }
+      }
+      throw error;
+    }
+  }
 
   // src/manager-i18n.js
   var MANAGER_STRINGS = {
@@ -357,6 +380,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
+  Object.assign(MANAGER_STRINGS.de, { submenus: "Untermenüs", moveGroup: "Untermenü verschieben", groupOrderHint: "Am Ziehgriff verschieben oder die Pfeile verwenden. Erst Speichern übernimmt die neue Reihenfolge.", saveOrderFirst: "Gruppenfolge geändert. Bitte zuerst hier Speichern oder Abbrechen, bevor Sie Gruppen bearbeiten." });
+  Object.assign(MANAGER_STRINGS.en, { submenus: "Submenus", moveGroup: "Move submenu", groupOrderHint: "Drag the handle or use the arrows. Save applies the new order.", saveOrderFirst: "Group order changed. Save or Cancel here before editing groups." });
+  Object.assign(MANAGER_STRINGS.fr, { submenus: "Sous-menus", moveGroup: "Déplacer le sous-menu", groupOrderHint: "Déplacez la poignée ou utilisez les flèches. Enregistrer applique le nouvel ordre.", saveOrderFirst: "Ordre des groupes modifié. Enregistrez ou annulez ici avant de modifier les groupes." });
 
   // src/manager-dialog.js
   var el = (tag, text2) => {
@@ -369,7 +395,7 @@
       super();
       this.attachShadow({ mode: "open" });
     }
-    show({ hass, record, entries: entries2, save, focusKey }) {
+    show({ hass, record, entries: entries2, save, focusKey, focusGroup }) {
       this.hass = hass;
       this.t = managerStrings(hass);
       this.draft = clone(normalizeManager(record));
@@ -387,6 +413,11 @@
         target.style.outline = "2px solid var(--primary-color,#03a9f4)";
         target.scrollIntoView({ block: "center" });
         target.querySelector("select")?.focus();
+      }
+      const groupRow = [...this.shadowRoot.querySelectorAll(".cards:first-of-type .row")][this.draft.groups.findIndex((g) => g.id === focusGroup)];
+      if (groupRow) {
+        groupRow.scrollIntoView({ block: "center" });
+        groupRow.querySelector("input")?.focus();
       }
     }
     button(label, fn, icon) {
@@ -565,6 +596,164 @@
     }
   };
 
+  // src/native-groups.js
+  var sessions = /* @__PURE__ */ new WeakMap();
+  var DIRTY_KEY = MANAGER_KEY + ":group-order";
+  var el2 = (tag, text2) => {
+    const n = document.createElement(tag);
+    if (text2) n.textContent = text2;
+    return n;
+  };
+  var nativeGroupsDirty = (dialog) => !!sessions.get(dialog)?.dirty;
+  var nativeGroupsBusy = (dialog) => !!sessions.get(dialog)?.saving;
+  function endNativeGroups(dialog) {
+    const s = sessions.get(dialog);
+    s?.section.remove();
+    sessions.delete(dialog);
+  }
+  function move(dialog, s, id, target) {
+    if (s.saving) return;
+    const from = s.draft.groups.findIndex((g) => g.id === id);
+    if (from < 0 || target < 0 || target >= s.draft.groups.length || from === target) return;
+    s.draft.groups.splice(target, 0, s.draft.groups.splice(from, 1)[0]);
+    s.dirty = stable(s.base.groups.map((g) => g.id)) !== stable(s.draft.groups.map((g) => g.id));
+    dialog._dirtyStateContext.setState(s.dirty, DIRTY_KEY);
+    s.signature = null;
+    render(dialog, s);
+    dialog.requestUpdate?.();
+  }
+  function render(dialog, s) {
+    const t = managerStrings(dialog.hass), signature = stable({ groups: s.draft.groups, dirty: s.dirty, saving: s.saving, title: t.submenus });
+    if (s.signature === signature) return;
+    s.signature = signature;
+    const style = el2("style");
+    style.textContent = ".sm-native-groups{border-top:1px solid var(--divider-color);margin-top:14px;padding-top:10px}.sm-native-groups h3{font-size:14px;margin:4px 0}.sm-native-groups p{font-size:12px;color:var(--secondary-text-color);line-height:1.4}.sm-native-group-row{display:flex;align-items:center;gap:7px;min-height:46px;border-radius:6px}.sm-native-group-row>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sm-native-group-row ha-icon{--mdc-icon-size:24px;margin-inline:8px 4px;flex:none}.sm-native-group-row button{box-sizing:border-box;width:30px;min-width:30px;height:30px;padding:3px;color:var(--secondary-text-color);border:1px solid var(--divider-color);border-radius:6px;background:var(--card-background-color);font:inherit;cursor:pointer}.sm-native-group-row button:disabled{opacity:.35;cursor:default}.sm-native-group-row .grip{cursor:grab;touch-action:none;font-size:20px}.sm-native-group-row .swatch{width:32px;min-width:32px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px}.swatch span{display:block;width:100%;height:100%;border-radius:3px}";
+    const list = el2("div");
+    list.setAttribute("role", "list");
+    list.setAttribute("aria-label", t.submenus);
+    s.draft.groups.forEach((group, index) => {
+      const row = el2("div");
+      row.className = "sm-native-group-row";
+      row.dataset.smGroupRow = group.id;
+      row.setAttribute("role", "listitem");
+      const icon = el2("ha-icon");
+      icon.icon = group.icon;
+      icon.style.color = rgba(group.color) || "";
+      const name = el2("span", group.name);
+      name.title = group.name;
+      name.style.color = rgba(group.color) || "";
+      const button = (text2, title, fn) => {
+        const b = el2("button", text2);
+        b.type = "button";
+        b.title = title;
+        b.setAttribute("aria-label", title + " " + group.name);
+        b.onclick = fn;
+        return b;
+      };
+      const swatch = button("", t.groupColor, () => {
+        if (!s.dirty && !s.saving) s.options.editGroup(group.id);
+      });
+      swatch.className = "swatch";
+      swatch.disabled = s.dirty;
+      const fill = el2("span");
+      fill.style.background = rgba(group.color) || "transparent";
+      swatch.append(fill);
+      const up = button("↑", t.up, () => move(dialog, s, group.id, index - 1)), down = button("↓", t.down, () => move(dialog, s, group.id, index + 1));
+      up.disabled = index === 0;
+      down.disabled = index === s.draft.groups.length - 1;
+      const grip = button("≡", t.moveGroup, () => {
+      });
+      grip.className = "grip";
+      grip.onkeydown = (e) => {
+        if (!["ArrowUp", "ArrowDown"].includes(e.key)) return;
+        e.preventDefault();
+        move(dialog, s, group.id, index + (e.key === "ArrowUp" ? -1 : 1));
+        [...s.section.querySelectorAll("[data-sm-group-row]")].find((r) => r.dataset.smGroupRow === group.id)?.querySelector(".grip")?.focus();
+      };
+      grip.onpointerdown = (e) => {
+        if (s.saving || e.button !== 0) return;
+        e.preventDefault();
+        grip.setPointerCapture?.(e.pointerId);
+        s.drag = { id: group.id, target: index };
+      };
+      grip.onpointermove = (e) => {
+        if (!s.drag) return;
+        const hit = [...list.children].find((row2) => {
+          const r = row2.getBoundingClientRect();
+          return e.clientX >= r.left && e.clientX < r.right && e.clientY >= r.top && e.clientY < r.bottom;
+        });
+        if (!hit) return;
+        s.drag.target = s.draft.groups.findIndex((g) => g.id === hit.dataset.smGroupRow);
+        for (const r of list.children) r.style.outline = r === hit ? "1px solid var(--primary-color)" : "";
+      };
+      grip.onpointerup = () => {
+        const drag = s.drag;
+        s.drag = null;
+        for (const r of list.children) r.style.outline = "";
+        if (drag) move(dialog, s, drag.id, drag.target);
+      };
+      grip.onpointercancel = () => {
+        s.drag = null;
+        for (const r of list.children) r.style.outline = "";
+      };
+      row.append(icon, name, swatch, up, down, grip);
+      list.append(row);
+    });
+    s.section.className = "sm-native-groups";
+    s.section.replaceChildren(style, el2("h3", t.submenus), el2("p", s.dirty ? t.saveOrderFirst : t.groupOrderHint), list);
+    s.section.inert = !!s.saving;
+  }
+  function attachNativeGroups(dialog, options) {
+    const content = dialog.shadowRoot?.querySelector(".content");
+    if (!content || !dialog._open) return;
+    let s = sessions.get(dialog);
+    const record = normalizeManager(options.record);
+    if (!s) {
+      const section = el2("section");
+      content.append(section);
+      s = { section, base: clone(record), draft: clone(record), dirty: false, saving: false, identity: options.identity, options };
+      sessions.set(dialog, s);
+      dialog._dirtyStateContext.setState(false, DIRTY_KEY);
+    }
+    if (!s.dirty && !s.saving) {
+      s.base = clone(record);
+      s.draft = clone(record);
+      s.identity = options.identity;
+    }
+    s.options = options;
+    render(dialog, s);
+  }
+  async function withNativeGroupsSave(dialog, followup) {
+    const s = sessions.get(dialog);
+    if (!s) return followup();
+    if (s.saving) throw Error("busy");
+    const options = s.options, owner = s.identity;
+    const check = () => {
+      if (options.getIdentity() !== owner || dialog.hass.user.id !== owner.id) throw Error("conflict");
+    };
+    check();
+    s.saving = true;
+    render(dialog, s);
+    dialog.requestUpdate?.();
+    try {
+      if (!s.dirty) return await followup();
+      return await saveManagerWithFollowup({ base: s.base, draft: s.draft, read: async () => {
+        check();
+        return options.read();
+      }, write: async (value) => {
+        check();
+        await options.write(value);
+      }, backup: async (before) => {
+        check();
+        await options.backup(before);
+      } }, followup);
+    } finally {
+      s.saving = false;
+      render(dialog, s);
+      dialog.requestUpdate?.();
+    }
+  }
+
   // src/manager-runtime.js
   var config = normalizeManager(null);
   var hassRef;
@@ -576,7 +765,7 @@
   var state = /* @__PURE__ */ new WeakMap();
   var editDialogs = /* @__PURE__ */ new Set();
   var collapsed = /* @__PURE__ */ new Map();
-  var el2 = (tag, text2) => {
+  var el3 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
     return n;
@@ -634,13 +823,14 @@
       console.warn("[Sidebar Manager] Layout unavailable; stored data left untouched.");
     }
   }
-  function openManager(sidebar, focusKey) {
+  function openManager(sidebar, focusKey, focusGroup) {
+    if ([...editDialogs].some((dialog2) => dialog2.isConnected && (nativeGroupsDirty(dialog2) || nativeGroupsBusy(dialog2)))) return;
     const hass = sidebar.hass;
     if (!loaded || hass.user.id !== identity?.id) return;
     if (document.querySelector("ugso-sidebar-manager-dialog")) return;
-    const base = clone(config), owner = identity, currentEpoch = epoch, dialog = el2("ugso-sidebar-manager-dialog");
+    const base = clone(config), owner = identity, currentEpoch = epoch, dialog = el3("ugso-sidebar-manager-dialog");
     document.body.append(dialog);
-    dialog.show({ hass, record: base, entries: entries(sidebar), focusKey, save: async (draft) => {
+    dialog.show({ hass, record: base, entries: entries(sidebar), focusKey, focusGroup, save: async (draft) => {
       if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
       await saveManager({ base, draft, read: () => read(hass), write: (value) => {
         if (identity !== owner) throw Error("conflict");
@@ -671,11 +861,12 @@
   }
   function attachManagerButton(nativeDialog) {
     editDialogs.add(nativeDialog);
+    if (!nativeDialog._open) return;
     const content = nativeDialog.shadowRoot?.querySelector(".content");
     if (!content) return;
     let button = content.querySelector("[data-sm-open]");
     if (!button) {
-      button = el2("button");
+      button = el3("button");
       button.dataset.smOpen = "";
       button.type = "button";
       button.style.cssText = "margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer";
@@ -685,11 +876,22 @@
       };
       content.prepend(button);
     }
+    if (loaded) attachNativeGroups(nativeDialog, { record: config, identity, getIdentity: () => identity, read: () => read(nativeDialog.hass), write: (value) => request(nativeDialog.hass, "frontend/set_user_data", MANAGER_KEY, value), backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + nativeDialog.hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })), editGroup: (id) => {
+      const sidebar = [...instances].find((s) => s.isConnected);
+      if (sidebar) openManager(sidebar, void 0, id);
+    } });
     const title = managerStrings(nativeDialog.hass).open;
     if (button.textContent !== title) button.textContent = title;
-    button.disabled = !loaded;
+    button.disabled = !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
     const editor = nativeDialog.shadowRoot.querySelector("ha-items-display-editor");
-    for (const badge of editor?.shadowRoot?.querySelectorAll("[data-sm-move]") || []) updateMoveBadge(badge, nativeDialog.hass);
+    for (const badge of editor?.shadowRoot?.querySelectorAll("[data-sm-move]") || []) {
+      updateMoveBadge(badge, nativeDialog.hass);
+      if (nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog)) badge.disabled = true;
+    }
+  }
+  function endManagerDialog(dialog) {
+    editDialogs.delete(dialog);
+    endNativeGroups(dialog);
   }
   function updateMoveBadge(button, hass) {
     const key = button.dataset.smMove, group = config.groups.find((g) => g.id === config.items[key]?.group), name = group?.name || managerStrings(hass).none;
@@ -699,7 +901,7 @@
     button.disabled = !loaded;
   }
   function moveEntryButton(hass, key, label) {
-    const button = el2("button");
+    const button = el3("button");
     button.type = "button";
     button.dataset.smMove = key;
     button.dataset.smLabel = label || key;
@@ -719,7 +921,7 @@
     let title = row.querySelector("[data-sm-label]"), icon = row.querySelector("[data-sm-icon]");
     if (item?.title) {
       if (!title) {
-        title = el2("span");
+        title = el3("span");
         title.dataset.smLabel = "";
         title.className = "item-text";
         title.slot = "headline";
@@ -733,7 +935,7 @@
     }
     if (item?.icon) {
       if (!icon) {
-        icon = el2("ha-icon");
+        icon = el3("ha-icon");
         icon.dataset.smIcon = "";
         icon.slot = "start";
         row.prepend(icon);
@@ -751,12 +953,12 @@
     const slot = root.querySelector("slot[name=main-navigation]");
     if (!slot) return;
     if (!s.style) {
-      s.style = el2("style");
+      s.style = el3("style");
       s.style.textContent = `slot[name=main-navigation]{display:flex;flex-direction:column;min-height:100%}[data-sm-group]{width:calc(100% - 8px);margin:7px 4px 2px;border:0;border-top:1px solid var(--divider-color);padding:10px 12px;text-align:start;font:inherit;font-weight:600;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer;border-radius:6px}[data-sm-bottom]{margin-top:auto!important}[data-sm-hidden]{display:none!important}[data-sm-label][hidden],[slot=start][hidden],.item-text[hidden]{display:none!important}.sm-entry{min-height:40px;padding:0 12px;display:flex;align-items:center;gap:20px;color:var(--sidebar-text-color);text-decoration:none}.sm-entry:hover{background:var(--secondary-background-color)}.sm-entry ha-icon{color:var(--sidebar-icon-color)}:host(:not([expanded])) [data-sm-group]{font-size:0;padding:8px} :host(:not([expanded])) [data-sm-group]::after{content:'⋯';font-size:18px}:host(:not([expanded])) .sm-entry .item-text{display:none}`;
       root.append(s.style);
     }
     if (!s.iconStyle) {
-      s.iconStyle = el2("style");
+      s.iconStyle = el3("style");
       s.iconStyle.textContent = "[data-sm-group]{display:flex;align-items:center;gap:8px}[data-sm-group] ha-icon{--mdc-icon-size:20px;flex:none}[data-sm-group] .sm-group-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}:host(:not([expanded])) [data-sm-group] .sm-group-label{display:none}:host(:not([expanded])) [data-sm-group]::after{display:none}";
       root.append(s.iconStyle);
     }
@@ -767,11 +969,11 @@
     for (const [key, item] of Object.entries(config.items)) if (item.url) {
       let row = s.custom.get(key);
       if (!row) {
-        row = el2("a");
+        row = el3("a");
         row.className = "sm-entry";
         row.dataset.smLink = "";
         row.id = "sidebar-panel-" + key;
-        row.append(el2("ha-icon"), el2("span"));
+        row.append(el3("ha-icon"), el3("span"));
         row.firstElementChild.slot = "start";
         row.lastElementChild.className = "item-text";
         row.lastElementChild.slot = "headline";
@@ -798,10 +1000,10 @@
         keep.add(entry.id);
         let head = s.headers.get(entry.id);
         if (!head) {
-          head = el2("button");
+          head = el3("button");
           head.type = "button";
           head.dataset.smGroup = entry.id;
-          const icon = el2("ha-icon"), label = el2("span");
+          const icon = el3("ha-icon"), label = el3("span");
           label.className = "sm-group-label";
           head.append(icon, label);
           head.onclick = () => {
@@ -843,7 +1045,7 @@
 
   // src/sidebar-colors.js
   var FLAG = /* @__PURE__ */ Symbol.for("ugso.sidebar.manager.loaded");
-  var sessions = /* @__PURE__ */ new WeakMap();
+  var sessions2 = /* @__PURE__ */ new WeakMap();
   var styled = /* @__PURE__ */ new Map();
   var controllers = /* @__PURE__ */ new Set();
   var activeSession = null;
@@ -1022,8 +1224,8 @@
       session.previousRenderer = editor.actionsRenderer;
       editor.actionsRenderer = (item) => {
         const field = makeButton(session, item);
-        const move = moveEntryButton(session.dialog.hass, item.value, item.label);
-        return session.previousRenderer ? [session.previousRenderer(item), move, field] : [move, field];
+        const move2 = moveEntryButton(session.dialog.hass, item.value, item.label);
+        return session.previousRenderer ? [session.previousRenderer(item), move2, field] : [move2, field];
       };
       if (editor.shadowRoot) {
         session.observer = new MutationObserver(() => syncRows(session));
@@ -1052,11 +1254,11 @@
       saving: false,
       nativeBase: { order: clone(dialog._order), hidden: clone(dialog._hidden) }
     };
-    sessions.set(dialog, session);
+    sessions2.set(dialog, session);
     activeSession = session;
     try {
       const [raw, native] = await Promise.all([readRecord(hass), readRecord(hass, "sidebar")]);
-      if (sessions.get(dialog) !== session || !dialog._open) return;
+      if (sessions2.get(dialog) !== session || !dialog._open) return;
       session.rawBase = clone(raw);
       session.nativeStored = clone(native);
       session.base = normalizeRecord(raw);
@@ -1073,17 +1275,18 @@
     }
   }
   function endDialog(dialog) {
-    const session = sessions.get(dialog);
+    endManagerDialog(dialog);
+    const session = sessions2.get(dialog);
     if (!session) return;
     session.picker?.finish();
     session.observer?.disconnect();
     if (session.editor) session.editor.actionsRenderer = session.previousRenderer;
-    sessions.delete(dialog);
+    sessions2.delete(dialog);
     if (activeSession === session) activeSession = null;
     refresh();
   }
   async function saveDialog(dialog, original, args, originalClose) {
-    const session = sessions.get(dialog);
+    const session = sessions2.get(dialog);
     if (!session) return original.apply(dialog, args);
     if (session.saving) return;
     if (!session.loaded) {
@@ -1103,7 +1306,7 @@
     try {
       const nativeChanged = !!dialog._migrateToUserData || stable(session.nativeBase) !== stable({ order: dialog._order, hidden: dialog._hidden });
       if (nativeChanged && stable(await readRecord(hass, "sidebar")) !== stable(session.nativeStored)) throw new Error("conflict");
-      await saveColorDraft({
+      await withNativeGroupsSave(dialog, () => saveColorDraft({
         base: session.base,
         draft: session.draft,
         read: () => readRecord(hass),
@@ -1118,7 +1321,7 @@
           await original.apply(dialog, args);
           if (dialog._error || dialog.isDirtyState) throw new Error("native_save_failed");
         }
-      });
+      }));
       saved = clone(session.draft);
       dialog._markDirtyStateClean();
       session.saving = false;
@@ -1148,7 +1351,7 @@
       return saveDialog(this, save, args, close);
     };
     proto.closeDialog = function(...args) {
-      if (sessions.get(this)?.saving) return;
+      if (sessions2.get(this)?.saving) return;
       endDialog(this);
       return close.apply(this, args);
     };
@@ -1159,7 +1362,7 @@
     const update = proto.updated;
     proto.updated = function(...args) {
       update?.apply(this, args);
-      const session = sessions.get(this);
+      const session = sessions2.get(this);
       if (session?.loaded) queueMicrotask(() => syncRows(session));
     };
     for (const dialog of findAll(document, "dialog-edit-sidebar")) if (dialog._open) beginDialog(dialog);
