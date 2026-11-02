@@ -68,6 +68,19 @@ The first HTTP test exposed use of secure-context-only `crypto.randomUUID`; repl
 
 The automation's download-event wait timed out, although the export file was correctly downloaded. The file and actual JSON import were verified independently; this was not treated as a failed application export.
 
+## 0.1.6 — links and separators, 2026-11-02
+
+- Fresh complete HA backup `f3941782`, “Sidebar Manager vor Links und Trennlinien 0.1.6 2026-11-02”, 174.88 MB, completed before deployment. PC source/configuration/user-data snapshot: `C:/Users/rockb/source/backups/sidebar-manager-vor-links-trennlinie-20261102`.
+- Syntax check, bundle build and all 56 automated tests pass. Additional coverage includes 0–4 px validation, separator placement, legacy link behavior, saved-link-only iframe routing, unchanged-source frame reuse, mixed-content handling and logout during a pending read.
+- HA 2026.10.4 on `.177:80`: configuration validation succeeds, then restart loads 0.1.6. Hidden `panel_custom` registration adds no native sidebar entry.
+- Own group “SM 016 Prüfung” and own link “SM Webseite 016” used for testing. Existing groups Test/Test2 and the three permanent HA shortcuts were retained.
+- Link name in settings measured `rgb(168, 220, 255)`. A new-tab click opens the selected .177 icon resource in a separate browser tab with `noopener noreferrer`; original HA tab remains.
+- Switching the saved link to iframe opens `/ugso-sidebar-web/sm-link-…`, keeps the HA sidebar and displays the resource in a titled iframe. The browser accessibility tree confirms the loaded image. Frame uses `no-referrer` and a sandbox without top-navigation permission. This is a same-test-host integration check, not a compatibility test against ioBroker or other external websites.
+- Separator measured exactly 4 px, `rgba(0, 255, 0, 0.7)`, with 1 px margin above/below, after the group's link. It remains after the collapsed header. Settings survive browser reload. Changing the slider to zero removes the separator. Initial separators default off; group headers no longer add a top border.
+- Own group/link removed, own new tab closed. Server readback confirms normalized manager settings equal the pre-test snapshot, all other user settings/colors unchanged, Test für APP and resources unchanged, deployed bundle hash matches local.
+- Local ZIP contains the single bundle, optional `panel-custom.example.yaml`, DE/EN/FR instructions, test record and screenshots. No publication.
+- Backup retention: four complete backups temporarily remain pending concrete action-time approval to delete only oldest `4c40757b`. Retain `f3941782`, `82bbd8e7`, `1cf6590c`, the separate app-update backup and all PC backups.
+
 ## Limits
 
 DE is live tested; EN/FR UI dictionaries and matching documentation are checked locally. No HA 2026.10.3 or Marketplace 2026.11 live test. No simultaneous Sidebar Organizer/Sidebar Colors installation. No HA core modifications. Grouped/pinned entries stay in the scrollable main navigation. Native Settings/Profile/Notifications are outside the custom layout. No Organizer import or arbitrary CSS/templates in this first local increment.

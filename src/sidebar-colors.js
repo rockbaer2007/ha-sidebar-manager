@@ -2,6 +2,7 @@ import { VERSION, STORE_KEY, supportedVersion, normalizeRecord, normalizeColor, 
 import { SidebarColorPicker, strings } from "./color-picker.js";
 import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave} from './manager-runtime.js';
 import {ManagerDialog} from './manager-dialog.js';
+import {registerWebPanel} from './web-panel.js';
 
 const FLAG = Symbol.for("ugso.sidebar.manager.loaded");
 const sessions = new WeakMap();
@@ -242,6 +243,7 @@ function patchDialog(Type) {
 
 if(!window[FLAG]) {
   window[FLAG]=true;
+  registerWebPanel();
   if(!customElements.get("ugso-sidebar-color-picker"))customElements.define("ugso-sidebar-color-picker",SidebarColorPicker);
   customElements.whenDefined("ha-sidebar").then(()=>{
     const Type=customElements.get("ha-sidebar"), original=Type.prototype.updated;

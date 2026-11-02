@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.5 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.6 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.5";
+  var VERSION = "0.1.6";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -281,6 +281,9 @@
 
   // src/manager-model.js
   var MANAGER_KEY = "ugso_sidebar_manager_v1";
+  var WEB_PANEL = "ugso-sidebar-web";
+  var isExternalUrl = (value) => typeof value === "string" && /^https?:\/\//i.test(value);
+  var separatorWidth = (value) => Number.isInteger(value) ? Math.max(0, Math.min(4, value)) : 0;
   var HA_SHORTCUTS = [
     { id: "logs", url: "/config/logs" },
     { id: "automations", url: "/config/automation/dashboard" },
@@ -318,7 +321,7 @@
     for (const g of raw?.groups || []) {
       if (!safeKey(g.id) || !text(g.name) || seen.has(g.id)) throw Error("invalid_group");
       seen.add(g.id);
-      groups.push({ id: g.id, name: text(g.name), icon: /^mdi:[a-z0-9-]+$/.test(g.icon || "") ? g.icon : "mdi:folder-outline", color: normalizeColor(g.color), collapsed: !!g.collapsed, bottom: !!g.bottom });
+      groups.push({ id: g.id, name: text(g.name), icon: /^mdi:[a-z0-9-]+$/.test(g.icon || "") ? g.icon : "mdi:folder-outline", color: normalizeColor(g.color), collapsed: !!g.collapsed, bottom: !!g.bottom, separator: separatorWidth(g.separator) });
     }
     for (const [key, v] of Object.entries(raw?.items || {})) {
       if (!safeKey(key) || !v || typeof v !== "object") throw Error("invalid_item");
@@ -327,6 +330,7 @@
         item.url = safeUrl(v.url);
         if (!item.url) throw Error("invalid_url");
         if (!key.startsWith("sm-link-")) throw Error("invalid_item");
+        if (isExternalUrl(item.url)) item.openMode = ["tab", "iframe", "same"].includes(v.openMode) ? v.openMode : "same";
       }
       items[key] = item;
     }
@@ -345,7 +349,7 @@
       for (const group of [null, ...r.groups]) {
         const members = entries2.filter((e) => (e.group || "") === (group?.id || "") && (group ? group.bottom : !!e.bottom) === bottom && !e.hidden);
         if (!members.length) continue;
-        if (group) blocks.push({ token: "g:" + group.id, rows: [{ kind: "group", ...group }, ...members.map((item) => ({ kind: "item", ...item, collapsed: !!group.collapsed }))] });
+        if (group) blocks.push({ token: "g:" + group.id, rows: [{ kind: "group", ...group }, ...members.map((item) => ({ kind: "item", ...item, collapsed: !!group.collapsed })), ...group.separator ? [{ kind: "separator", id: group.id, color: group.color, width: group.separator, bottom: group.bottom }] : []] });
         else for (const item of members) blocks.push({ token: "p:" + item.key, rows: [{ kind: "item", ...item, collapsed: false }] });
       }
       blocks.sort((a, b) => (menuRank.get(a.token) ?? 1e9) - (menuRank.get(b.token) ?? 1e9));
@@ -400,6 +404,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
+  Object.assign(MANAGER_STRINGS.de, { separator: "Trennlinie", off: "Aus", openMode: "Öffnen", newTab: "In neuem Tab öffnen", iframe: "Rechts anzeigen (iframe)", sameWindow: "Im bisherigen Fenster", webPage: "Webseite", menu: "Seitenleiste öffnen", frameHint: "Die Webseite muss das Einbetten erlauben. Falls sie leer bleibt, in einem neuen Tab öffnen.", mixedContent: "Diese HTTP-Webseite kann in einem per HTTPS geöffneten HA nicht eingebettet werden. In einem neuen Tab öffnen.", frameUnavailable: "Link nicht verfügbar. Bitte eine gespeicherte Webseite aus der Seitenleiste wählen.", frameSetup: "Für die iframe-Ansicht zuerst den mitgelieferten panel_custom-Eintrag installieren und HA neu starten." });
+  Object.assign(MANAGER_STRINGS.en, { separator: "Separator", off: "Off", openMode: "Open", newTab: "Open in new tab", iframe: "Show on the right (iframe)", sameWindow: "In the current window", webPage: "Web page", menu: "Open sidebar", frameHint: "The website must allow embedding. If it stays blank, open it in a new tab.", mixedContent: "This HTTP website cannot be embedded in HA opened over HTTPS. Open it in a new tab.", frameUnavailable: "Link unavailable. Select a saved website from the sidebar.", frameSetup: "For iframe display, install the supplied panel_custom entry first and restart HA." });
+  Object.assign(MANAGER_STRINGS.fr, { separator: "Séparateur", off: "Désactivé", openMode: "Ouvrir", newTab: "Ouvrir dans un nouvel onglet", iframe: "Afficher à droite (iframe)", sameWindow: "Dans la fenêtre actuelle", webPage: "Page web", menu: "Ouvrir la barre latérale", frameHint: "Le site doit autoriser l'intégration. Si la page reste vide, ouvrez-la dans un nouvel onglet.", mixedContent: "Ce site HTTP ne peut pas être intégré dans HA ouvert en HTTPS. Ouvrez-le dans un nouvel onglet.", frameUnavailable: "Lien indisponible. Choisissez un site enregistré dans la barre latérale.", frameSetup: "Pour afficher une iframe, installez l'entrée panel_custom fournie puis redémarrez HA." });
   Object.assign(MANAGER_STRINGS.de, { haShortcuts: "Home-Assistant-Verknüpfungen", shortcut_logs: "Logs", shortcut_automations: "Automationen", shortcut_states: "Zustände", shortcutAdd: "Hinzufügen", shortcutPresent: "Bereits vorhanden", shortcutHint: "Unterordner wählen und hinzufügen. Vorhandene Links werden wiederverwendet; ihre Zuordnung lässt sich hier ändern. Erst Speichern übernimmt Änderungen. HA-Zugriffsrechte gelten weiterhin." });
   Object.assign(MANAGER_STRINGS.en, { haShortcuts: "Home Assistant shortcuts", shortcut_logs: "Logs", shortcut_automations: "Automations", shortcut_states: "States", shortcutAdd: "Add", shortcutPresent: "Already present", shortcutHint: "Choose a folder and add the shortcut. Existing links are reused and their folder can be changed here. Save applies changes. Home Assistant access permissions still apply." });
   Object.assign(MANAGER_STRINGS.fr, { haShortcuts: "Raccourcis Home Assistant", shortcut_logs: "Journaux", shortcut_automations: "Automatisations", shortcut_states: "États", shortcutAdd: "Ajouter", shortcutPresent: "Déjà présent", shortcutHint: "Choisissez un dossier et ajoutez le raccourci. Les liens existants sont réutilisés et leur dossier peut être modifié ici. Enregistrer applique les changements. Les autorisations Home Assistant restent applicables." });
@@ -471,6 +478,27 @@
         if (group) option.textContent = group.name;
       }
     }
+    separatorControl(group) {
+      const label = el("label", this.t.separator), slider = el("input"), value = el("output");
+      slider.type = "range";
+      slider.min = "0";
+      slider.max = "4";
+      slider.step = "1";
+      slider.value = String(separatorWidth(group.separator));
+      slider.setAttribute("aria-label", this.t.separator + " " + group.name);
+      slider.style.cssText = "width:90px;min-width:90px;padding:0";
+      value.style.cssText = "min-width:30px;font-variant-numeric:tabular-nums";
+      const paint = () => {
+        value.textContent = Number(slider.value) === 0 ? this.t.off : slider.value + " px";
+      };
+      slider.oninput = () => {
+        group.separator = Number(slider.value);
+        paint();
+      };
+      paint();
+      label.append(slider, value);
+      return label;
+    }
     groupColor(group) {
       const button = this.button(this.t.groupColor + " " + group.name, () => {
         const picker = document.createElement("ugso-sidebar-color-picker");
@@ -501,7 +529,7 @@
         if (!this.busy) this.remove();
       }, "×"));
       const accent = el("style");
-      accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}";
+      accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}";
       this.main = el("main");
       this.foot = el("footer");
       this.modal.append(head, this.main, this.foot);
@@ -520,7 +548,7 @@
         row.append(this.input(t.name, g.name, (v) => {
           g.name = v;
           this.syncGroupLabels();
-        }), this.input(t.icon, g.icon, (v) => g.icon = v), this.groupColor(g), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
+        }), this.input(t.icon, g.icon, (v) => g.icon = v), this.groupColor(g), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.separatorControl(g), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
           this.draft.groups.splice(i, 1);
           for (const item of Object.values(this.draft.items)) if (item.group === g.id) item.group = "";
           this.renderBody();
@@ -582,7 +610,7 @@
         row.className = "row";
         row.dataset.key = key;
         const title = el("strong", original?.label || current?.title || key);
-        if (HA_SHORTCUTS.some((preset) => findShortcut(this.draft, preset)?.[0] === key)) title.className = "sm-ha-shortcut-title";
+        title.className = item.url ? isExternalUrl(item.url) ? "sm-external-title" : "sm-ha-shortcut-title" : "";
         row.append(title);
         if (!original && !current?.url) row.append(el("small", t.missing));
         row.append(this.input(t.label, item.title, (v) => edit("title", v)), this.input(t.icon, item.icon, (v) => edit("icon", v)));
@@ -605,16 +633,40 @@
           this.draft.order = keys;
           this.move(this.draft.order, i, 1);
         }, "↓"));
-        if (item.url != null) row.append(this.input(t.url, item.url, (v) => edit("url", v)), this.button(t.remove, () => {
-          delete this.draft.items[key];
-          this.draft.order = this.draft.order.filter((k) => k !== key);
-          this.renderBody();
-        }, "×"));
+        if (item.url != null) {
+          const modeLabel = el("label", t.openMode), mode = el("select");
+          mode.setAttribute("aria-label", t.openMode + " " + (item.title || key));
+          const syncMode = () => {
+            const external = isExternalUrl(item.url), currentMode = item.openMode || "same";
+            mode.replaceChildren();
+            for (const [value, text2] of [["tab", t.newTab], ["iframe", t.iframe], ...currentMode === "same" ? [["same", t.sameWindow]] : []]) {
+              const option = el("option", text2);
+              option.value = value;
+              mode.append(option);
+            }
+            mode.value = currentMode;
+            mode.disabled = !external;
+            title.className = external ? "sm-external-title" : "sm-ha-shortcut-title";
+          };
+          mode.onchange = () => edit("openMode", mode.value);
+          syncMode();
+          modeLabel.append(mode);
+          row.append(this.input(t.url, item.url, (v) => {
+            const previous = isExternalUrl(item.url);
+            edit("url", v);
+            if (isExternalUrl(v) && !previous) edit("openMode", "tab");
+            syncMode();
+          }), modeLabel, el("small", t.frameHint), this.button(t.remove, () => {
+            delete this.draft.items[key];
+            this.draft.order = this.draft.order.filter((k) => k !== key);
+            this.renderBody();
+          }, "×"));
+        }
         items.append(row);
       });
       this.main.append(items, this.button(t.addLink, () => {
         const key = newId("sm-link");
-        this.draft.items[key] = { title: t.newLink, icon: "mdi:link", url: "/home", group: "", bottom: false, hidden: false };
+        this.draft.items[key] = { title: t.newLink, icon: "mdi:link", url: "/home", openMode: "tab", group: "", bottom: false, hidden: false };
         this.renderBody();
       }));
       const details = el("details");
@@ -920,7 +972,7 @@
     instances.add(sidebar);
     connect(sidebar.hass);
     if (!state.has(sidebar) && sidebar.shadowRoot) {
-      const s = { headers: /* @__PURE__ */ new Map(), custom: /* @__PURE__ */ new Map() };
+      const s = { headers: /* @__PURE__ */ new Map(), separators: /* @__PURE__ */ new Map(), custom: /* @__PURE__ */ new Map() };
       state.set(sidebar, s);
       s.observer = new MutationObserver(() => {
         if (s.pending) return;
@@ -1034,7 +1086,7 @@
     }
     if (!s.iconStyle) {
       s.iconStyle = el3("style");
-      s.iconStyle.textContent = "[data-sm-group]{display:flex;align-items:center;gap:8px}[data-sm-group] ha-icon{--mdc-icon-size:20px;flex:none}[data-sm-group] .sm-group-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}:host(:not([expanded])) [data-sm-group] .sm-group-label{display:none}:host(:not([expanded])) [data-sm-group]::after{display:none}";
+      s.iconStyle.textContent = "[data-sm-group]{display:flex;align-items:center;gap:8px;border-top:0}[data-sm-group] ha-icon{--mdc-icon-size:20px;flex:none}[data-sm-group] .sm-group-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}:host(:not([expanded])) [data-sm-group] .sm-group-label{display:none}:host(:not([expanded])) [data-sm-group]::after{display:none}";
       root.append(s.iconStyle);
     }
     for (const [id, node] of s.custom) if (!config.items[id]?.url) {
@@ -1055,7 +1107,16 @@
         slot.append(row);
         s.custom.set(key, row);
       }
-      row.href = item.url;
+      const external = isExternalUrl(item.url);
+      row.href = external && item.openMode === "iframe" ? "/" + WEB_PANEL + "/" + encodeURIComponent(key) : item.url;
+      row.target = external && item.openMode === "tab" ? "_blank" : "";
+      row.rel = external && item.openMode === "tab" ? "noopener noreferrer" : "";
+      row.onclick = (event) => {
+        if (external && item.openMode === "iframe" && !sidebar.hass.panels?.[WEB_PANEL]) {
+          event.preventDefault();
+          sidebar.dispatchEvent(new CustomEvent("hass-notification", { detail: { message: managerStrings(sidebar.hass).frameSetup }, bubbles: true, composed: true }));
+        }
+      };
       row.firstElementChild.icon = item.icon || "mdi:link";
       if (row.lastElementChild.textContent !== item.title) row.lastElementChild.textContent = item.title;
       row.setAttribute("aria-label", item.title);
@@ -1101,6 +1162,20 @@
         head.style.order = String(order++);
         head.toggleAttribute("data-sm-bottom", entry.bottom && !bottomSeen);
         if (entry.bottom) bottomSeen = true;
+      } else if (entry.kind === "separator") {
+        let line = s.separators.get(entry.id);
+        if (!line) {
+          line = el3("div");
+          line.dataset.smSeparator = entry.id;
+          line.setAttribute("role", "separator");
+          line.setAttribute("aria-orientation", "horizontal");
+          line.style.cssText = "flex:none;margin:1px 12px;padding:0;border:0;min-height:0";
+          slot.append(line);
+          s.separators.set(entry.id, line);
+        }
+        line.style.height = entry.width + "px";
+        line.style.backgroundColor = rgba(entry.color) || getComputedStyle(s.headers.get(entry.id).firstElementChild).color;
+        line.style.order = String(order++);
       } else {
         const row = rows.find((r) => r.id === "sidebar-panel-" + entry.key);
         if (!row) continue;
@@ -1116,6 +1191,144 @@
       head.remove();
       s.headers.delete(id);
     }
+    for (const [id, line] of s.separators) if (!keep.has(id) || !config.groups.find((g) => g.id === id)?.separator) {
+      line.remove();
+      s.separators.delete(id);
+    }
+  }
+
+  // src/web-panel.js
+  function frameItem(record, path) {
+    let key;
+    try {
+      key = decodeURIComponent((path || "").replace(/^\//, "").split("/")[0]);
+    } catch {
+      return null;
+    }
+    if (!key?.startsWith("sm-link-")) return null;
+    const item = normalizeManager(record).items[key];
+    return item?.openMode === "iframe" && isExternalUrl(item.url) ? item : null;
+  }
+  var SidebarWebPanel = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this._generation = 0;
+      this._record = null;
+    }
+    set hass(value) {
+      const changed2 = this._hass?.user?.id !== value?.user?.id || this._hass?.connection !== value?.connection;
+      this._hass = value;
+      if (changed2) {
+        this._generation++;
+        this._unsubscribe?.();
+        this._unsubscribe = null;
+        this._record = null;
+        this._connect();
+      }
+      this._render();
+    }
+    get hass() {
+      return this._hass;
+    }
+    set route(value) {
+      this._route = value;
+      this._render();
+    }
+    get route() {
+      return this._route;
+    }
+    connectedCallback() {
+      this._render();
+      if (this._hass) this._connect();
+    }
+    disconnectedCallback() {
+      this._generation++;
+      this._unsubscribe?.();
+      this._unsubscribe = null;
+      this._record = null;
+      this.shadowRoot.querySelector("iframe")?.remove();
+    }
+    async _connect() {
+      if (!this.isConnected || !this._hass?.connection || !this._hass.user?.id) return;
+      const generation = ++this._generation, hass = this._hass;
+      this._unsubscribe?.();
+      this._unsubscribe = null;
+      this._record = null;
+      this._render();
+      let timer;
+      try {
+        const response = await Promise.race([hass.connection.sendMessagePromise({ type: "frontend/get_user_data", key: MANAGER_KEY }), new Promise((_, reject) => timer = setTimeout(() => reject(Error("timeout")), 12e3))]);
+        if (generation !== this._generation) return;
+        this._record = normalizeManager(response.value);
+        this._render();
+        const off2 = await hass.connection.subscribeMessage((event) => {
+          if (generation !== this._generation) return;
+          try {
+            this._record = normalizeManager(event.value);
+          } catch {
+            this._record = null;
+          }
+          this._render();
+        }, { type: "frontend/subscribe_user_data", key: MANAGER_KEY });
+        if (generation === this._generation) this._unsubscribe = off2;
+        else off2();
+      } catch {
+        if (generation === this._generation) {
+          this._record = null;
+          this._render();
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    _render() {
+      const t = managerStrings(this._hass), root = this.shadowRoot;
+      if (!root.firstChild) {
+        const style = document.createElement("style");
+        style.textContent = ":host{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--primary-background-color);color:var(--primary-text-color);font:14px var(--ha-font-family,Arial)}header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--divider-color);min-height:40px}header strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}a{color:var(--primary-color);white-space:nowrap}button{border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer}p{font-size:12px;line-height:1.4;margin:8px 16px;color:var(--secondary-text-color)}iframe{flex:1;width:100%;min-height:0;border:0;background:var(--card-background-color)}";
+        const head = document.createElement("header"), menu = document.createElement("button"), name = document.createElement("strong"), link2 = document.createElement("a"), hint2 = document.createElement("p");
+        menu.textContent = "☰";
+        menu.setAttribute("aria-label", t.menu);
+        menu.onclick = () => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true }));
+        name.dataset.title = "";
+        link2.target = "_blank";
+        link2.rel = "noopener noreferrer";
+        link2.dataset.open = "";
+        hint2.dataset.hint = "";
+        head.append(menu, name, link2);
+        root.append(style, head, hint2);
+      }
+      let item = null;
+      try {
+        if (this._record) item = frameItem(this._record, this._route?.path);
+      } catch {
+      }
+      const title = root.querySelector("[data-title]"), link = root.querySelector("[data-open]"), hint = root.querySelector("[data-hint]");
+      title.textContent = item?.title || t.webPage;
+      link.textContent = t.newTab;
+      link.hidden = !item;
+      link.removeAttribute("href");
+      if (item) link.href = item.url;
+      const mixed = item && location.protocol === "https:" && new URL(item.url).protocol === "http:";
+      hint.textContent = !item ? t.frameUnavailable : mixed ? t.mixedContent : t.frameHint;
+      let frame = root.querySelector("iframe");
+      if (!item || mixed) {
+        frame?.remove();
+        return;
+      }
+      if (!frame) {
+        frame = document.createElement("iframe");
+        frame.referrerPolicy = "no-referrer";
+        frame.setAttribute("sandbox", "allow-scripts allow-forms allow-same-origin allow-downloads allow-modals allow-popups");
+        root.append(frame);
+      }
+      frame.title = item.title || t.webPage;
+      if (frame.getAttribute("src") !== item.url) frame.src = item.url;
+    }
+  };
+  function registerWebPanel() {
+    if (!customElements.get(WEB_PANEL)) customElements.define(WEB_PANEL, SidebarWebPanel);
   }
 
   // src/sidebar-colors.js
@@ -1449,6 +1662,7 @@
   }
   if (!window[FLAG]) {
     window[FLAG] = true;
+    registerWebPanel();
     if (!customElements.get("ugso-sidebar-color-picker")) customElements.define("ugso-sidebar-color-picker", SidebarColorPicker);
     customElements.whenDefined("ha-sidebar").then(() => {
       const Type = customElements.get("ha-sidebar"), original = Type.prototype.updated;

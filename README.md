@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.5 — local preview
+# Sidebar Manager 0.1.6 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -8,9 +8,13 @@ One Home Assistant frontend extension for per-entry colors/opacity, groups, coll
 
 Open Home Assistant's **Edit sidebar** dialog by holding the sidebar heading. The color fields, visibility controls and native ordering remain available. **Manage groups and links** opens Sidebar Manager. Its Save button commits the manager layout independently; color/order edits in the underlying HA dialog still require that dialog's Save button. Cancel discards the respective open draft.
 
-Groups have a name, initial collapsed state and optional bottom placement. Existing items can be assigned to groups, renamed for display, given an MDI icon, hidden or pinned. Arrow buttons change custom layout order. Group headers act as separators and can be collapsed with mouse, touch or keyboard. Pinned entries appear after normal entries within the scrollable main navigation, not in HA's protected profile/notification area. Own links accept internal paths and HTTP(S) URLs only. These presentation settings never change dashboard configuration or access permissions.
+Groups have a name, initial collapsed state and optional bottom placement. Existing items can be assigned to groups, renamed for display, given an MDI icon, hidden or pinned. Arrow buttons change custom layout order inside the Manager. Group headers can be collapsed with mouse, touch or keyboard. Pinned entries appear after normal entries within the scrollable main navigation, not in HA's protected profile/notification area. Own links accept internal paths and HTTP(S) URLs only. These presentation settings never change dashboard configuration or access permissions.
 
 Folders have their own color picker with opacity, applied to the folder icon and name. **Theme color** clears the override. The Manager's Save button confirms the choice.
+
+Each folder has a **Separator** slider from **0 to 4 px**. Zero switches it off. The line appears at the end of the folder's block, including when collapsed, in the folder icon's color and opacity. It adds only 1 px of spacing above and below. Empty folders have no separator.
+
+Own internal links are marked pale yellow in settings; external HTTP(S) links are **light blue** (`#a8dcff`). External links can open in a **new tab** or **on the right inside HA (iframe)**. New links default to a new tab. Older links retain their previous same-window behavior until changed. These markers do not override individual sidebar colors or icons.
 
 The native **Edit sidebar** dialog lists all folders together with the main entries. Use the same native drag handle to place any folder between main entries. There are no extra Up/Down buttons. The native keyboard sorting remains available (Alt+Up/Down on a row). Save commits the mixed order; Cancel discards it. Folder membership is unchanged, so a folder and its children move as one block in the sidebar. Pinned-bottom groups stay in the bottom section. Folder IDs never enter HA's stored native panel order.
 
@@ -32,10 +36,12 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.5/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.6/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.
+
+For the iframe option, also merge the entry from **`panel-custom.example.yaml`** into `configuration.yaml` (or the existing `panel_custom` list). It registers the hidden `ugso-sidebar-web` panel without an extra sidebar entry. Keep its module URL identical to the frontend module URL. Validate and restart HA once. Without this registration, clicking an iframe link displays a setup notice. The panel reads only the signed-in user's saved links and never forwards HA tokens. The target website must allow embedding; CSP/X-Frame-Options and HTTPS-to-HTTP restrictions can prevent it. The panel always offers a new-tab alternative. An embedded third-party page retains that website's own login requirements.
 
 This local package includes a HACS-style `hacs.json` and a bundled single JS file, but no GitHub repository or release has been created. No catalog inclusion is claimed.
 
@@ -45,9 +51,13 @@ The settings include shortcuts for Logs, Automations and States, each with a sel
 
 The shortcut section heading and shortcut names are pale yellow (`#fff2a6`), including their names in the entry list below. This highlight affects only the settings dialog, not user-selected sidebar colors or editable icons.
 
-Version 0.1.4 is installed and verified on .177 (HA 2026.10.4, port 80), with 50 automated tests. Logs, Automations and States open correctly; folder assignment, moving an existing link to the main menu, duplicate prevention, Cancel and persistence after reload were checked. Temporary test objects were removed and existing settings preserved. See `docs/TESTING.md`.
+Version 0.1.6 is installed and verified on .177 (HA 2026.10.4, port 80), with 56 automated tests. New-tab and embedded opening were checked with a resource on .177. The 4 px separator, matching opacity, collapse, reload persistence and switching off were verified. Temporary test objects were removed; existing settings and Test für APP were preserved. No external website compatibility is claimed. See `docs/TESTING.md`.
 
 ![Shortcut settings on .177](docs/images/ha-shortcuts-014-177.png)
+
+![External link options on .177](docs/images/web-link-016-177.png)
+
+![Website displayed inside HA on .177](docs/images/web-panel-016-177.png)
 
 Node 22 or newer: `npm ci`, `npm run check`, `npm run build`, `npm test`.
 

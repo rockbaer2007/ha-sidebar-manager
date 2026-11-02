@@ -1,5 +1,8 @@
 import {clone, stable,normalizeColor} from './core.js';
 export const MANAGER_KEY='ugso_sidebar_manager_v1';
+export const WEB_PANEL='ugso-sidebar-web';
+export const isExternalUrl=value=>typeof value==='string'&&/^https?:\/\//i.test(value);
+export const separatorWidth=value=>Number.isInteger(value)?Math.max(0,Math.min(4,value)):0;
 export const HA_SHORTCUTS=[
  {id:'logs',url:'/config/logs'},
  {id:'automations',url:'/config/automation/dashboard'},
@@ -24,11 +27,11 @@ export function safeUrl(value){
 export function normalizeManager(raw){
   if(raw!=null&&(raw.version!==1||!Array.isArray(raw.groups)||!raw.items||Array.isArray(raw.items)||typeof raw.items!=='object'))throw Error('unsupported_record');
   const groups=[],seen=new Set(),items=Object.create(null);
-  for(const g of raw?.groups||[]){if(!safeKey(g.id)||!text(g.name)||seen.has(g.id))throw Error('invalid_group');seen.add(g.id);groups.push({id:g.id,name:text(g.name),icon:/^mdi:[a-z0-9-]+$/.test(g.icon||'')?g.icon:'mdi:folder-outline',color:normalizeColor(g.color),collapsed:!!g.collapsed,bottom:!!g.bottom});}
+  for(const g of raw?.groups||[]){if(!safeKey(g.id)||!text(g.name)||seen.has(g.id))throw Error('invalid_group');seen.add(g.id);groups.push({id:g.id,name:text(g.name),icon:/^mdi:[a-z0-9-]+$/.test(g.icon||'')?g.icon:'mdi:folder-outline',color:normalizeColor(g.color),collapsed:!!g.collapsed,bottom:!!g.bottom,separator:separatorWidth(g.separator)});}
   for(const [key,v]of Object.entries(raw?.items||{})){
     if(!safeKey(key)||!v||typeof v!=='object')throw Error('invalid_item');
     const item={title:text(v.title),icon:/^mdi:[a-z0-9-]+$/.test(v.icon||'')?v.icon:'',group:seen.has(v.group)?v.group:'',bottom:!!v.bottom,hidden:!!v.hidden};
-    if(v.url!=null){item.url=safeUrl(v.url);if(!item.url)throw Error('invalid_url');if(!key.startsWith('sm-link-'))throw Error('invalid_item');}
+    if(v.url!=null){item.url=safeUrl(v.url);if(!item.url)throw Error('invalid_url');if(!key.startsWith('sm-link-'))throw Error('invalid_item');if(isExternalUrl(item.url))item.openMode=['tab','iframe','same'].includes(v.openMode)?v.openMode:'same';}
     items[key]=item;
   }
   const order=[...new Set((raw?.order||[]).filter(safeKey))];
@@ -47,7 +50,7 @@ export function layoutEntries(record,available){
     for(const group of [null,...r.groups]){
       const members=entries.filter(e=>(e.group||'')===(group?.id||'')&&((group?group.bottom:!!e.bottom)===bottom)&&!e.hidden);
       if(!members.length)continue;
-      if(group)blocks.push({token:'g:'+group.id,rows:[{kind:'group',...group},...members.map(item=>({kind:'item',...item,collapsed:!!group.collapsed}))]});
+      if(group)blocks.push({token:'g:'+group.id,rows:[{kind:'group',...group},...members.map(item=>({kind:'item',...item,collapsed:!!group.collapsed})),...(group.separator?[{kind:'separator',id:group.id,color:group.color,width:group.separator,bottom:group.bottom}]:[])]});
       else for(const item of members)blocks.push({token:'p:'+item.key,rows:[{kind:'item',...item,collapsed:false}]});
     }
     blocks.sort((a,b)=>(menuRank.get(a.token)??1e9)-(menuRank.get(b.token)??1e9));

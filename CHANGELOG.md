@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6 — unpublished local preview
+
+- Light-blue external links in settings; internal links remain pale yellow.
+- External links open in a new tab or a hidden HA custom iframe panel. Existing same-window behavior is retained until edited.
+- Per-group separator slider, 0–4 px, placed after the group block in its icon color/opacity, with 2 px total extra spacing.
+- Include `panel-custom.example.yaml` for the optional iframe panel. No extra sidebar entry, credentials forwarded or HA core patches.
+- Verified only on .177, port 80; existing settings and Test für APP preserved. No publication.
+
 ## 0.1.5 — unpublished local preview
 
 - Pale-yellow heading and names distinguish Home Assistant shortcuts in settings and the lower entry list.
