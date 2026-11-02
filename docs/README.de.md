@@ -1,6 +1,8 @@
 # Sidebar Manager
 
-**0.1.7 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.8 lokale Vorschau · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+Die lokale Version 0.1.8 zeigt eigene Links in **Seitenleiste bearbeiten**: mit Farbauswahl/Transparenz, Sichtbarkeit und Ziehgriff. Links ohne gespeicherte Position erscheinen am Ende. Der Einstellungsbutton zeigt **Link** oder **ext. Link**; die Gruppenzuordnung bleibt erhalten. Öffentlich verfügbar bleibt 0.1.7. Dieser Entwicklungsschritt wurde lokal automatisch geprüft, noch nicht erneut in HA.
 
 Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeiten“. Haupteinträge und Ordner gemeinsam am nativen Ziehgriff sortieren. Keine HA-Systemdateien werden ersetzt.
 

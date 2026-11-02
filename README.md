@@ -2,7 +2,9 @@
 
 <img src="docs/images/icon.svg" width="80" height="80" alt="Sidebar Manager" />
 
-**0.1.7 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.8 local preview · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+Local 0.1.8 adds custom links to **Edit sidebar** with colors/opacity, visibility and drag sorting. Links without a saved position appear at the end. The settings button reads **Link** or **Ext. link**, while retaining the folder assignment. Public release remains 0.1.7; this increment has local automated verification, not a new live HA test.
 
 Organize Home Assistant's sidebar with folders, colors, opacity and custom links, directly from **Edit sidebar**. Move main entries and folders with the native drag handles. No HA core files are replaced.
 

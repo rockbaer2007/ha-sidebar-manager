@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 — local preview
+
+- Include all saved internal and external links in the native sidebar editor, including hidden links. Links without a saved mixed position start at the end.
+- Use the existing color/opacity picker, visibility eye and drag/keyboard sorting for links. Moving links also preserves the requested order among native members of a folder.
+- Label link controls as Link / Ext. link (DE: Link / ext. Link; FR: Lien / Lien ext.) instead of the folder name. Clicking still opens the selected link's settings; its folder remains in the accessible label and tooltip.
+- Keep link order/visibility in Manager storage and colors in their existing namespace. Never pass generated links or folders to HA's native saved panel preferences. Save/Cancel and conflict/readback safeguards remain in use.
+- Apply saved link colors immediately when the Manager creates sidebar rows. Regression tests cover bundle integration, DE/EN/FR badges, preservation of native preferences, cancellation and failed-save compensation. Local checks only; no new live HA test or public release yet.
+
 ## 0.1.7 — first public release
 
 - Align bottom-pinned folder placement between the editor and sidebar. Moving a folder before a normal menu block releases its bottom pin rather than silently forcing it back down.

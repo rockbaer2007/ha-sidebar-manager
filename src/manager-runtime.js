@@ -31,9 +31,10 @@ export function openManager(sidebar,focusKey,focusGroup){
   config=clone(draft);collapsed.clear();refreshManager();
  }});
 }
-export function attachManager(sidebar){
+export function attachManager(sidebar,onLayout){
  instances.add(sidebar);connect(sidebar.hass);
  if(!state.has(sidebar)&&sidebar.shadowRoot){const s={headers:new Map(),separators:new Map(),custom:new Map()};state.set(sidebar,s);s.observer=new MutationObserver(()=>{if(s.pending)return;s.pending=true;queueMicrotask(()=>{s.pending=false;if(sidebar.isConnected)applyLayout(sidebar);});});s.observer.observe(sidebar.shadowRoot,{childList:true,subtree:true});}
+ if(onLayout&&state.has(sidebar))state.get(sidebar).onLayout=onLayout;
  applyLayout(sidebar);
 }
 export function attachManagerButton(nativeDialog){
@@ -48,9 +49,9 @@ export function attachManagerButton(nativeDialog){
 }
 export function endManagerDialog(dialog){editDialogs.delete(dialog);endNativeGroups(dialog);}
 function updateMoveBadge(button,hass){
- const key=button.dataset.smMove,group=config.groups.find(g=>g.id===config.items[key]?.group),name=group?.name||managerStrings(hass).none;
+ const key=button.dataset.smMove,item=config.items[key],group=config.groups.find(g=>g.id===item?.group),t=managerStrings(hass),name=item?.url?(isExternalUrl(item.url)?t.externalLink:t.internalLink):(group?.name||t.none);
  if(button.textContent!==name)button.textContent=name;
- button.title=managerStrings(hass).move+': '+name;button.setAttribute('aria-label',managerStrings(hass).move+' '+button.dataset.smLabel+': '+name);button.disabled=!loaded||[...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog)));
+ button.title=(item?.url?t.editLink:t.move)+': '+(group?.name||t.none);button.setAttribute('aria-label',(item?.url?t.editLink:t.move)+' '+button.dataset.smLabel+': '+name+'; '+(group?.name||t.none));button.disabled=!loaded||[...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog)));
 }
 export function moveEntryButton(hass,key,label){
  const button=el('button');button.type='button';button.dataset.smMove=key;button.dataset.smLabel=label||key;
@@ -86,4 +87,5 @@ function applyLayout(sidebar){
  }
  for(const [id,head]of s.headers)if(!keep.has(id)){head.remove();s.headers.delete(id);}
  for(const [id,line]of s.separators)if(!keep.has(id)||!config.groups.find(g=>g.id===id)?.separator){line.remove();s.separators.delete(id);}
+ s.onLayout?.();
 }

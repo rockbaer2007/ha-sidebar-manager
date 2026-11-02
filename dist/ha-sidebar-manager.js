@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.7 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.8 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.7";
+  var VERSION = "0.1.8";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -404,6 +404,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
+  Object.assign(MANAGER_STRINGS.de, { internalLink: "Link", externalLink: "ext. Link", editLink: "Link bearbeiten" });
+  Object.assign(MANAGER_STRINGS.en, { internalLink: "Link", externalLink: "Ext. link", editLink: "Edit link" });
+  Object.assign(MANAGER_STRINGS.fr, { internalLink: "Lien", externalLink: "Lien ext.", editLink: "Modifier le lien" });
   Object.assign(MANAGER_STRINGS.de, { separator: "Trennlinie", off: "Aus", openMode: "Öffnen", newTab: "In neuem Tab öffnen", iframe: "Rechts anzeigen (iframe)", sameWindow: "Im bisherigen Fenster", webPage: "Webseite", menu: "Seitenleiste öffnen", frameHint: "Die Webseite muss das Einbetten erlauben. Falls sie leer bleibt, in einem neuen Tab öffnen.", mixedContent: "Diese HTTP-Webseite kann in einem per HTTPS geöffneten HA nicht eingebettet werden. In einem neuen Tab öffnen.", frameUnavailable: "Link nicht verfügbar. Bitte eine gespeicherte Webseite aus der Seitenleiste wählen.", frameSetup: "Für die iframe-Ansicht zuerst den mitgelieferten panel_custom-Eintrag installieren und HA neu starten." });
   Object.assign(MANAGER_STRINGS.en, { separator: "Separator", off: "Off", openMode: "Open", newTab: "Open in new tab", iframe: "Show on the right (iframe)", sameWindow: "In the current window", webPage: "Web page", menu: "Open sidebar", frameHint: "The website must allow embedding. If it stays blank, open it in a new tab.", mixedContent: "This HTTP website cannot be embedded in HA opened over HTTPS. Open it in a new tab.", frameUnavailable: "Link unavailable. Select a saved website from the sidebar.", frameSetup: "For iframe display, install the supplied panel_custom entry first and restart HA." });
   Object.assign(MANAGER_STRINGS.fr, { separator: "Séparateur", off: "Désactivé", openMode: "Ouvrir", newTab: "Ouvrir dans un nouvel onglet", iframe: "Afficher à droite (iframe)", sameWindow: "Dans la fenêtre actuelle", webPage: "Page web", menu: "Ouvrir la barre latérale", frameHint: "Le site doit autoriser l'intégration. Si la page reste vide, ouvrez-la dans un nouvel onglet.", mixedContent: "Ce site HTTP ne peut pas être intégré dans HA ouvert en HTTPS. Ouvrez-le dans un nouvel onglet.", frameUnavailable: "Lien indisponible. Choisissez un site enregistré dans la barre latérale.", frameSetup: "Pour afficher une iframe, installez l'entrée panel_custom fournie puis redémarrez HA." });
@@ -724,6 +727,14 @@
   var sessions = /* @__PURE__ */ new WeakMap();
   var DIRTY_KEY = MANAGER_KEY + ":menu-order";
   var groupKey = (id) => "sm-group:" + id;
+  var customLinks = (record) => {
+    const rank = new Map(record.order.map((key, index) => [key, index]));
+    return Object.entries(record.items).filter(([, item]) => item.url).sort(([a], [b]) => (rank.get(a) ?? 1e9) - (rank.get(b) ?? 1e9));
+  };
+  var editorItems = (record, nativeItems) => [
+    ...nativeItems.filter((i) => !record.items[i.value]?.url).map((i) => ({ ...i, smMixed: true })),
+    ...customLinks(record).map(([key, item]) => ({ value: key, label: item.title || item.url, icon: item.icon || "mdi:link", smMixed: true, smLink: true }))
+  ];
   var el2 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
@@ -741,11 +752,11 @@
     sessions.delete(dialog);
   }
   function mixedMenuOrder(record, nativeOrder, items) {
-    const valid = new Set(items.map((i) => i.value)), groups = new Set(record.groups.map((g) => groupKey(g.id)));
+    const links = customLinks(record).map(([key]) => key), valid = /* @__PURE__ */ new Set([...items.map((i) => i.value), ...links]), groups = new Set(record.groups.map((g) => groupKey(g.id)));
     const fromToken = (t) => t.startsWith("g:") ? groupKey(t.slice(2)) : t.startsWith("p:") ? t.slice(2) : "";
     const values = record.menuOrder.map(fromToken).filter((v) => valid.has(v) || groups.has(v));
-    const order = [.../* @__PURE__ */ new Set([...values, ...nativeOrder.filter((v) => valid.has(v)), ...items.map((i) => i.value), ...groups])];
-    const bottom = new Set(record.groups.filter((g) => g.bottom).map((g) => groupKey(g.id)));
+    const order = [.../* @__PURE__ */ new Set([...values, ...nativeOrder.filter((v) => valid.has(v)), ...items.map((i) => i.value), ...groups, ...links])];
+    const bottom = /* @__PURE__ */ new Set([...record.groups.filter((g) => g.bottom).map((g) => groupKey(g.id)), ...links.filter((key) => record.items[key].bottom && !record.items[key].group)]);
     return [...order.filter((v) => !bottom.has(v)), ...order.filter((v) => bottom.has(v))];
   }
   function releaseMovedBottomGroups(record, order) {
@@ -756,13 +767,14 @@
         if (!group.bottom) normalAfter = true;
       } else {
         const item = record.items[order[i]];
+        if (item?.url && !item.group && item.bottom && normalAfter) item.bottom = false;
         if (!item?.group && !item?.bottom) normalAfter = true;
       }
     }
   }
   function render(dialog, s) {
     const t = managerStrings(dialog.hass), nativeItems = s.native.items || [];
-    const signature = stable({ groups: s.draft.groups, menu: s.order, items: nativeItems.map((i) => [i.value, i.label, i.iconPath, i.disableHiding, i.disableSorting]), hidden: s.hidden, dirty: s.dirty, saving: s.saving, lang: t.groupOrderHint });
+    const signature = stable({ groups: s.draft.groups, links: customLinks(s.draft), menu: s.order, items: nativeItems.map((i) => [i.value, i.label, i.iconPath, i.disableHiding, i.disableSorting]), hidden: s.hidden, dirty: s.dirty, saving: s.saving, lang: t.groupOrderHint });
     if (!s.renderer) {
       s.renderer = (item) => {
         const group = s.draft.groups.find((g) => groupKey(g.id) === item.value);
@@ -797,7 +809,7 @@
     if (s.signature !== signature) {
       s.signature = signature;
       s.hint.textContent = s.dirty ? t.saveOrderFirst : t.groupOrderHint;
-      s.editor.items = [...nativeItems.map((i) => ({ ...i, smMixed: true })), ...s.draft.groups.map((g) => ({ value: groupKey(g.id), label: g.name, icon: g.icon, disableHiding: true }))];
+      s.editor.items = [...editorItems(s.draft, nativeItems), ...s.draft.groups.map((g) => ({ value: groupKey(g.id), label: g.name, icon: g.icon, disableHiding: true }))];
       s.editor.value = { order: s.order, hidden: [...s.hidden] };
     }
     s.editor.hass = dialog.hass;
@@ -813,18 +825,23 @@
     if (s.saving) return;
     const value = event.detail?.value;
     if (!value || !Array.isArray(value.order) || !Array.isArray(value.hidden)) return;
-    const nativeKeys = new Set((s.native.items || []).map((i) => i.value)), groupIds = new Map(s.draft.groups.map((g) => [groupKey(g.id), g.id]));
-    const priorNativeOrder = s.order.filter((v) => nativeKeys.has(v)), priorHidden = s.hidden;
-    const order = value.order.filter((v) => nativeKeys.has(v) || groupIds.has(v));
+    const linkKeys = new Set(customLinks(s.draft).map(([key]) => key)), nativeKeys = new Set((s.native.items || []).map((i) => i.value).filter((key) => !linkKeys.has(key))), groupIds = new Map(s.draft.groups.map((g) => [groupKey(g.id), g.id]));
+    const priorNativeOrder = s.order.filter((v) => nativeKeys.has(v)), priorPanelOrder = s.order.filter((v) => nativeKeys.has(v) || linkKeys.has(v)), priorHidden = s.hidden.filter((v) => nativeKeys.has(v));
+    const order = [...new Set(value.order.filter((v) => nativeKeys.has(v) || linkKeys.has(v) || groupIds.has(v)))];
     const tokens = order.map((v) => groupIds.has(v) ? "g:" + groupIds.get(v) : "p:" + v);
     const unseen = s.draft.menuOrder.filter((v) => !tokens.includes(v));
     if (stable(order) !== stable(s.order)) releaseMovedBottomGroups(s.draft, order);
     s.order = order;
     s.draft.menuOrder = [...tokens, ...unseen];
-    s.dirty = stable(s.draft.menuOrder) !== stable(s.base.menuOrder);
+    for (const key of linkKeys) s.draft.items[key].hidden = value.hidden.includes(key);
+    const panelOrder = order.filter((key) => nativeKeys.has(key) || linkKeys.has(key));
+    if (linkKeys.size && stable(panelOrder) !== stable(priorPanelOrder)) {
+      s.draft.order = [...panelOrder, ...s.draft.order.filter((key) => !panelOrder.includes(key))];
+    }
+    s.dirty = stable(s.draft) !== stable(s.base);
     dialog._dirtyStateContext.setState(s.dirty, DIRTY_KEY);
     const nativeValue = { order: order.filter((v) => nativeKeys.has(v)), hidden: value.hidden.filter((v) => nativeKeys.has(v)) };
-    s.hidden = nativeValue.hidden;
+    s.hidden = [...nativeValue.hidden, ...[...linkKeys].filter((key) => s.draft.items[key].hidden)];
     if (stable(nativeValue) !== stable({ order: priorNativeOrder, hidden: priorHidden })) {
       s.native.dispatchEvent(new CustomEvent("value-changed", { detail: { value: nativeValue }, bubbles: true, composed: true }));
     }
@@ -847,7 +864,7 @@
       native.after(section);
       s = { section, hint, editor, native, display: native.style.display, base: clone(record), draft: clone(record), dirty: false, saving: false, identity: options.identity, options };
       s.order = mixedMenuOrder(record, dialog._order || [], native.items || []);
-      s.hidden = [...native.value?.hidden || dialog._hidden || []];
+      s.hidden = [...native.value?.hidden || dialog._hidden || [], ...customLinks(record).filter(([, item]) => item.hidden).map(([key]) => key)];
       native.style.display = "none";
       sessions.set(dialog, s);
       dialog._dirtyStateContext.setState(false, DIRTY_KEY);
@@ -860,7 +877,7 @@
       s.draft = clone(record);
       s.identity = options.identity;
       s.order = mixedMenuOrder(record, dialog._order || [], native.items || []);
-      s.hidden = [...native.value?.hidden || dialog._hidden || []];
+      s.hidden = [...native.value?.hidden || dialog._hidden || [], ...customLinks(record).filter(([, item]) => item.hidden).map(([key]) => key)];
     }
     s.options = options;
     render(dialog, s);
@@ -983,7 +1000,7 @@
       refreshManager();
     } });
   }
-  function attachManager(sidebar) {
+  function attachManager(sidebar, onLayout) {
     instances.add(sidebar);
     connect(sidebar.hass);
     if (!state.has(sidebar) && sidebar.shadowRoot) {
@@ -999,6 +1016,7 @@
       });
       s.observer.observe(sidebar.shadowRoot, { childList: true, subtree: true });
     }
+    if (onLayout && state.has(sidebar)) state.get(sidebar).onLayout = onLayout;
     applyLayout(sidebar);
   }
   function attachManagerButton(nativeDialog) {
@@ -1036,10 +1054,10 @@
     endNativeGroups(dialog);
   }
   function updateMoveBadge(button, hass) {
-    const key = button.dataset.smMove, group = config.groups.find((g) => g.id === config.items[key]?.group), name = group?.name || managerStrings(hass).none;
+    const key = button.dataset.smMove, item = config.items[key], group = config.groups.find((g) => g.id === item?.group), t = managerStrings(hass), name = item?.url ? isExternalUrl(item.url) ? t.externalLink : t.internalLink : group?.name || t.none;
     if (button.textContent !== name) button.textContent = name;
-    button.title = managerStrings(hass).move + ": " + name;
-    button.setAttribute("aria-label", managerStrings(hass).move + " " + button.dataset.smLabel + ": " + name);
+    button.title = (item?.url ? t.editLink : t.move) + ": " + (group?.name || t.none);
+    button.setAttribute("aria-label", (item?.url ? t.editLink : t.move) + " " + button.dataset.smLabel + ": " + name + "; " + (group?.name || t.none));
     button.disabled = !loaded || [...editDialogs].some((dialog) => dialog.isConnected && (nativeGroupsDirty(dialog) || nativeGroupsBusy(dialog)));
   }
   function moveEntryButton(hass, key, label) {
@@ -1212,6 +1230,7 @@
       line.remove();
       s.separators.delete(id);
     }
+    s.onLayout?.();
   }
 
   // src/web-panel.js
@@ -1688,13 +1707,13 @@
         if (!isSupported(this.hass)) return;
         controllers.add(this);
         useConnection(this.hass);
-        attachManager(this);
+        attachManager(this, () => applyRecord(this, activeSession?.loaded ? activeSession.draft : saved));
         queueMicrotask(() => applyRecord(this, activeSession?.loaded ? activeSession.draft : saved));
       };
       for (const sidebar of findAll(document, "ha-sidebar")) {
         controllers.add(sidebar);
         useConnection(sidebar.hass);
-        attachManager(sidebar);
+        attachManager(sidebar, () => applyRecord(sidebar, activeSession?.loaded ? activeSession.draft : saved));
         sidebar.requestUpdate?.();
       }
     });

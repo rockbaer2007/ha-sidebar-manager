@@ -250,10 +250,10 @@ if(!window[FLAG]) {
     Type.prototype.updated=function(...args){
       original?.apply(this,args);
       if(!isSupported(this.hass))return;
-      controllers.add(this);useConnection(this.hass);attachManager(this);
+      controllers.add(this);useConnection(this.hass);attachManager(this,()=>applyRecord(this,activeSession?.loaded?activeSession.draft:saved));
       queueMicrotask(()=>applyRecord(this,activeSession?.loaded?activeSession.draft:saved));
     };
-    for(const sidebar of findAll(document,"ha-sidebar")){controllers.add(sidebar);useConnection(sidebar.hass);attachManager(sidebar);sidebar.requestUpdate?.();}
+    for(const sidebar of findAll(document,"ha-sidebar")){controllers.add(sidebar);useConnection(sidebar.hass);attachManager(sidebar,()=>applyRecord(sidebar,activeSession?.loaded?activeSession.draft:saved));sidebar.requestUpdate?.();}
   });
   customElements.whenDefined("dialog-edit-sidebar").then(()=>patchDialog(customElements.get("dialog-edit-sidebar")));
   if(!customElements.get('ugso-sidebar-manager-dialog'))customElements.define('ugso-sidebar-manager-dialog',ManagerDialog);

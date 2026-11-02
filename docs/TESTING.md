@@ -1,4 +1,13 @@
-# Local verification — 2026-11-01
+# Verification history
+
+## Local verification — 0.1.8, 2026-11-02
+
+Source backup created before editing. No HA host was accessed for this increment; existing installations, user settings and dashboards remain unchanged.
+
+- `npm run check`, `npm run build`, `npm test` and `git diff --check` pass: **70 automated tests**.
+- The built bundle was exercised in a simulated DOM with the sidebar editor, real Manager and color-picker modules, and simulated HA user-data persistence. Saved custom-link colors apply immediately after layout creation. Internal/external badges follow DE/EN/FR; editing a link color and dragging/hiding another link saves both stores while leaving native HA panel preferences unchanged.
+- Regression cases cover first-open placement, existing link ordering, saved/reopened mixed order, visibility-only changes, Cancel, failed-save compensation, moving relative to native folder members and releasing bottom pinning.
+- This is local automated verification. Actual HA drag behavior/top-layer color picker and reconnect/reload behavior for this increment still need verification on .177 before publication.
 
 ## Public release preparation — 2026-11-02, 0.1.7
 

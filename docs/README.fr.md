@@ -1,6 +1,8 @@
 # Sidebar Manager
 
-**0.1.7 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.8 aperçu local · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+La version locale 0.1.8 ajoute les liens personnalisés à **Modifier la barre latérale**, avec couleur/opacité, visibilité et tri par poignée. Les liens sans position enregistrée apparaissent à la fin. Le bouton affiche **Lien** ou **Lien ext.** ; le dossier attribué reste conservé. La version publique reste 0.1.7. Cette modification est vérifiée par des tests automatisés locaux, sans nouveau test HA.
 
 Dossiers, couleurs, opacité et liens personnalisés dans « Modifier la barre latérale ». Triez dossiers et entrées principales avec les poignées natives. Aucun fichier système HA n'est remplacé.
 
