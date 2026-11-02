@@ -1,5 +1,9 @@
 # Local verification — 2026-11-01
 
+## Pale-yellow shortcut names — 2026-11-02, 0.1.5
+
+Presentation-only update installed on .177, port 80. PC source/configuration/user-data/Test für APP backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-hellgelb-20261102`. A separate test tab was used; the user's open settings dialog was not edited or closed. Confirmed computed color `rgb(255, 242, 166)` on all seven titles: section heading, three preset names and the same three entry-list names. Existing settings and Test für APP remain byte-identical. Syntax, bundle and all 50 tests pass. No additional full HA backup was created for this reversible style-only change; the three previously confirmed full backups remain. No publication.
+
 ## Local continuation — 2026-11-02, 0.1.4
 
 Initial PC source backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-links-20261102`. Existing variants and ZIPs retained. Syntax, bundle and 50 automated tests pass. New checks cover all three shortcut routes and selected folders, duplicate/legacy URL recognition, custom-name/icon preservation, ID collisions, absent-folder fallback, renaming folders in the open dialog, and adding a shortcut without writing until Save (Cancel does not persist).

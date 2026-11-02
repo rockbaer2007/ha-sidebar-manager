@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 — unpublished local preview
+
+- Pale-yellow heading and names distinguish Home Assistant shortcuts in settings and the lower entry list.
+- Presentation-only change; custom sidebar colors, link data and editable icons retained.
+
 ## 0.1.4 — unpublished local preview
 
 - Settings provide Logs, Automations and States shortcuts with selectable folders and `mdi:cog-transfer`.

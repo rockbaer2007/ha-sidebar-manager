@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.4 — aperçu local
+# Sidebar Manager 0.1.5 — aperçu local
 
 Extension indépendante pour Home Assistant : couleurs et opacité, groupes repliables, entrées épinglées, liens personnalisés, noms et icônes MDI. La langue DE/EN/FR suit automatiquement HA. Aucune publication.
 
@@ -18,7 +18,7 @@ L'export/import JSON couvre l'organisation (groupes, liens, noms, icônes, masqu
 
 ## Installation et retour
 
-Charger un seul module : `/local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
+Charger un seul module : `/local/ugso-sidebar-manager/0.1.5/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
 
 Les dossiers possèdent un sélecteur de couleur avec opacité, appliquée à leur icône et leur nom. « Couleur du thème » retire la couleur personnalisée. Enregistrer dans le Manager confirme le choix.
 
@@ -29,6 +29,8 @@ Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA.
 ## Limites
 
 Les réglages proposent Journaux, Automatisations et États, avec dossier au choix et `mdi:cog-transfer`. Les liens correspondants sont réutilisés, sans écraser leurs noms ou icônes personnalisés. Enregistrer applique les modifications. États utilise `/config/tools/state` ; les anciens liens `/developer-tools/state` sont reconnus. Les autorisations HA restent inchangées.
+
+Le titre de la section et les trois noms sont jaune clair (`#fff2a6`), y compris dans la liste des entrées plus bas. Cette mise en évidence concerne uniquement les réglages ; les couleurs personnalisées de la barre latérale et les icônes modifiables sont conservées.
 
 La version 0.1.4 est installée et vérifiée sur .177 (HA 2026.10.4, port 80), avec 50 tests automatisés réussis. Journaux, Automatisations et États s'ouvrent correctement. Choix du dossier, déplacement d'un lien existant vers le menu principal, prévention des doublons, annulation et conservation après rechargement sont vérifiés. Objets de test supprimés, réglages existants conservés. Voir `TESTING.md`.
 

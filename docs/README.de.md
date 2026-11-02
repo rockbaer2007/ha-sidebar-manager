@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.4 — lokale Vorschau
+# Sidebar Manager 0.1.5 — lokale Vorschau
 
 Eigenständige Erweiterung für Home Assistant: Farben und Transparenz, Gruppen, Ein-/Ausklappen, Anheften, eigene Links, Anzeigenamen und MDI-Icons. DE/EN/FR folgen automatisch der HA-Sprache. Noch nicht veröffentlicht.
 
@@ -18,7 +18,7 @@ Bestehende Farben bleiben unter `ugso_sidebar_colors_v1`. Die Organisation wird 
 
 ## Installation und Rückkehr
 
-Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
+Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.5/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
 
 Ordner besitzen einen eigenen Farbwähler mit Transparenz. Die Farbe gilt für Icon und Gruppennamen. „Theme-Farbe“ entfernt die eigene Farbe; gespeichert wird erst mit dem Speichern im Manager.
 
@@ -29,6 +29,8 @@ Für die Rückkehr den gesicherten alten Moduleintrag wiederherstellen und HA ne
 ## Grenzen dieses ersten Stands
 
 Unter „Home-Assistant-Verknüpfungen“ stehen Logs, Automationen und Zustände bereit, jeweils mit auswählbarem Unterordner und `mdi:cog-transfer`. Vorhandene passende Links werden wiederverwendet, eigene Namen und Icons erhalten. Erst Speichern übernimmt Änderungen. Zustände verwendet `/config/tools/state`; ältere Links auf `/developer-tools/state` werden erkannt. HA-Zugriffsrechte bleiben unverändert.
+
+Die Überschrift und die drei Namen erscheinen hellgelb (`#fff2a6`), auch unten in der Eintragsliste. Diese Hervorhebung gilt nur für den Einstellungsdialog; eigene Seitenleistenfarben und änderbare Icons bleiben erhalten.
 
 0.1.4 ist auf .177 installiert und geprüft (HA 2026.10.4, Port 80), mit 50 erfolgreichen automatischen Tests. Logs, Automationen und Zustände öffnen korrekt. Unterordner-Auswahl, Umhängen eines vorhandenen Links ins Hauptmenü, Dublettenschutz, Abbrechen und Erhalt nach Neuladen sind geprüft. Eigene Testobjekte entfernt, vorhandene Einstellungen erhalten. Details in `TESTING.md`.
 

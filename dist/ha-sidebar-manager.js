@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.4 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.5 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.4";
+  var VERSION = "0.1.5";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -500,10 +500,12 @@
       head.append(el("h2", this.t.title), this.button(this.t.cancel, () => {
         if (!this.busy) this.remove();
       }, "×"));
+      const accent = el("style");
+      accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}";
       this.main = el("main");
       this.foot = el("footer");
       this.modal.append(head, this.main, this.foot);
-      this.shadowRoot.replaceChildren(style, this.modal);
+      this.shadowRoot.replaceChildren(style, accent, this.modal);
       this.renderBody();
     }
     renderBody() {
@@ -529,7 +531,9 @@
         this.draft.groups.push({ id: newId("group"), name: t.newGroup, icon: "mdi:folder-outline", collapsed: false, bottom: false });
         this.renderBody();
       }));
-      this.main.append(el("h3", t.haShortcuts));
+      const shortcutHeading = el("h3", t.haShortcuts);
+      shortcutHeading.className = "sm-ha-shortcut-title";
+      this.main.append(shortcutHeading);
       const shortcuts = el("div");
       shortcuts.className = "cards sm-ha-shortcuts";
       this.presetGroups ||= {};
@@ -537,7 +541,9 @@
         const existing = findShortcut(this.draft, preset), row = el("div");
         row.className = "row";
         row.dataset.shortcut = preset.id;
-        row.append(el("strong", t["shortcut_" + preset.id]), el("small", preset.url));
+        const title = el("strong", t["shortcut_" + preset.id]);
+        title.className = "sm-ha-shortcut-title";
+        row.append(title, el("small", preset.url));
         const label = el("label", t.group), select = el("select");
         select.setAttribute("aria-label", t.group + " " + t["shortcut_" + preset.id]);
         for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
@@ -575,7 +581,9 @@
         const row = el("div");
         row.className = "row";
         row.dataset.key = key;
-        row.append(el("strong", original?.label || current?.title || key));
+        const title = el("strong", original?.label || current?.title || key);
+        if (HA_SHORTCUTS.some((preset) => findShortcut(this.draft, preset)?.[0] === key)) title.className = "sm-ha-shortcut-title";
+        row.append(title);
         if (!original && !current?.url) row.append(el("small", t.missing));
         row.append(this.input(t.label, item.title, (v) => edit("title", v)), this.input(t.icon, item.icon, (v) => edit("icon", v)));
         const label = el("label", t.group), select = el("select");

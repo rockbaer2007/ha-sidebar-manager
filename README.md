@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.4 — local preview
+# Sidebar Manager 0.1.5 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -32,7 +32,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.5/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.
@@ -42,6 +42,8 @@ This local package includes a HACS-style `hacs.json` and a bundled single JS fil
 ## Development
 
 The settings include shortcuts for Logs, Automations and States, each with a selectable folder and `mdi:cog-transfer`. Existing matching URLs are reused without overwriting their names or icons. Changes apply only after Save. States uses the current `/config/tools/state` route; legacy `/developer-tools/state` links are recognized. These links do not change HA access permissions.
+
+The shortcut section heading and shortcut names are pale yellow (`#fff2a6`), including their names in the entry list below. This highlight affects only the settings dialog, not user-selected sidebar colors or editable icons.
 
 Version 0.1.4 is installed and verified on .177 (HA 2026.10.4, port 80), with 50 automated tests. Logs, Automations and States open correctly; folder assignment, moving an existing link to the main menu, duplicate prevention, Cancel and persistence after reload were checked. Temporary test objects were removed and existing settings preserved. See `docs/TESTING.md`.
 
