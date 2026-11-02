@@ -1,10 +1,11 @@
 Sidebar Manager — Veröffentlichungsstand 0.1.7, 02.11.2026
 
-1. Öffentliches eigenes GitHub-Repository und Release 0.1.7 mit JS, ZIP,
-   HACS-/Marketplace-kompatibler Struktur, Lizenz und DE/EN/FR-Anleitungen
-   vorbereitet. Veröffentlichung und CI im Prüfbericht dokumentieren.
-2. Open-Source-Dokumentation DE/EN/FR mit Bildern von .177 und gleicher
-   Installation/Bedienung für beide Domains vorbereitet.
+1. Erledigt: öffentliches GitHub-Repository und Release 0.1.7 mit JS, ZIP,
+   HACS-/Marketplace-kompatibler Struktur, Lizenz und DE/EN/FR-Anleitungen.
+   GitHub CI/Release erfolgreich; heruntergeladene Prüfsummen bestätigt.
+2. Erledigt: Open-Source-Dokumentation DE/EN/FR mit Bildern von .177 und
+   gleicher Installation/Bedienung auf beiden Domains veröffentlicht.
+   Alle sechs Sprachseiten liefern 200, HTML und Testbild identisch.
 3. Forumsentwurf DE/EN: docs/FORUM-DE-EN.txt. Noch nicht abgesendet.
    Als Nächstes Zielforum/Thread festlegen und Beitrag prüfen.
 
@@ -12,3 +13,9 @@ Prüfstand: 0.1.7, 60 automatische Tests, echte HA-Prüfung nur .177.
 Ordnerposition, untere Anheftung und Trennlinien nur ausgeklappt geprüft.
 Vorhandene Einstellungen und Test für APP erhalten, drei Vollbackups.
 Keine automatische Organizer-Migration, kein Marketplace-Live-Test.
+
+GitHub: https://github.com/rockbaer2007/ha-sidebar-manager
+Release: https://github.com/rockbaer2007/ha-sidebar-manager/releases/tag/v0.1.7
+Doku: https://opensource.ugso-software.de/projects/sidebar-manager/
+Spiegel: https://ugso-opensource.net/projects/sidebar-manager/
+Veröffentlichungsnachweis: docs/RELEASE-0.1.7.md
