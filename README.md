@@ -2,18 +2,18 @@
 
 <img src="docs/images/icon.svg" width="80" height="80" alt="Sidebar Manager" />
 
-**0.1.8 local preview · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.8 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
-Local 0.1.8 adds custom links to **Edit sidebar** with colors/opacity, visibility and drag sorting. Links without a saved position appear at the end. The settings button reads **Link** or **Ext. link**, while retaining the folder assignment. Public release remains 0.1.7; this increment has local automated verification, not a new live HA test.
+Version 0.1.8 adds custom links to **Edit sidebar** with colors/opacity, visibility and drag sorting. The settings button reads **Link** or **Ext. link**. The user confirmed successful functional verification on 2 November 2026; 70 automated tests pass.
 
 Organize Home Assistant's sidebar with folders, colors, opacity and custom links, directly from **Edit sidebar**. Move main entries and folders with the native drag handles. No HA core files are replaced.
 
 [Deutsch](docs/README.de.md) · [Français](docs/README.fr.md) · [Documentation](https://opensource.ugso-software.de/en/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
-## Local 0.1.8 preview: links in the sidebar editor
+## New in 0.1.8: links in the sidebar editor
 
-> **Development status, 2 November 2026**
-> **0.1.8 is prepared locally; the public version remains 0.1.7.** Syntax checks, the build and **70 automated tests** pass. These additions have not yet been tested in Home Assistant on .177. The steps below refer to the local test package, not the linked 0.1.7 release. Existing screenshots show earlier verification stages.
+> **Verification status, 2 November 2026**
+> **0.1.8: successful functional verification confirmed by the user on 2 November 2026.** Links, colors, moving entries and the Link/Ext. link labels work. Syntax checks, the build and **70 automated tests** also pass. Existing screenshots show earlier verification stages. Codex did not perform an additional independent HA runtime test for this release; the user’s test host and HA version were not separately specified.
 
 Custom internal and external links now also appear in **Edit sidebar**. Links without a saved position initially appear at the end; existing ordering is respected. Hidden links remain available for editing.
 
@@ -25,7 +25,7 @@ Custom internal and external links now also appear in **Edit sidebar**. Links wi
 
 Link ordering and visibility remain in `ugso_sidebar_manager_v1`; colors stay in the existing `ugso_sidebar_colors_v1` record. Custom link IDs never enter HA’s native saved panel order. Existing settings, opening modes and missing panels are preserved.
 
-Local checks exercise the built JavaScript package with simulated HA storage, DE/EN/FR labels, color selection, Save/Cancel, sorting, preserved folder membership and recovery after a failed save. A real HA runtime test is still pending for this increment.
+Local checks exercise the built JavaScript package with simulated HA storage, DE/EN/FR labels, color selection, Save/Cancel, sorting, preserved folder membership and recovery after a failed save. The user confirmed successful functional verification on 2 November 2026; this acceptance is recorded separately from the automated tests.
 
 ## Install with HACS / Marketplace
 

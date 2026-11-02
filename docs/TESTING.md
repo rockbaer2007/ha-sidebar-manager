@@ -1,13 +1,14 @@
 # Verification history
 
-## Local verification — 0.1.8, 2026-11-02
+## Verification and user acceptance — 0.1.8, 2026-11-02
 
-Source backup created before editing. No HA host was accessed for this increment; existing installations, user settings and dashboards remain unchanged.
+Source backup created before editing. Codex did not access an HA host for this increment or publication. The user tested the supplied local 0.1.8 package and explicitly confirmed that everything works. The host and HA version of that acceptance test were not separately specified; the earlier .177/2026.10.4 verification below remains a distinct historical test.
 
 - `npm run check`, `npm run build`, `npm test` and `git diff --check` pass: **70 automated tests**.
 - The built bundle was exercised in a simulated DOM with the sidebar editor, real Manager and color-picker modules, and simulated HA user-data persistence. Saved custom-link colors apply immediately after layout creation. Internal/external badges follow DE/EN/FR; editing a link color and dragging/hiding another link saves both stores while leaving native HA panel preferences unchanged.
 - Regression cases cover first-open placement, existing link ordering, saved/reopened mixed order, visibility-only changes, Cancel, failed-save compensation, moving relative to native folder members and releasing bottom pinning.
-- This is local automated verification. Actual HA drag behavior/top-layer color picker and reconnect/reload behavior for this increment still need verification on .177 before publication.
+- User acceptance: links, colors, moving entries and Link/Ext. link labels confirmed working on 2026-11-02. This report distinguishes that user confirmation from the 70 local automated tests; it does not claim a new independent .177 runtime test, a separately tested HA 2026.10.3 installation or a Marketplace test.
+- Publication authorized after user acceptance. Source and documentation snapshots plus the prior local test ZIP were backed up in `C:/Users/rockb/source/backups/sidebar-manager-vor-release-018-20261102-193356`. Runtime code is unchanged from the user-tested local 0.1.8 package. The tagged release workflow rebuilds/checks the bundle and packages the DE/EN/FR instructions; the documentation deployment mirrors one build to both existing domains.
 
 ## Public release preparation — 2026-11-02, 0.1.7
 

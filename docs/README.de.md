@@ -1,17 +1,17 @@
 # Sidebar Manager
 
-**0.1.8 lokale Vorschau · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.8 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
-Die lokale Version 0.1.8 zeigt eigene Links in **Seitenleiste bearbeiten**: mit Farbauswahl/Transparenz, Sichtbarkeit und Ziehgriff. Links ohne gespeicherte Position erscheinen am Ende. Der Einstellungsbutton zeigt **Link** oder **ext. Link**; die Gruppenzuordnung bleibt erhalten. Öffentlich verfügbar bleibt 0.1.7. Dieser Entwicklungsschritt wurde lokal automatisch geprüft, noch nicht erneut in HA.
+Version 0.1.8 ergänzt eigene Links in **Seitenleiste bearbeiten**, mit Farben/Transparenz, Auge und Ziehgriff. Die Beschriftung lautet **Link** beziehungsweise **ext. Link**. Der Anwender hat die erfolgreiche Funktionsprüfung am 02.11.2026 bestätigt; 70 automatische Tests sind erfolgreich.
 
 Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeiten“. Haupteinträge und Ordner gemeinsam am nativen Ziehgriff sortieren. Keine HA-Systemdateien werden ersetzt.
 
 [English](../README.md) · [Français](README.fr.md) · [Dokumentation](https://opensource.ugso-software.de/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
-## Lokale Vorschau 0.1.8: Links im Seitenleisten-Editor
+## Neu in 0.1.8: Links im Seitenleisten-Editor
 
-> **Entwicklungsstand vom 02.11.2026**
-> **0.1.8 ist lokal vorbereitet; die öffentliche Version bleibt 0.1.7.** Syntaxprüfung, Build und **70 automatische Tests** sind erfolgreich. Die neuen Funktionen wurden noch nicht auf .177 in Home Assistant geprüft. Die folgenden Schritte beziehen sich auf das lokale Testpaket, nicht auf das verlinkte Release 0.1.7. Die bisherigen Bilder zeigen frühere Prüfstände.
+> **Prüfstand vom 02.11.2026**
+> **0.1.8: Funktionsprüfung vom Anwender am 02.11.2026 erfolgreich bestätigt.** Links, Farben, Verschieben und die Kennzeichnung „Link“/„ext. Link“ funktionieren. Syntaxprüfung, Build und **70 automatische Tests** sind ebenfalls erfolgreich. Die bisherigen Bilder zeigen frühere Prüfstände. Für diese Version wurde kein zusätzlicher eigenständiger HA-Laufzeittest durch Codex durchgeführt; Host und HA-Version der Anwenderprüfung wurden nicht gesondert angegeben.
 
 Eigene interne und externe Links erscheinen jetzt ebenfalls in **Seitenleiste bearbeiten**. Ohne gespeicherte Position stehen sie zunächst ganz unten; eine vorhandene Reihenfolge wird berücksichtigt. Auch ausgeblendete Links bleiben zum Bearbeiten sichtbar.
 
@@ -23,7 +23,7 @@ Eigene interne und externe Links erscheinen jetzt ebenfalls in **Seitenleiste be
 
 Link-Reihenfolge und -Sichtbarkeit bleiben im Manager-Datensatz `ugso_sidebar_manager_v1`, die Farben im vorhandenen Datensatz `ugso_sidebar_colors_v1`. Eigene Link-IDs werden nicht in HAs native Panel-Reihenfolge geschrieben. Bestehende Einstellungen, Öffnungsarten und fehlende Panels bleiben erhalten.
 
-Die lokalen Prüfungen decken das gebaute JavaScript-Paket mit simuliertem HA-Speicher, die Beschriftungen in DE/EN/FR, Farbauswahl, Speichern/Abbrechen, Sortierung, gespeicherte Gruppenzuordnung und die Wiederherstellung nach fehlgeschlagenem Speichern ab. Ein echter HA-Laufzeittest steht für diese Erweiterung noch aus.
+Die lokalen Prüfungen decken das gebaute JavaScript-Paket mit simuliertem HA-Speicher, die Beschriftungen in DE/EN/FR, Farbauswahl, Speichern/Abbrechen, Sortierung, gespeicherte Gruppenzuordnung und die Wiederherstellung nach fehlgeschlagenem Speichern ab. Die erfolgreiche Funktionsprüfung wurde am 02.11.2026 vom Anwender bestätigt; dies ist getrennt von den automatischen Tests dokumentiert.
 
 ## HACS / Marketplace
 
