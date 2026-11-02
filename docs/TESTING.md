@@ -16,7 +16,7 @@ Initial PC source backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-
 - Move the existing States shortcut into the main menu, save and reload. Logs/Automations retain their folder and States retains Main menu. All three Add buttons remain disabled as Already present.
 - Live testing exposed stale folder labels after renaming a group; fixed immediate label synchronization without rerendering the active name field. Regression added to the dialog test and verified again live.
 - Only the three created shortcuts and our own test folder removed afterward. `.local/test-014.mjs verify` confirms original user preferences/colors, normalized manager configuration, Test für APP and resources unchanged, and matching local/deployed bundle. A pre-existing dangling token for an already-deleted older test folder is normalized away; no user folder is removed.
-- Four full backups after the fresh backup; retention cleanup awaits concrete approval for oldest `a74b1275`. PC backups and app-update backup remain untouched.
+- Retention completed after explicit action-time approval: only oldest full backup `a74b1275` (174.17 MB) deleted. HA confirms exactly three manual full backups, `82bbd8e7`, `1cf6590c` and `4c40757b`, totaling 523.59 MB. The separate app-update backup (119.18 MB) and all PC backups remain untouched.
 
 Unpublished Sidebar Manager 0.1.3. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
 
