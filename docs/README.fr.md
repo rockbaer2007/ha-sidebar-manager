@@ -1,57 +1,90 @@
-# Sidebar Manager 0.1.7 — aperçu local
+# Sidebar Manager
 
-Extension indépendante pour Home Assistant : couleurs et opacité, groupes repliables, entrées épinglées, liens personnalisés, noms et icônes MDI. La langue DE/EN/FR suit automatiquement HA. Aucune publication.
+**0.1.7 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
-0.1.7 vérifiée sur .177 (HA 2026.10.4, port 80) : déplacement d'un dossier de test initialement épinglé en bas, annulation, enregistrement et rechargement. Séparateurs visibles uniquement lorsque le groupe est déplié ; 60 tests automatisés réussis. Réglages et « Test für APP » conservés, objets de test supprimés.
+Dossiers, couleurs, opacité et liens personnalisés dans « Modifier la barre latérale ». Triez dossiers et entrées principales avec les poignées natives. Aucun fichier système HA n'est remplacé.
 
-![Position du dossier enregistrée sur .177](images/ordnerposition-017-177.png)
+[English](../README.md) · [Deutsch](README.de.md) · [Documentation](https://opensource.ugso-software.de/fr/projects/sidebar-manager/) · [Téléchargements](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
-![Dossier replié sans séparateur](images/trennlinie-eingeklappt-017-177.png)
+## HACS / Marketplace
+
+Plugin frontend, pas une application Supervisor ni une carte de tableau de bord. Ajoutez `https://github.com/rockbaer2007/ha-sidebar-manager` comme dépôt personnalisé HACS, catégorie **Dashboard** (`plugin`), puis téléchargez-le. La publication n'implique pas l'inclusion au catalogue standard. Structure compatible HACS pour Marketplace ; aucun test d'exécution Marketplace distinct.
+
+Créez d'abord une sauvegarde complète HA. Fusionnez dans la section `frontend:` existante de `configuration.yaml`, en conservant thèmes et autres modules :
+
+```yaml
+frontend:
+  extra_module_url:
+    - /hacsfiles/ha-sidebar-manager/ha-sidebar-manager.js
+```
+
+Désactivez les anciens modules Sidebar Colors et Sidebar Organizer ; chargez seulement Sidebar Manager. Validez, redémarrez HA et rechargez le navigateur. Une simple ressource de tableau de bord ne suffit pas pour toutes les pages HA.
+
+## Installation manuelle
+
+Copiez `ha-sidebar-manager.js` de la release vers `/config/www/ha-sidebar-manager/ha-sidebar-manager.js`, puis utilisez `/local/ha-sidebar-manager/ha-sidebar-manager.js` comme URL de module. Ne chargez pas simultanément les copies HACS et manuelle. Le ZIP contient le bundle, les exemples de configuration, la licence et les instructions DE/EN/FR. Un ancien chemin local versionné comme `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js` reste possible si le fichier correspondant existe. Conservez le chemin choisi lors des mises à jour et rechargez le navigateur.
+
+## Sites affichés à droite dans HA
+
+Les liens ouvrant un nouvel onglet n'exigent aucune configuration supplémentaire. Pour **Afficher à droite (iframe)**, fusionnez aussi dans `configuration.yaml` ou la liste `panel_custom` existante :
+
+```yaml
+panel_custom:
+  - name: ugso-sidebar-web
+    url_path: ugso-sidebar-web
+    module_url: /hacsfiles/ha-sidebar-manager/ha-sidebar-manager.js
+    embed_iframe: false
+    require_admin: false
+```
+
+Pour une installation manuelle, utilisez `/local/ha-sidebar-manager/ha-sidebar-manager.js` comme `module_url`. Cette URL doit correspondre au module frontend. Validez et redémarrez HA. Sans `sidebar_title`, aucune entrée supplémentaire n'est créée. Exemples dans le ZIP : `panel-custom.example.yaml` et `panel-custom.manual.example.yaml`.
+
+Le site cible doit autoriser l'intégration. CSP/X-Frame-Options, HTTPS-vers-HTTP ou sa propre authentification peuvent empêcher l'affichage. L'ouverture dans un nouvel onglet reste disponible. Aucun jeton HA n'est transmis au site et les autorisations HA restent applicables.
 
 ## Utilisation
 
-Maintenez l'en-tête de la barre latérale. Les champs de couleur, les yeux et le tri natifs restent dans « Modifier la barre latérale ». « Gérer les groupes et les liens » ouvre le Manager. Enregistrer dans le Manager applique l'organisation ; les couleurs et l'ordre natif modifiés dans la fenêtre HA doivent être enregistrés séparément dans cette fenêtre. Annuler abandonne le brouillon correspondant.
+Maintenez l'en-tête de la barre latérale. Couleurs, yeux et poignées restent dans la fenêtre HA ; « Gérer les groupes et les liens » ouvre le Manager. DE/EN/FR suit la langue HA, avec anglais par défaut.
 
-Chaque groupe possède un nom, un état replié initial et une position basse facultative. Les entrées peuvent être regroupées, renommées pour l'affichage, masquées, épinglées ou dotées d'une icône MDI. Les flèches changent l'ordre dans le Manager. Les en-têtes se replient à la souris, au toucher et au clavier. Les entrées épinglées restent à la fin de la navigation principale défilante, hors de la zone HA réservée au profil et aux notifications. Les liens autorisent les chemins internes et HTTP(S).
+- Couleur et opacité par entrée ; « Couleur du thème » retire la couleur personnalisée. Le damier représente la transparence.
+- Dossiers avec nom, icône MDI, couleur et état replié/déplié initial. Affectez les entrées et liens existants ; « Menu principal » permet de les ramener.
+- Déplacez les dossiers entre les entrées principales. Dossier et contenu bougent ensemble ; Alt+Haut/Bas permet le tri au clavier.
+- Les dossiers épinglés en bas apparaissent aussi en bas dans l'éditeur. Les déplacer avant un bloc normal retire leur épinglage inférieur. Annuler conserve position et épinglage.
+- Séparateur **0–4 px**, 0 = désactivé. Visible uniquement lorsque le groupe est déplié, après son contenu, avec couleur/opacité de l'icône et 1 px d'espacement au-dessus et au-dessous.
+- Ajoutez Journaux, Automatisations et États avec un dossier au choix. Les liens correspondants sont réutilisés ; noms et icônes restent modifiables.
+- Liens internes personnalisés jaune clair dans les réglages, liens HTTP(S) externes bleu clair. Nouvel onglet ou iframe pour les liens externes. Les anciens gardent leur comportement précédent jusqu'à modification. Couleurs personnalisées de la barre latérale conservées.
+- Enregistrer dans le Manager applique l'organisation. Couleurs/ordre natif modifiés dans la fenêtre HA sous-jacente doivent y être enregistrés séparément. Annuler abandonne le brouillon concerné.
 
-Chaque groupe possède un curseur **Séparateur de 0 à 4 px**. Zéro le désactive. La ligne termine le bloc uniquement lorsque le groupe est déplié, avec la couleur et l'opacité de son icône. L'espacement ajouté est limité à 1 px au-dessus et au-dessous. Les groupes vides ou repliés n'affichent aucune ligne.
+Réglages, profil et notifications restent natifs. Masquer ou regrouper ne change pas les droits d'accès.
 
-Dans les réglages, les liens internes personnalisés sont jaune clair et les liens HTTP(S) externes **bleu clair** (`#a8dcff`). Un lien externe peut s'ouvrir **dans un nouvel onglet** ou **à droite dans HA (iframe)**. Les nouveaux liens utilisent initialement un nouvel onglet. Les anciens conservent leur comportement précédent jusqu'à modification. Couleurs personnalisées de la barre latérale et icônes sont conservées.
+## Images et vérification
 
-## Conservation et récupération
+![Sélecteur de couleur](images/farbwaehler-177.png)
 
-Chaque entrée normale affiche son groupe ou « Menu principal » à côté de sa couleur. Un clic ouvre directement son affectation. Choisir un groupe ou « Menu principal » permet de déplacer puis de ramener l'entrée, y compris pour les applications et tableaux de bord existants, sans changer leur destination HA. Chaque groupe dispose d'une icône MDI, un dossier par défaut. Réglages, profil et notifications restent natifs.
+![Options des liens](images/web-link-016-177.png)
 
-Les couleurs existantes restent dans `ugso_sidebar_colors_v1`. L'organisation utilise séparément `ugso_sidebar_manager_v1`, stocké sur le serveur HA par utilisateur et synchronisé entre clients. Les panneaux temporairement absents sont conservés. Une erreur de lecture ou un format inconnu ne remplace jamais les réglages par des valeurs par défaut. Avant chaque écriture, l'organisation précédente est sauvegardée localement ; un stockage bloqué empêche l'enregistrement. Les conflits sont vérifiés avant l'écriture et les confirmations perdues sont contrôlées par relecture. Sans comparaison atomique côté serveur, une course très courte entre écritures simultanées reste possible.
+![Position du dossier en 0.1.7](images/ordnerposition-017-177.png)
 
-L'export/import JSON couvre l'organisation (groupes, liens, noms, icônes, masquage, épinglage et ordre), sans identifiants ni réglages HA natifs. Les couleurs conservent leur sauvegarde distincte. La réinitialisation affecte seulement le brouillon jusqu'à son enregistrement.
+![Dossier replié sans séparateur](images/trennlinie-eingeklappt-017-177.png)
 
-## Installation et retour
+![Site affiché à droite dans HA](images/web-panel-016-177.png)
 
-Charger un seul module : `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
+0.1.7 vérifiée sur HA **2026.10.4**, port 80 : enregistrement/annulation, déplacement d'un dossier de test épinglé, rechargement, affectation et séparateurs uniquement dépliés. Les tests antérieurs couvrent couleurs, opacité, liens, iframe/nouvel onglet et export/import. Données et tableau de test conservés, objets temporaires supprimés. **60 tests automatisés réussis.** Les images couleur/liens de 0.1.6 montrent des fonctions toujours valides. [Historique des tests](TESTING.md).
 
-Pour l'iframe, fusionner aussi l'entrée de **`panel-custom.example.yaml`** dans `configuration.yaml` ou la liste `panel_custom` existante. Elle enregistre le panneau caché `ugso-sidebar-web`, sans nouvelle entrée de barre latérale. Garder la même URL de module que pour le frontend. Valider puis redémarrer HA une fois. Sans cette inscription, un message explique la configuration nécessaire. Le panneau lit uniquement les liens enregistrés de l'utilisateur connecté et ne transmet aucun jeton HA. La page cible doit autoriser l'intégration ; CSP/X-Frame-Options et les restrictions HTTPS-vers-HTTP peuvent l'empêcher. L'ouverture dans un nouvel onglet reste disponible. Un site tiers conserve ses propres exigences de connexion.
+2026.10.3 est le minimum prévu, sans installation distincte testée en direct. Aucune compatibilité générale revendiquée avec tous les sites ou versions Marketplace.
 
-Les dossiers possèdent un sélecteur de couleur avec opacité, appliquée à leur icône et leur nom. « Couleur du thème » retire la couleur personnalisée. Enregistrer dans le Manager confirme le choix.
+## Conserver les réglages et migrer
 
-La fenêtre HA « Modifier la barre latérale » réunit tous les sous-menus et les entrées principales. La même poignée native permet de placer chaque dossier entre les entrées principales, sans boutons de déplacement supplémentaires. Le tri au clavier reste disponible (Alt+Haut/Bas sur une ligne). Enregistrer applique l'ordre commun ; Annuler l'abandonne. Les affectations restent intactes : dossier et contenu se déplacent comme un bloc dans la barre latérale. Les dossiers épinglés en bas restent dans cette section. Aucun identifiant de dossier n'entre dans la liste native des panneaux enregistrée par HA.
+1. Sauvegardez HA complètement et exportez les réglages Organizer ainsi que les sauvegardes Manager/couleurs disponibles.
+2. Désactivez les anciens modules sans supprimer leurs fichiers ni réglages. Installez une seule copie du Manager.
+3. Couleurs Sidebar Colors conservées dans `ugso_sidebar_colors_v1`, organisation Manager dans `ugso_sidebar_manager_v1`, synchronisées sur le serveur par utilisateur HA.
+4. **Aucun import automatique YAML/présentation Organizer.** Conservez son export et recréez manuellement les groupes/liens souhaités.
 
-Depuis 0.1.7, les dossiers épinglés en bas apparaissent aussi en bas dans l'éditeur. Déplacer un tel dossier avant un bloc normal du menu principal retire son épinglage inférieur : la position enregistrée s'applique dans la barre latérale. Annuler conserve la position et l'épinglage d'origine.
+Les panneaux absents restent enregistrés. Une erreur de lecture ou un format inconnu n'écrit pas de valeurs par défaut. L'organisation précédente est sauvegardée dans le navigateur avant écriture ; un stockage bloqué empêche l'enregistrement. Conflits vérifiés avant écriture, confirmations incertaines contrôlées par relecture. Une courte course entre écritures simultanées reste possible sans comparaison atomique serveur.
 
-Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA. Les données Manager restent séparées ; couleurs et réglages natifs sont conservés.
+Export/import JSON : dossiers, liens, noms, icônes, visibilité, épinglage, ordre et séparateurs ; aucun identifiant d'accès ni réglage HA natif. Les couleurs des entrées gardent leur sauvegarde distincte. Réinitialiser change seulement le brouillon jusqu'à son enregistrement. Pour revenir, restaurez l'ancien module, redémarrez HA et rechargez le navigateur sans supprimer les données utilisateur.
 
-## Limites
+## Développement et limites
 
-Les réglages proposent Journaux, Automatisations et États, avec dossier au choix et `mdi:cog-transfer`. Les liens correspondants sont réutilisés, sans écraser leurs noms ou icônes personnalisés. Enregistrer applique les modifications. États utilise `/config/tools/state` ; les anciens liens `/developer-tools/state` sont reconnus. Les autorisations HA restent inchangées.
+Node ≥22 : `npm ci`, `npm run check`, `npm run build`, `npm test`. Les tags génèrent JS et ZIP automatiquement. Les interfaces internes HA peuvent changer. Pas de présentations par appareil, CSS/modèles libres, migration automatique Organizer ou réglages d'en-tête/largeur.
 
-Le titre de la section et les trois noms sont jaune clair (`#fff2a6`), y compris dans la liste des entrées plus bas. Cette mise en évidence concerne uniquement les réglages ; les couleurs personnalisées de la barre latérale et les icônes modifiables sont conservées.
-
-La version 0.1.6 est installée et vérifiée sur .177 (HA 2026.10.4, port 80), avec 56 tests automatisés réussis. Nouvel onglet et intégration vérifiés avec une ressource de .177. Ligne de 4 px, opacité correspondante, repli, conservation après rechargement et désactivation vérifiés. Objets de test supprimés ; réglages existants et « Test für APP » conservés. Aucune compatibilité générale avec les sites tiers n'est revendiquée. Voir `TESTING.md`.
-
-![Réglages des raccourcis sur .177](images/ha-shortcuts-014-177.png)
-
-![Options des liens externes sur .177](images/web-link-016-177.png)
-
-![Page intégrée à droite dans HA sur .177](images/web-panel-016-177.png)
-
-Cible minimale HA 2026.10.3 ; vérification réelle uniquement sur .177 avec 2026.10.4. Pas encore d'import YAML Organizer, de présentations par appareil, de CSS libre ou d'actions à modèles. Réglages d'en-tête/largeur et migration automatique Organizer restent à faire. Structure HACS préparée localement, sans publication. Voir `TESTING.md` pour les vérifications.
+Implémentation UGSo originale basée sur Sidebar Colors. [Sidebar Organizer de Viet Ngoc](https://github.com/ngocjohn/sidebar-organizer) sert de référence fonctionnelle ; aucun code Organizer intégré. Licence MIT dans le dépôt.

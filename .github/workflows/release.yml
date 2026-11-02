@@ -1,0 +1,33 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check && npm run build && npm test
+      - name: Check tag and version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: node -e 'if("v"+require("./package.json").version!==process.env.TAG)process.exit(1)'
+      - name: Package release
+        run: |
+          mkdir release-package
+          cp dist/ha-sidebar-manager.js hacs.json LICENSE README.md CHANGELOG.md panel-custom*.yaml release-package/
+          cp -r docs release-package/
+          (cd release-package && zip -qr ../ha-sidebar-manager-${{ github.ref_name }}.zip .)
+          (cd release-package && sha256sum ha-sidebar-manager.js panel-custom*.yaml) > SHA256SUMS.txt
+          sha256sum ha-sidebar-manager-${{ github.ref_name }}.zip >> SHA256SUMS.txt
+      - name: Publish assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" --verify-tag --title "Sidebar Manager ${{ github.ref_name }}" --notes-file RELEASE_NOTES.md dist/ha-sidebar-manager.js ha-sidebar-manager-${{ github.ref_name }}.zip panel-custom*.yaml SHA256SUMS.txt

@@ -1,5 +1,9 @@
 # Local verification — 2026-11-01
 
+## Public release preparation — 2026-11-02, 0.1.7
+
+Sources and existing documentation backed up before publication in `C:/Users/rockb/source/backups/sidebar-manager-vor-veroeffentlichung-017-20261102`. Runtime source remains unchanged from the verified 0.1.7; the bundle banner only loses its local-preview label. Syntax, rebuild and all 60 tests pass. Public DE/EN/FR instructions now distinguish HACS/manual paths and include both iframe examples, migration limits and existing test screenshots. GitHub CI checks rebuild reproducibility; the tagged release builds JS, ZIP, configuration examples and checksums. Open-source documentation is built once and mirrored to both existing domains by its established workflow. No further HA changes or test-system backups are necessary for documentation/package publication. DE/EN forum posts are drafts only, with no destination selected.
+
 ## Folder placement and collapsed separators — 2026-11-02, 0.1.7
 
 - Before changes: complete HA backup `c77d2ea8`, actual name “Custom backup 2026.10.4”, 2 November 2026 at 14:19, 175.01 MB. Includes settings/history, all apps, media, share and SSL. The entered descriptive name was not retained by HA; the actual backup details were checked. PC sources and exact current user-data/configuration/dashboard/resources saved in `C:/Users/rockb/source/backups/sidebar-manager-vor-ordnerposition-20261102`.

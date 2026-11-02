@@ -1,0 +1,8 @@
+# HACS installation. Merge into the existing panel_custom list.
+# Use exactly the same module URL as frontend.extra_module_url.
+panel_custom:
+  - name: ugso-sidebar-web
+    url_path: ugso-sidebar-web
+    module_url: /hacsfiles/ha-sidebar-manager/ha-sidebar-manager.js
+    embed_iframe: false
+    require_admin: false

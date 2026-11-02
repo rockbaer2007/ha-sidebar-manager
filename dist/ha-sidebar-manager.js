@@ -1,4 +1,4 @@
-/* Sidebar Manager 0.1.7 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.7 | MIT | UGSo Software */
 (() => {
   // src/core.js
   var VERSION = "0.1.7";

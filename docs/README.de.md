@@ -1,57 +1,90 @@
-# Sidebar Manager 0.1.7 — lokale Vorschau
+# Sidebar Manager
 
-Eigenständige Erweiterung für Home Assistant: Farben und Transparenz, Gruppen, Ein-/Ausklappen, Anheften, eigene Links, Anzeigenamen und MDI-Icons. DE/EN/FR folgen automatisch der HA-Sprache. Noch nicht veröffentlicht.
+**0.1.7 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
-0.1.7 ist auf .177 geprüft (HA 2026.10.4, Port 80): zunächst unten angehefteten Testordner verschoben, Abbrechen, Speichern und Neuladen geprüft. Trennlinien erscheinen nur ausgeklappt; 60 automatische Tests erfolgreich. Einstellungen und „Test für APP“ erhalten, eigene Testobjekte entfernt.
+Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeiten“. Haupteinträge und Ordner gemeinsam am nativen Ziehgriff sortieren. Keine HA-Systemdateien werden ersetzt.
 
-![Gespeicherte Ordnerposition auf .177](images/ordnerposition-017-177.png)
+[English](../README.md) · [Français](README.fr.md) · [Dokumentation](https://opensource.ugso-software.de/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
-![Eingeklappter Ordner ohne Trennlinie](images/trennlinie-eingeklappt-017-177.png)
+## HACS / Marketplace
+
+Frontend-Plugin, keine Supervisor-App und keine Dashboard-Karte. `https://github.com/rockbaer2007/ha-sidebar-manager` als benutzerdefiniertes HACS-Repository in Kategorie **Dashboard** (`plugin`) hinzufügen und herunterladen. Veröffentlichung bedeutet keine Aufnahme in den Standardkatalog. HACS-kompatible Paketstruktur für Marketplace; noch kein eigener Marketplace-Laufzeittest.
+
+Vorher HA-Vollbackup erstellen. Im bestehenden `frontend:`-Abschnitt der `configuration.yaml` ergänzen; Themes und andere Module erhalten:
+
+```yaml
+frontend:
+  extra_module_url:
+    - /hacsfiles/ha-sidebar-manager/ha-sidebar-manager.js
+```
+
+Alte Moduleinträge für Sidebar Colors und Sidebar Organizer deaktivieren, nur Sidebar Manager laden. Konfiguration prüfen, HA neu starten und Browser neu laden. Nur eine Dashboard-Ressource genügt für den seitenübergreifenden Einsatz nicht.
+
+## Manuelle Installation
+
+`ha-sidebar-manager.js` aus dem Release nach `/config/www/ha-sidebar-manager/ha-sidebar-manager.js` kopieren und stattdessen `/local/ha-sidebar-manager/ha-sidebar-manager.js` als Moduladresse verwenden. HACS- und manuelle Kopie nicht gleichzeitig laden. Das ZIP enthält Bundle, Konfigurationsbeispiele, Lizenz und DE/EN/FR-Anleitungen. Bestehende versionierte lokale Pfade wie `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js` dürfen bleiben, wenn die Datei dort liegt. Bei Updates den gewählten Pfad erhalten und Browser neu laden.
+
+## Webseiten rechts in HA
+
+Links in einem neuen Tab benötigen keine weitere Einrichtung. Für **Rechts anzeigen (iframe)** zusätzlich diesen Eintrag in `configuration.yaml` bzw. die vorhandene `panel_custom`-Liste übernehmen:
+
+```yaml
+panel_custom:
+  - name: ugso-sidebar-web
+    url_path: ugso-sidebar-web
+    module_url: /hacsfiles/ha-sidebar-manager/ha-sidebar-manager.js
+    embed_iframe: false
+    require_admin: false
+```
+
+Bei manueller Installation `module_url` auf `/local/ha-sidebar-manager/ha-sidebar-manager.js` ändern. Die Adresse muss mit dem Frontend-Modul übereinstimmen. Prüfen und HA neu starten. Ohne `sidebar_title` entsteht kein zusätzlicher Menüeintrag. Beispiele: `panel-custom.example.yaml` und `panel-custom.manual.example.yaml` im ZIP.
+
+Die Zielseite muss Einbettung erlauben. CSP/X-Frame-Options, HTTPS-zu-HTTP oder die eigene Anmeldung der Zielseite können die Anzeige verhindern. „In neuem Tab öffnen“ bleibt als Alternative verfügbar. Keine HA-Tokens werden an Webseiten übergeben; HA-Zugriffsrechte bleiben wirksam.
 
 ## Bedienung
 
-Den Kopf der HA-Seitenleiste länger gedrückt halten. Im normalen Dialog „Seitenleiste bearbeiten“ bleiben Farbfelder, Augen und Sortieren erhalten. „Gruppen und Links verwalten“ öffnet den Manager. Dessen Speichern übernimmt die Organisation; Änderungen an Farben oder HA-Reihenfolge im darunterliegenden Dialog müssen dort zusätzlich gespeichert werden. Abbrechen verwirft den jeweiligen Entwurf.
+Den Seitenleistenkopf länger gedrückt halten. Farbfelder, Augen und Ziehgriffe bleiben im HA-Dialog; „Gruppen und Links verwalten“ öffnet den Manager. DE/EN/FR folgen der HA-Sprache, Englisch dient als Rückfall.
 
-Gruppen lassen sich benennen, anfangs einklappen und unten anordnen. Einträge können Gruppen zugeordnet, für die Anzeige umbenannt, mit MDI-Icons versehen, ausgeblendet und angeheftet werden. Pfeile ändern die eigene Reihenfolge innerhalb des Managers. Gruppenüberschriften lassen sich per Maus, Touch und Tastatur öffnen. Angeheftete Einträge stehen am Ende der scrollbaren Hauptnavigation, nicht im geschützten HA-Bereich für Profil und Benachrichtigungen. Links erlauben interne Pfade und HTTP(S).
+- Farben und Deckkraft je Eintrag; „Theme-Farbe“ entfernt die eigene Farbe. Das Schachbrett kennzeichnet Transparenz.
+- Ordner mit Namen, MDI-Icon, Farbe und anfänglichem Ein-/Ausklappen. Bestehende Menüeinträge und eigene Links zuordnen; „Hauptmenü“ verschiebt sie zurück.
+- Ordner zwischen Haupteinträge ziehen. Ordner und Inhalt wandern als Block; Alt+Auf/Ab unterstützt die Tastaturbedienung.
+- Unten angeheftete Ordner stehen auch im Editor unten. Verschieben vor einen normalen Menüblock hebt die untere Anheftung auf. Abbrechen erhält Position und Anheftung.
+- Trennlinie **0–4 px**, 0 = Aus. Nur ausgeklappt sichtbar, am Ende des Untermenüs, in Icon-Farbe/Transparenz, mit jeweils 1 px Abstand oben und unten.
+- Logs, Automationen und Zustände mit auswählbarem Ordner hinzufügen. Vorhandene passende Links werden wiederverwendet; Namen und Icons bleiben änderbar.
+- Eigene interne Links sind in den Einstellungen hellgelb, externe HTTP(S)-Links hellblau. Extern: neuer Tab oder iframe. Alte Links behalten ihre bisherige Öffnungsart bis zur Änderung. Eigene Seitenleistenfarben bleiben erhalten.
+- Speichern im Manager übernimmt dessen Organisation. Farben/native Reihenfolge im darunterliegenden HA-Dialog dort separat speichern. Abbrechen verwirft den jeweiligen Entwurf.
 
-Jede Gruppe hat einen Regler **Trennlinie von 0 bis 4 px**. Null bedeutet **Aus**. Die Linie steht nur bei ausgeklapptem Untermenü an dessen Ende, in Farbe und Transparenz des Ordner-Icons. Ober- und unterhalb bleiben jeweils nur 1 px Abstand. Leere oder eingeklappte Gruppen zeigen keine Linie.
+Einstellungen, Profil und Benachrichtigungen bleiben nativ. Ausblenden und Gruppieren ändern keine Zugriffsrechte.
 
-Eigene interne Links erscheinen in den Einstellungen hellgelb, externe HTTP(S)-Links **hellblau** (`#a8dcff`). Für externe Links stehen **In neuem Tab öffnen** und **Rechts anzeigen (iframe)** zur Auswahl. Neue Links verwenden zunächst einen neuen Tab. Bestehende Links behalten ihre bisherige Öffnungsart, bis sie geändert wird. Eigene Seitenleistenfarben und Icons bleiben erhalten.
+## Bilder und Prüfstand
 
-## Daten erhalten
+![Farbwähler](images/farbwaehler-177.png)
 
-Jeder normale Hauptmenüeintrag zeigt neben seinem Farbfeld den Gruppennamen oder „Hauptmenü“. Ein Klick öffnet direkt die passende Zuordnung. Im Manager wählen Sie unter „Gruppe“ einen Ordner oder „Hauptmenü“ für die Rückkehr. Auch bestehende App- und Dashboard-Einträge sind verschiebbar; das HA-Ziel bleibt gleich. Jede Gruppe hat ein eigenes MDI-Icon, standardmäßig einen Ordner. Die geschützten Einträge Einstellungen, Profil und Benachrichtigungen bleiben nativ.
+![Linkoptionen](images/web-link-016-177.png)
 
-Bestehende Farben bleiben unter `ugso_sidebar_colors_v1`. Die Organisation wird getrennt unter `ugso_sidebar_manager_v1` pro HA-Benutzer auf dem HA-Server gespeichert und zwischen Clients synchronisiert. Fehlende Menüeinträge bleiben gespeichert. Ladefehler und unbekannte Datenformate überschreiben niemals die Einstellungen mit Standardwerten. Vor jedem Schreiben wird lokal der vorherige Organisationsstand gesichert; bei blockiertem Browserspeicher wird nicht gespeichert. Konflikte werden vor dem Schreiben geprüft, verlorene Bestätigungen nachgelesen. Ein enges Restrisiko gleichzeitiger Schreibvorgänge bleibt ohne serverseitigen Versionsvergleich.
+![Ordnerposition in 0.1.7](images/ordnerposition-017-177.png)
 
-„Sicherung exportieren/importieren“ betrifft die Organisation (Gruppen, Links, Anzeigenamen, Icons, Ausblenden, Anheften, Reihenfolge), keine Zugangsdaten und keine nativen HA-Einstellungen. Die bisherigen Farben behalten ihre eigene Sicherung. „Eigene Darstellung zurücksetzen“ ändert zunächst nur den offenen Entwurf.
+![Eingeklappter Ordner ohne Trennlinie](images/trennlinie-eingeklappt-017-177.png)
 
-## Installation und Rückkehr
+![Webseite rechts innerhalb von HA](images/web-panel-016-177.png)
 
-Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
+0.1.7 auf HA **2026.10.4**, Port 80 geprüft: Speichern/Abbrechen, angehefteten Testordner verschieben, Neuladen, Gruppenzuordnung und Trennlinien nur bei ausgeklapptem Menü. Frühere Prüfungen decken Farben, Transparenz, Links, iframe/neuen Tab und Export/Import ab. Daten und Testdashboard erhalten, eigene Testobjekte entfernt. **60 automatische Tests erfolgreich.** Bilder der Farb-/Linkfunktionen aus 0.1.6 zeigen weiter gültige Funktionen. [Prüfbericht](TESTING.md).
 
-Für die iframe-Auswahl zusätzlich den Eintrag aus **`panel-custom.example.yaml`** in `configuration.yaml` bzw. die vorhandene `panel_custom`-Liste übernehmen. Er registriert `ugso-sidebar-web` ohne zusätzlichen Seitenleisteneintrag. Die Moduladresse muss mit der Frontend-Moduladresse übereinstimmen. Einmal prüfen und HA neu starten. Ohne diese Registrierung erscheint beim Öffnen ein Einrichtungshinweis. Das Panel verwendet nur gespeicherte Links des angemeldeten Benutzers und übergibt keine HA-Tokens. Die Zielseite muss Einbettung erlauben; CSP/X-Frame-Options oder HTTPS-zu-HTTP können sie verhindern. Als Alternative bleibt „In neuem Tab öffnen“ verfügbar. Eine fremde Webseite benötigt weiterhin ihre eigene Anmeldung.
+2026.10.3 ist die vorgesehene Mindestversion, keine separat live geprüfte Installation. Keine pauschale Kompatibilitätszusage für alle Webseiten oder Marketplace-Versionen.
 
-Ordner besitzen einen eigenen Farbwähler mit Transparenz. Die Farbe gilt für Icon und Gruppennamen. „Theme-Farbe“ entfernt die eigene Farbe; gespeichert wird erst mit dem Speichern im Manager.
+## Einstellungen erhalten und umsteigen
 
-Im nativen Dialog „Seitenleiste bearbeiten“ stehen alle Untermenüs gemeinsam mit den Haupteinträgen. Mit demselben Ziehgriff rechts lässt sich jeder Ordner zwischen Haupteinträge verschieben, ohne zusätzliche Pfeilbuttons. Die native Tastaturbedienung bleibt möglich (Alt+Auf/Ab auf einer Zeile). Speichern übernimmt die gemeinsame Reihenfolge; Abbrechen verwirft sie. Gruppenzuordnungen bleiben erhalten: In der Seitenleiste wandern Ordner und ihre Inhalte als Block. Unten angeheftete Ordner bleiben im unteren Bereich. Ordner-IDs gelangen niemals in die gespeicherte native HA-Panelliste.
+1. Vollbackup erstellen und vorhandene Organizer-Einstellungen sowie Manager-/Farbsicherungen exportieren.
+2. Alte Sidebar-Module deaktivieren; Dateien und Benutzereinstellungen erhalten. Nur eine Manager-Kopie installieren.
+3. Sidebar-Colors-Farben bleiben unter `ugso_sidebar_colors_v1`, Manager-Organisation unter `ugso_sidebar_manager_v1`, pro HA-Benutzer auf dem Server synchronisiert.
+4. **Kein automatischer Organizer-YAML-/Layoutimport.** Export aufbewahren und gewünschte Gruppen/Links manuell anlegen.
 
-Seit 0.1.7 stehen unten angeheftete Ordner auch im Editor unten. Wird ein solcher Ordner vor einen normalen Hauptmenüblock verschoben, hebt dies seine untere Anheftung auf. Die gespeicherte Position gilt damit auch in der tatsächlichen Seitenleiste. Abbrechen erhält ursprüngliche Position und Anheftung.
+Fehlende Panels bleiben gespeichert. Ladefehler/unbekannte Formate überschreiben keine Einstellungen. Vor Änderungen wird der vorherige Organisationsstand im Browser gesichert; gesperrte Ablage verhindert das Speichern. Konflikte werden vorab geprüft, unklare Bestätigungen nachgelesen. Ein enges gleichzeitiges Schreibfenster bleibt ohne atomaren Serververgleich möglich.
 
-Für die Rückkehr den gesicherten alten Moduleintrag wiederherstellen und HA neu starten. Manager-Daten bleiben unter ihrem eigenen Schlüssel; die bisherigen Farben und nativen Einstellungen werden nicht verändert.
+JSON-Export/Import betrifft Gruppen, Links, Namen, Icons, Sichtbarkeit, Anheftung, Reihenfolge und Trennlinien; keine Zugangsdaten oder nativen HA-Einstellungen. Eintragsfarben haben eine getrennte Sicherung. Zurücksetzen wirkt zunächst nur auf den Entwurf. Für Rückkehr alten Moduleintrag wiederherstellen, HA neu starten und Browser neu laden; Benutzerdaten behalten.
 
-## Grenzen dieses ersten Stands
+## Entwicklung und Grenzen
 
-Unter „Home-Assistant-Verknüpfungen“ stehen Logs, Automationen und Zustände bereit, jeweils mit auswählbarem Unterordner und `mdi:cog-transfer`. Vorhandene passende Links werden wiederverwendet, eigene Namen und Icons erhalten. Erst Speichern übernimmt Änderungen. Zustände verwendet `/config/tools/state`; ältere Links auf `/developer-tools/state` werden erkannt. HA-Zugriffsrechte bleiben unverändert.
+Node ≥22: `npm ci`, `npm run check`, `npm run build`, `npm test`. Tags bauen JS und ZIP automatisch. Interne HA-Dialoge können sich mit Frontend-Updates ändern. Keine gerätespezifischen Layouts, freien CSS-/Template-Aktionen, automatische Organizer-Migration oder Kopf-/Breiteneinstellungen.
 
-Die Überschrift und die drei Namen erscheinen hellgelb (`#fff2a6`), auch unten in der Eintragsliste. Diese Hervorhebung gilt nur für den Einstellungsdialog; eigene Seitenleistenfarben und änderbare Icons bleiben erhalten.
-
-0.1.6 ist auf .177 installiert und geprüft (HA 2026.10.4, Port 80), mit 56 erfolgreichen automatischen Tests. Neuer Tab und Einbettung wurden mit einer Ressource von .177 geprüft. Trennlinie mit 4 px, passende Transparenz, Einklappen, Erhalt nach Neuladen und Ausschalten funktionieren. Eigene Testobjekte entfernt; vorhandene Einstellungen und „Test für APP“ erhalten. Keine pauschale Kompatibilitätszusage für fremde Webseiten. Details in `TESTING.md`.
-
-![Verknüpfungs-Einstellungen auf .177](images/ha-shortcuts-014-177.png)
-
-![Externe Linkoptionen auf .177](images/web-link-016-177.png)
-
-![Webseite rechts innerhalb von HA auf .177](images/web-panel-016-177.png)
-
-Mindestziel HA 2026.10.3; echte Prüfung ausschließlich auf .177 mit 2026.10.4. Kein Organizer-YAML-Import, keine gerätespezifischen Layouts, kein eigenes CSS oder Template-Aktionen. Kopf-/Breiteneinstellungen und automatische Organizer-Übernahme sind noch nicht enthalten. HACS-Paketstruktur lokal vorbereitet, keine Veröffentlichung. Details zur Prüfung stehen in `TESTING.md`.
+Eigene UGSo-Implementierung auf Basis von Sidebar Colors. [Sidebar Organizer von Viet Ngoc](https://github.com/ngocjohn/sidebar-organizer) dient als Funktionsreferenz; kein Organizer-Quellcode eingebettet. MIT-Lizenz im Repository.

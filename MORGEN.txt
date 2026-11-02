@@ -1,30 +1,14 @@
-Sidebar Manager — nächste Schritte für 02.11.2026
+Sidebar Manager — Veröffentlichungsstand 0.1.7, 02.11.2026
 
-Nutzerwunsch vom 01.11.2026; heute nur vormerken.
+1. Öffentliches eigenes GitHub-Repository und Release 0.1.7 mit JS, ZIP,
+   HACS-/Marketplace-kompatibler Struktur, Lizenz und DE/EN/FR-Anleitungen
+   vorbereitet. Veröffentlichung und CI im Prüfbericht dokumentieren.
+2. Open-Source-Dokumentation DE/EN/FR mit Bildern von .177 und gleicher
+   Installation/Bedienung für beide Domains vorbereitet.
+3. Forumsentwurf DE/EN: docs/FORUM-DE-EN.txt. Noch nicht abgesendet.
+   Als Nächstes Zielforum/Thread festlegen und Beitrag prüfen.
 
-1. Eigenes Repository für die Veröffentlichung fertig machen:
-   README, Lizenz, HACS-/Marketplace-Struktur, Versionsangaben,
-   Installations-/Wechselanleitung und lokales Paket abschließend prüfen.
-   Bisherige Sidebar-Colors-/Organizer-Einstellungen erhalten.
-
-2. Open-Source-Dokumentation in ugso-opensource-docs erstellen:
-   DE/EN/FR mit gleicher Beschreibung, Installation, Wechsel von den
-   bisherigen Erweiterungen, Bedienung und Bildern von .177.
-   Vorhandene Seiten und Links erhalten; beide Domains berücksichtigen.
-
-3. Forumsbeitrag auf Deutsch und Englisch entwerfen:
-   Sidebar Manager vorstellen, Funktionen, Bilder, Voraussetzungen,
-   Installation und Hinweis, alte Sidebar-Module zu deaktivieren.
-   Ziel-Forum/Thread vor dem tatsächlichen Absenden festlegen.
-
-Ausgangspunkt:
-- Lokaler Stand 0.1.3, Commit 79ac120, kein GitHub-Remote.
-- 47 Tests erfolgreich, echte Prüfung nur auf .177.
-- Alle Untermenüs und Haupteinträge gemeinsam per nativem Ziehgriff
-  sortierbar; keine zusätzlichen Pfeilbuttons.
-- Vorhandene Farben, Einstellungen, Test/Test2 und Test für APP erhalten.
-- Drei Vollbackups auf .177: 1cf6590c, 4c40757b, a74b1275.
-- ZIP: C:\Users\rockb\Downloads\Sidebar-Manager-0.1.3-lokal.zip
-- Prüfbericht: docs/TESTING.md; aktueller Stand: STAND.txt.
-
-Dieses Vormerken veröffentlicht nichts und richtet keine Erinnerung ein.
+Prüfstand: 0.1.7, 60 automatische Tests, echte HA-Prüfung nur .177.
+Ordnerposition, untere Anheftung und Trennlinien nur ausgeklappt geprüft.
+Vorhandene Einstellungen und Test für APP erhalten, drei Vollbackups.
+Keine automatische Organizer-Migration, kein Marketplace-Live-Test.

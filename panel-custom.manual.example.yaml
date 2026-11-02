@@ -1,0 +1,8 @@
+# Manual installation: /config/www/ha-sidebar-manager/ha-sidebar-manager.js
+# Merge into the existing panel_custom list; keep the frontend URL identical.
+panel_custom:
+  - name: ugso-sidebar-web
+    url_path: ugso-sidebar-web
+    module_url: /local/ha-sidebar-manager/ha-sidebar-manager.js
+    embed_iframe: false
+    require_admin: false

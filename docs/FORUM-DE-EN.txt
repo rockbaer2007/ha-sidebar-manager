@@ -1,0 +1,43 @@
+Forumsentwürfe – Sidebar Manager 0.1.7
+Noch nicht abgesendet; Zielforum/Thread nicht festgelegt.
+
+DEUTSCH
+Titel: Sidebar Manager: Farben, Ordner und Links direkt in der HA-Seitenleiste
+
+Mit Sidebar Manager lässt sich die Home-Assistant-Seitenleiste direkt im
+vorhandenen Dialog „Seitenleiste bearbeiten“ organisieren: eigene Farben mit
+Transparenz, Ordner mit Icons, gemeinsame Sortierung und eigene Links.
+Externe Webseiten öffnen wahlweise in einem neuen Tab oder rechts in HA,
+sofern die Zielseite Einbettung erlaubt. Trennlinien erscheinen nur bei
+ausgeklappten Gruppen; ihre Stärke ist von 0 bis 4 px einstellbar.
+
+Die Oberfläche unterstützt DE/EN/FR. Version 0.1.7 wurde mit HA 2026.10.4
+geprüft; 60 automatische Tests bestehen. Vorgesehenes Minimum: 2026.10.3.
+Als HACS-kompatibles benutzerdefiniertes Frontend-Repository verfügbar;
+keine automatische Aufnahme in den Standardkatalog. Vor Installation sichern
+und bisherige Sidebar-Module deaktivieren. Sidebar-Colors-Farben bleiben
+erhalten; ein automatischer Organizer-Import ist noch nicht enthalten.
+
+GitHub: https://github.com/rockbaer2007/ha-sidebar-manager
+Doku/Bilder: https://opensource.ugso-software.de/projects/sidebar-manager/
+Download: https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest
+
+ENGLISH
+Title: Sidebar Manager: colors, folders and links in the HA sidebar editor
+
+Sidebar Manager extends Home Assistant's existing Edit sidebar dialog with
+per-entry colors and opacity, folders with icons, shared ordering and custom
+links. External websites open in a new tab or on the right inside HA when
+the target permits embedding. Folder separators are visible only while the
+group is expanded and can be set from 0 to 4 px.
+
+The interface supports DE/EN/FR. Version 0.1.7 was verified with HA 2026.10.4;
+60 automated tests pass. Intended minimum: 2026.10.3. Available as a
+HACS-compatible custom frontend repository, not automatically included in
+the default catalog. Back up first and disable older sidebar modules.
+Existing Sidebar Colors data is retained; automatic Organizer import is
+not implemented yet.
+
+GitHub: https://github.com/rockbaer2007/ha-sidebar-manager
+Docs/screenshots: https://opensource.ugso-software.de/en/projects/sidebar-manager/
+Download: https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest

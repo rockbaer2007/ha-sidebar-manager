@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.1.7 — unpublished local preview
+## 0.1.7 — first public release
 
 - Align bottom-pinned folder placement between the editor and sidebar. Moving a folder before a normal menu block releases its bottom pin rather than silently forcing it back down.
 - Show group separators only while the corresponding group is expanded.
 - Preserve folder membership, existing colors, links and native HA preferences. Add regression coverage for ordering, pinning and live collapse behavior.
+- Publish the self-contained HACS-compatible frontend bundle, configuration examples, DE/EN/FR documentation and screenshots from the .177 tests. Minimum target HA 2026.10.3, live verified on 2026.10.4; 60 automated tests pass.
 
 ## 0.1.6 — unpublished local preview
 
