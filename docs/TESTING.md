@@ -1,5 +1,18 @@
 # Local verification — 2026-11-01
 
+## Folder placement and collapsed separators — 2026-11-02, 0.1.7
+
+- Before changes: complete HA backup `c77d2ea8`, actual name “Custom backup 2026.10.4”, 2 November 2026 at 14:19, 175.01 MB. Includes settings/history, all apps, media, share and SSL. The entered descriptive name was not retained by HA; the actual backup details were checked. PC sources and exact current user-data/configuration/dashboard/resources saved in `C:/Users/rockb/source/backups/sidebar-manager-vor-ordnerposition-20261102`.
+- Ordinary folder movement worked on .177. Code review and a regression case reproduced contradictory bottom pinning: an explicitly higher mixed-order position could still be forced to the bottom. The editor now places pinned folders at the bottom consistently; moving one before a normal block releases its pin. Existing unrelated groups are not automatically unpinned.
+- Syntax, bundle and all 60 tests pass. New coverage includes pinned-folder order, saved manual placement, preserving pinning when only grouped members follow, and actual runtime DOM updates when a group is collapsed/expanded.
+- Only .177:80, HA 2026.10.4 used. Configuration validates, restart loads 0.1.7. No other HA systems accessed; the supplied screenshots from another installation were visual evidence only.
+- Own folder “SM 017 Position” created with bottom pinning, 4 px separator and own internal “SM 017 Link”. Editor initially shows it at the bottom. Move upward and Cancel: still pinned at the bottom when reopened. Move again and Save: stored bottom flag is false; folder and its child appear above Test für APP in the actual sidebar. Position persists after browser reload.
+- Collapse: computed separator display is `none`. Expand/default after reload: separator is visible at the end of the block. Folder membership and other groups remain intact.
+- Own folder/link removed, original Test/Test2 order restored. Server readback confirms manager preferences equal the pre-test normalized snapshot, all native user preferences/colors unchanged, Test für APP/resources unchanged and deployed bundle SHA-256 matches local.
+- Previous 0.1.6 report below describes the then-current always-visible separator; 0.1.7 intentionally supersedes that behavior.
+- Backup retention pending concrete action-time approval: delete only oldest `1cf6590c`; retain `c77d2ea8`, `f3941782`, `82bbd8e7`, the app-update backup and all PC snapshots.
+- Local ZIP 0.1.7 and DE/EN/FR instructions updated. Nothing published.
+
 ## Pale-yellow shortcut names — 2026-11-02, 0.1.5
 
 Presentation-only update installed on .177, port 80. PC source/configuration/user-data/Test für APP backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-hellgelb-20261102`. A separate test tab was used; the user's open settings dialog was not edited or closed. Confirmed computed color `rgb(255, 242, 166)` on all seven titles: section heading, three preset names and the same three entry-list names. Existing settings and Test für APP remain byte-identical. Syntax, bundle and all 50 tests pass. No additional full HA backup was created for this reversible style-only change; the three previously confirmed full backups remain. No publication.

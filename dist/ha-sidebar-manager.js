@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.6 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.7 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.6";
+  var VERSION = "0.1.7";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -744,7 +744,21 @@
     const valid = new Set(items.map((i) => i.value)), groups = new Set(record.groups.map((g) => groupKey(g.id)));
     const fromToken = (t) => t.startsWith("g:") ? groupKey(t.slice(2)) : t.startsWith("p:") ? t.slice(2) : "";
     const values = record.menuOrder.map(fromToken).filter((v) => valid.has(v) || groups.has(v));
-    return [.../* @__PURE__ */ new Set([...values, ...nativeOrder.filter((v) => valid.has(v)), ...items.map((i) => i.value), ...groups])];
+    const order = [.../* @__PURE__ */ new Set([...values, ...nativeOrder.filter((v) => valid.has(v)), ...items.map((i) => i.value), ...groups])];
+    const bottom = new Set(record.groups.filter((g) => g.bottom).map((g) => groupKey(g.id)));
+    return [...order.filter((v) => !bottom.has(v)), ...order.filter((v) => bottom.has(v))];
+  }
+  function releaseMovedBottomGroups(record, order) {
+    for (let i = order.length - 1, normalAfter = false; i >= 0; i--) {
+      const group = record.groups.find((g) => groupKey(g.id) === order[i]);
+      if (group) {
+        if (group.bottom && normalAfter) group.bottom = false;
+        if (!group.bottom) normalAfter = true;
+      } else {
+        const item = record.items[order[i]];
+        if (!item?.group && !item?.bottom) normalAfter = true;
+      }
+    }
   }
   function render(dialog, s) {
     const t = managerStrings(dialog.hass), nativeItems = s.native.items || [];
@@ -804,6 +818,7 @@
     const order = value.order.filter((v) => nativeKeys.has(v) || groupIds.has(v));
     const tokens = order.map((v) => groupIds.has(v) ? "g:" + groupIds.get(v) : "p:" + v);
     const unseen = s.draft.menuOrder.filter((v) => !tokens.includes(v));
+    if (stable(order) !== stable(s.order)) releaseMovedBottomGroups(s.draft, order);
     s.order = order;
     s.draft.menuOrder = [...tokens, ...unseen];
     s.dirty = stable(s.draft.menuOrder) !== stable(s.base.menuOrder);
@@ -1176,6 +1191,8 @@
         line.style.height = entry.width + "px";
         line.style.backgroundColor = rgba(entry.color) || getComputedStyle(s.headers.get(entry.id).firstElementChild).color;
         line.style.order = String(order++);
+        const group = config.groups.find((g) => g.id === entry.id);
+        line.toggleAttribute("data-sm-hidden", !!(collapsed.get(entry.id) ?? group?.collapsed));
       } else {
         const row = rows.find((r) => r.id === "sidebar-panel-" + entry.key);
         if (!row) continue;

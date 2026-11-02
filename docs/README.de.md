@@ -1,6 +1,12 @@
-# Sidebar Manager 0.1.6 — lokale Vorschau
+# Sidebar Manager 0.1.7 — lokale Vorschau
 
 Eigenständige Erweiterung für Home Assistant: Farben und Transparenz, Gruppen, Ein-/Ausklappen, Anheften, eigene Links, Anzeigenamen und MDI-Icons. DE/EN/FR folgen automatisch der HA-Sprache. Noch nicht veröffentlicht.
+
+0.1.7 ist auf .177 geprüft (HA 2026.10.4, Port 80): zunächst unten angehefteten Testordner verschoben, Abbrechen, Speichern und Neuladen geprüft. Trennlinien erscheinen nur ausgeklappt; 60 automatische Tests erfolgreich. Einstellungen und „Test für APP“ erhalten, eigene Testobjekte entfernt.
+
+![Gespeicherte Ordnerposition auf .177](images/ordnerposition-017-177.png)
+
+![Eingeklappter Ordner ohne Trennlinie](images/trennlinie-eingeklappt-017-177.png)
 
 ## Bedienung
 
@@ -8,7 +14,7 @@ Den Kopf der HA-Seitenleiste länger gedrückt halten. Im normalen Dialog „Sei
 
 Gruppen lassen sich benennen, anfangs einklappen und unten anordnen. Einträge können Gruppen zugeordnet, für die Anzeige umbenannt, mit MDI-Icons versehen, ausgeblendet und angeheftet werden. Pfeile ändern die eigene Reihenfolge innerhalb des Managers. Gruppenüberschriften lassen sich per Maus, Touch und Tastatur öffnen. Angeheftete Einträge stehen am Ende der scrollbaren Hauptnavigation, nicht im geschützten HA-Bereich für Profil und Benachrichtigungen. Links erlauben interne Pfade und HTTP(S).
 
-Jede Gruppe hat einen Regler **Trennlinie von 0 bis 4 px**. Null bedeutet **Aus**. Die Linie steht am Ende des Untermenüs, auch im eingeklappten Zustand, in Farbe und Transparenz des Ordner-Icons. Ober- und unterhalb bleiben jeweils nur 1 px Abstand. Leere Gruppen erhalten keine Linie.
+Jede Gruppe hat einen Regler **Trennlinie von 0 bis 4 px**. Null bedeutet **Aus**. Die Linie steht nur bei ausgeklapptem Untermenü an dessen Ende, in Farbe und Transparenz des Ordner-Icons. Ober- und unterhalb bleiben jeweils nur 1 px Abstand. Leere oder eingeklappte Gruppen zeigen keine Linie.
 
 Eigene interne Links erscheinen in den Einstellungen hellgelb, externe HTTP(S)-Links **hellblau** (`#a8dcff`). Für externe Links stehen **In neuem Tab öffnen** und **Rechts anzeigen (iframe)** zur Auswahl. Neue Links verwenden zunächst einen neuen Tab. Bestehende Links behalten ihre bisherige Öffnungsart, bis sie geändert wird. Eigene Seitenleistenfarben und Icons bleiben erhalten.
 
@@ -22,13 +28,15 @@ Bestehende Farben bleiben unter `ugso_sidebar_colors_v1`. Die Organisation wird 
 
 ## Installation und Rückkehr
 
-Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.6/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
+Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
 
 Für die iframe-Auswahl zusätzlich den Eintrag aus **`panel-custom.example.yaml`** in `configuration.yaml` bzw. die vorhandene `panel_custom`-Liste übernehmen. Er registriert `ugso-sidebar-web` ohne zusätzlichen Seitenleisteneintrag. Die Moduladresse muss mit der Frontend-Moduladresse übereinstimmen. Einmal prüfen und HA neu starten. Ohne diese Registrierung erscheint beim Öffnen ein Einrichtungshinweis. Das Panel verwendet nur gespeicherte Links des angemeldeten Benutzers und übergibt keine HA-Tokens. Die Zielseite muss Einbettung erlauben; CSP/X-Frame-Options oder HTTPS-zu-HTTP können sie verhindern. Als Alternative bleibt „In neuem Tab öffnen“ verfügbar. Eine fremde Webseite benötigt weiterhin ihre eigene Anmeldung.
 
 Ordner besitzen einen eigenen Farbwähler mit Transparenz. Die Farbe gilt für Icon und Gruppennamen. „Theme-Farbe“ entfernt die eigene Farbe; gespeichert wird erst mit dem Speichern im Manager.
 
 Im nativen Dialog „Seitenleiste bearbeiten“ stehen alle Untermenüs gemeinsam mit den Haupteinträgen. Mit demselben Ziehgriff rechts lässt sich jeder Ordner zwischen Haupteinträge verschieben, ohne zusätzliche Pfeilbuttons. Die native Tastaturbedienung bleibt möglich (Alt+Auf/Ab auf einer Zeile). Speichern übernimmt die gemeinsame Reihenfolge; Abbrechen verwirft sie. Gruppenzuordnungen bleiben erhalten: In der Seitenleiste wandern Ordner und ihre Inhalte als Block. Unten angeheftete Ordner bleiben im unteren Bereich. Ordner-IDs gelangen niemals in die gespeicherte native HA-Panelliste.
+
+Seit 0.1.7 stehen unten angeheftete Ordner auch im Editor unten. Wird ein solcher Ordner vor einen normalen Hauptmenüblock verschoben, hebt dies seine untere Anheftung auf. Die gespeicherte Position gilt damit auch in der tatsächlichen Seitenleiste. Abbrechen erhält ursprüngliche Position und Anheftung.
 
 Für die Rückkehr den gesicherten alten Moduleintrag wiederherstellen und HA neu starten. Manager-Daten bleiben unter ihrem eigenen Schlüssel; die bisherigen Farben und nativen Einstellungen werden nicht verändert.
 

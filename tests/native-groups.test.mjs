@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
 import {normalizeManager} from '../src/manager-model.js';
-import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,withNativeGroupsSave,mixedMenuOrder} from '../src/native-groups.js';
+import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,withNativeGroupsSave,mixedMenuOrder,releaseMovedBottomGroups} from '../src/native-groups.js';
 const setup=(emptyOrder=false)=>{
  const win=new Window({url:'https://ha.example.invalid/'});globalThis.document=win.document;globalThis.MutationObserver=win.MutationObserver;globalThis.CustomEvent=win.CustomEvent;
  const dialog=document.createElement('div');dialog.attachShadow({mode:'open'});dialog.shadowRoot.innerHTML='<div class="content"><ha-items-display-editor></ha-items-display-editor></div>';document.body.append(dialog);dialog._open=true;dialog.hass={language:'de',user:{id:'test'}};dialog._order=['home','map'];dialog._hidden=[];
@@ -29,3 +29,23 @@ test('all combined saves freeze mixed controls until completion',async()=>{const
 test('new or temporarily missing panels do not remove saved mixed anchors',()=>{const record=normalizeManager({version:1,groups:[{id:'one',name:'One'}],items:{},menuOrder:['p:missing','g:one','p:home']});assert.deepEqual(mixedMenuOrder(record,['home','new'],[{value:'home'},{value:'new'}]),['sm-group:one','home','new']);assert.equal(record.menuOrder[0],'p:missing');});
 
 test('folder-only moves preserve an empty native order meaning HA defaults',()=>{const s=setup(true);s.change(['home','sm-group:one','map','sm-group:two']);assert.deepEqual(s.dialog._order,[]);assert.deepEqual(s.dialog._hidden,[]);});
+
+test('bottom-pinned folders appear at the bottom in both the mixed editor and rendered layout',()=>{
+ const s=setup();s.options.record.groups[0].bottom=true;s.options.record.menuOrder=['g:one','p:home','p:map','g:two'];
+ const order=mixedMenuOrder(s.options.record,['home','map'],[{value:'home'},{value:'map'}]);
+ assert.deepEqual(order,['home','map','sm-group:two','sm-group:one']);
+});
+test('moving a bottom-pinned folder before a normal entry releases pinning and persists the requested position',async()=>{
+ const s=setup();endNativeGroups(s.dialog);s.options.record.groups[0].bottom=true;
+ attachNativeGroups(s.dialog,s.options);s.change(['home','sm-group:one','map','sm-group:two']);
+ assert.equal(s.dialog.shadowRoot.querySelector('.sm-native-groups ha-items-display-editor').value.order[1],'sm-group:one');
+ // Save against the actual snapshot, as HA would read it.
+ let stored=structuredClone(s.options.record);s.options.read=async()=>stored;s.options.write=async value=>stored=value;
+ await withNativeGroupsSave(s.dialog,async()=>{});
+ assert.equal(stored.groups[0].bottom,false);assert.equal(stored.items.home.group,'one');
+ assert.deepEqual(stored.menuOrder,['p:home','g:one','p:map','g:two']);
+});
+test('bottom pinning remains when only grouped members follow the folder',()=>{
+ const r=normalizeManager({version:1,groups:[{id:'one',name:'One',bottom:true}],items:{home:{group:'one'}}});
+ releaseMovedBottomGroups(r,['map','sm-group:one','home']);assert.equal(r.groups[0].bottom,true);
+});

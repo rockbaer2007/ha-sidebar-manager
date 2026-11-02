@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7 — unpublished local preview
+
+- Align bottom-pinned folder placement between the editor and sidebar. Moving a folder before a normal menu block releases its bottom pin rather than silently forcing it back down.
+- Show group separators only while the corresponding group is expanded.
+- Preserve folder membership, existing colors, links and native HA preferences. Add regression coverage for ordering, pinning and live collapse behavior.
+
 ## 0.1.6 — unpublished local preview
 
 - Light-blue external links in settings; internal links remain pale yellow.

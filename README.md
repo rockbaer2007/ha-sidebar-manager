@@ -1,8 +1,14 @@
-# Sidebar Manager 0.1.6 — local preview
+# Sidebar Manager 0.1.7 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
 One Home Assistant frontend extension for per-entry colors/opacity, groups, collapsible navigation, pinned entries and custom links. This is an unpublished local preview, intended for Home Assistant 2026.10.3 or newer; live verification is restricted to the authorized .177 test system.
+
+0.1.7 verified on .177 (HA 2026.10.4, port 80), including moving an initially bottom-pinned test folder, Cancel, Save and reload. Expanded-only separators checked live; 60 automated tests pass. Existing settings and Test für APP retained; own test objects removed.
+
+![Saved folder position on .177](docs/images/ordnerposition-017-177.png)
+
+![Collapsed folder without separator](docs/images/trennlinie-eingeklappt-017-177.png)
 
 ## Use
 
@@ -12,11 +18,13 @@ Groups have a name, initial collapsed state and optional bottom placement. Exist
 
 Folders have their own color picker with opacity, applied to the folder icon and name. **Theme color** clears the override. The Manager's Save button confirms the choice.
 
-Each folder has a **Separator** slider from **0 to 4 px**. Zero switches it off. The line appears at the end of the folder's block, including when collapsed, in the folder icon's color and opacity. It adds only 1 px of spacing above and below. Empty folders have no separator.
+Each folder has a **Separator** slider from **0 to 4 px**. Zero switches it off. The line appears only when the folder is expanded, at the end of its block, in the folder icon's color and opacity. It adds only 1 px of spacing above and below. Empty or collapsed folders show no separator.
 
 Own internal links are marked pale yellow in settings; external HTTP(S) links are **light blue** (`#a8dcff`). External links can open in a **new tab** or **on the right inside HA (iframe)**. New links default to a new tab. Older links retain their previous same-window behavior until changed. These markers do not override individual sidebar colors or icons.
 
 The native **Edit sidebar** dialog lists all folders together with the main entries. Use the same native drag handle to place any folder between main entries. There are no extra Up/Down buttons. The native keyboard sorting remains available (Alt+Up/Down on a row). Save commits the mixed order; Cancel discards it. Folder membership is unchanged, so a folder and its children move as one block in the sidebar. Pinned-bottom groups stay in the bottom section. Folder IDs never enter HA's stored native panel order.
+
+Since 0.1.7, bottom-pinned folders also appear at the bottom in the editor. Moving one before a normal main-menu block releases its bottom pin, so the saved position takes effect in the actual sidebar. Cancel leaves the original position and pin intact.
 
 ## Storage and recovery
 
@@ -36,7 +44,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.6/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.

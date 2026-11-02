@@ -1,6 +1,12 @@
-# Sidebar Manager 0.1.6 — aperçu local
+# Sidebar Manager 0.1.7 — aperçu local
 
 Extension indépendante pour Home Assistant : couleurs et opacité, groupes repliables, entrées épinglées, liens personnalisés, noms et icônes MDI. La langue DE/EN/FR suit automatiquement HA. Aucune publication.
+
+0.1.7 vérifiée sur .177 (HA 2026.10.4, port 80) : déplacement d'un dossier de test initialement épinglé en bas, annulation, enregistrement et rechargement. Séparateurs visibles uniquement lorsque le groupe est déplié ; 60 tests automatisés réussis. Réglages et « Test für APP » conservés, objets de test supprimés.
+
+![Position du dossier enregistrée sur .177](images/ordnerposition-017-177.png)
+
+![Dossier replié sans séparateur](images/trennlinie-eingeklappt-017-177.png)
 
 ## Utilisation
 
@@ -8,7 +14,7 @@ Maintenez l'en-tête de la barre latérale. Les champs de couleur, les yeux et l
 
 Chaque groupe possède un nom, un état replié initial et une position basse facultative. Les entrées peuvent être regroupées, renommées pour l'affichage, masquées, épinglées ou dotées d'une icône MDI. Les flèches changent l'ordre dans le Manager. Les en-têtes se replient à la souris, au toucher et au clavier. Les entrées épinglées restent à la fin de la navigation principale défilante, hors de la zone HA réservée au profil et aux notifications. Les liens autorisent les chemins internes et HTTP(S).
 
-Chaque groupe possède un curseur **Séparateur de 0 à 4 px**. Zéro le désactive. La ligne termine le bloc du groupe, même replié, avec la couleur et l'opacité de son icône. L'espacement ajouté est limité à 1 px au-dessus et au-dessous. Les groupes vides n'affichent aucune ligne.
+Chaque groupe possède un curseur **Séparateur de 0 à 4 px**. Zéro le désactive. La ligne termine le bloc uniquement lorsque le groupe est déplié, avec la couleur et l'opacité de son icône. L'espacement ajouté est limité à 1 px au-dessus et au-dessous. Les groupes vides ou repliés n'affichent aucune ligne.
 
 Dans les réglages, les liens internes personnalisés sont jaune clair et les liens HTTP(S) externes **bleu clair** (`#a8dcff`). Un lien externe peut s'ouvrir **dans un nouvel onglet** ou **à droite dans HA (iframe)**. Les nouveaux liens utilisent initialement un nouvel onglet. Les anciens conservent leur comportement précédent jusqu'à modification. Couleurs personnalisées de la barre latérale et icônes sont conservées.
 
@@ -22,13 +28,15 @@ L'export/import JSON couvre l'organisation (groupes, liens, noms, icônes, masqu
 
 ## Installation et retour
 
-Charger un seul module : `/local/ugso-sidebar-manager/0.1.6/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
+Charger un seul module : `/local/ugso-sidebar-manager/0.1.7/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
 
 Pour l'iframe, fusionner aussi l'entrée de **`panel-custom.example.yaml`** dans `configuration.yaml` ou la liste `panel_custom` existante. Elle enregistre le panneau caché `ugso-sidebar-web`, sans nouvelle entrée de barre latérale. Garder la même URL de module que pour le frontend. Valider puis redémarrer HA une fois. Sans cette inscription, un message explique la configuration nécessaire. Le panneau lit uniquement les liens enregistrés de l'utilisateur connecté et ne transmet aucun jeton HA. La page cible doit autoriser l'intégration ; CSP/X-Frame-Options et les restrictions HTTPS-vers-HTTP peuvent l'empêcher. L'ouverture dans un nouvel onglet reste disponible. Un site tiers conserve ses propres exigences de connexion.
 
 Les dossiers possèdent un sélecteur de couleur avec opacité, appliquée à leur icône et leur nom. « Couleur du thème » retire la couleur personnalisée. Enregistrer dans le Manager confirme le choix.
 
 La fenêtre HA « Modifier la barre latérale » réunit tous les sous-menus et les entrées principales. La même poignée native permet de placer chaque dossier entre les entrées principales, sans boutons de déplacement supplémentaires. Le tri au clavier reste disponible (Alt+Haut/Bas sur une ligne). Enregistrer applique l'ordre commun ; Annuler l'abandonne. Les affectations restent intactes : dossier et contenu se déplacent comme un bloc dans la barre latérale. Les dossiers épinglés en bas restent dans cette section. Aucun identifiant de dossier n'entre dans la liste native des panneaux enregistrée par HA.
+
+Depuis 0.1.7, les dossiers épinglés en bas apparaissent aussi en bas dans l'éditeur. Déplacer un tel dossier avant un bloc normal du menu principal retire son épinglage inférieur : la position enregistrée s'applique dans la barre latérale. Annuler conserve la position et l'épinglage d'origine.
 
 Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA. Les données Manager restent séparées ; couleurs et réglages natifs sont conservés.
 
