@@ -10,6 +10,23 @@ Organize Home Assistant's sidebar with folders, colors, opacity and custom links
 
 [Deutsch](docs/README.de.md) · [Français](docs/README.fr.md) · [Documentation](https://opensource.ugso-software.de/en/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
+## Local 0.1.8 preview: links in the sidebar editor
+
+> **Development status, 2 November 2026**
+> **0.1.8 is prepared locally; the public version remains 0.1.7.** Syntax checks, the build and **70 automated tests** pass. These additions have not yet been tested in Home Assistant on .177. The steps below refer to the local test package, not the linked 0.1.7 release. Existing screenshots show earlier verification stages.
+
+Custom internal and external links now also appear in **Edit sidebar**. Links without a saved position initially appear at the end; existing ordering is respected. Hidden links remain available for editing.
+
+- **Color field:** the same color/opacity picker used for HA entries. **Theme color** removes the override. Saved link colors apply immediately when sidebar rows are created.
+- **Link type:** the settings button displays **Link** for internal targets and **Ext. link** for external HTTP(S) targets, instead of the folder name. Clicking opens that link’s settings. Its folder assignment is preserved and also shown in the tooltip.
+- **Drag handle:** reorder links alongside other entries, including within their assigned folder. Dragging alone does not change folder membership; choose the folder in the link settings. Keyboard sorting remains available.
+- **Eye:** hide or show a link without deleting it or its settings.
+- **Save/Cancel:** apply or discard color, visibility and order changes in the HA editing dialog. General link settings are still saved in the Manager.
+
+Link ordering and visibility remain in `ugso_sidebar_manager_v1`; colors stay in the existing `ugso_sidebar_colors_v1` record. Custom link IDs never enter HA’s native saved panel order. Existing settings, opening modes and missing panels are preserved.
+
+Local checks exercise the built JavaScript package with simulated HA storage, DE/EN/FR labels, color selection, Save/Cancel, sorting, preserved folder membership and recovery after a failed save. A real HA runtime test is still pending for this increment.
+
 ## Install with HACS / Marketplace
 
 This is a frontend plugin, not a Supervisor app or a dashboard card. Add `https://github.com/rockbaer2007/ha-sidebar-manager` as a custom repository in HACS, category **Dashboard** (`plugin` internally), and download Sidebar Manager. A public repository is not automatically included in the default catalog. The package uses the HACS-compatible structure for Marketplace; Marketplace itself has not been live-tested.

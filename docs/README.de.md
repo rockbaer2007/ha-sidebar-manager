@@ -8,6 +8,23 @@ Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeite
 
 [English](../README.md) · [Français](README.fr.md) · [Dokumentation](https://opensource.ugso-software.de/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
+## Lokale Vorschau 0.1.8: Links im Seitenleisten-Editor
+
+> **Entwicklungsstand vom 02.11.2026**
+> **0.1.8 ist lokal vorbereitet; die öffentliche Version bleibt 0.1.7.** Syntaxprüfung, Build und **70 automatische Tests** sind erfolgreich. Die neuen Funktionen wurden noch nicht auf .177 in Home Assistant geprüft. Die folgenden Schritte beziehen sich auf das lokale Testpaket, nicht auf das verlinkte Release 0.1.7. Die bisherigen Bilder zeigen frühere Prüfstände.
+
+Eigene interne und externe Links erscheinen jetzt ebenfalls in **Seitenleiste bearbeiten**. Ohne gespeicherte Position stehen sie zunächst ganz unten; eine vorhandene Reihenfolge wird berücksichtigt. Auch ausgeblendete Links bleiben zum Bearbeiten sichtbar.
+
+- **Farbfeld:** derselbe Farbwähler mit Transparenz wie bei HA-Einträgen. „Theme-Farbe“ entfernt die eigene Farbe. Gespeicherte Link-Farben werden beim Aufbau der Seitenleiste sofort angewendet.
+- **Link-Typ:** statt des Gruppennamens zeigt der Einstellungsbutton **Link** für interne Ziele und **ext. Link** für externe HTTP(S)-Ziele. Ein Klick öffnet die Einstellungen dieses Links. Seine Gruppenzuordnung bleibt erhalten und steht zusätzlich im Tooltip.
+- **Ziehgriff:** Links zwischen den anderen Einträgen einsortieren, auch innerhalb ihrer zugewiesenen Gruppe. Ziehen allein ändert die Gruppenzuordnung nicht; sie wird weiterhin in den Link-Einstellungen gewählt. Die Tastatursortierung bleibt verfügbar.
+- **Auge:** Links ausblenden und wieder einblenden. Das entfernt weder den Link noch seine Einstellungen.
+- **Speichern/Abbrechen:** Farbe, Sichtbarkeit und Reihenfolge werden über den HA-Bearbeitungsdialog übernommen beziehungsweise verworfen. Die allgemeinen Link-Einstellungen werden weiterhin im Manager gespeichert.
+
+Link-Reihenfolge und -Sichtbarkeit bleiben im Manager-Datensatz `ugso_sidebar_manager_v1`, die Farben im vorhandenen Datensatz `ugso_sidebar_colors_v1`. Eigene Link-IDs werden nicht in HAs native Panel-Reihenfolge geschrieben. Bestehende Einstellungen, Öffnungsarten und fehlende Panels bleiben erhalten.
+
+Die lokalen Prüfungen decken das gebaute JavaScript-Paket mit simuliertem HA-Speicher, die Beschriftungen in DE/EN/FR, Farbauswahl, Speichern/Abbrechen, Sortierung, gespeicherte Gruppenzuordnung und die Wiederherstellung nach fehlgeschlagenem Speichern ab. Ein echter HA-Laufzeittest steht für diese Erweiterung noch aus.
+
 ## HACS / Marketplace
 
 Frontend-Plugin, keine Supervisor-App und keine Dashboard-Karte. `https://github.com/rockbaer2007/ha-sidebar-manager` als benutzerdefiniertes HACS-Repository in Kategorie **Dashboard** (`plugin`) hinzufügen und herunterladen. Veröffentlichung bedeutet keine Aufnahme in den Standardkatalog. HACS-kompatible Paketstruktur für Marketplace; noch kein eigener Marketplace-Laufzeittest.

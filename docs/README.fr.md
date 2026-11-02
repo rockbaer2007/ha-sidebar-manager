@@ -8,6 +8,23 @@ Dossiers, couleurs, opacité et liens personnalisés dans « Modifier la barre l
 
 [English](../README.md) · [Deutsch](README.de.md) · [Documentation](https://opensource.ugso-software.de/fr/projects/sidebar-manager/) · [Téléchargements](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
 
+## Aperçu local 0.1.8 : liens dans l’éditeur de barre latérale
+
+> **État du développement, 2 novembre 2026**
+> **0.1.8 est préparée localement ; la version publique reste 0.1.7.** La vérification syntaxique, la compilation et **70 tests automatisés** réussissent. Ces ajouts n’ont pas encore été testés dans Home Assistant sur .177. Les étapes suivantes concernent le paquet de test local, pas la release 0.1.7 liée ci-dessus. Les images existantes montrent les vérifications antérieures.
+
+Les liens personnalisés internes et externes apparaissent aussi dans **Modifier la barre latérale**. Sans position enregistrée, ils apparaissent d’abord à la fin ; l’ordre existant est respecté. Les liens masqués restent disponibles pour modification.
+
+- **Champ de couleur :** même sélecteur de couleur et d’opacité que pour les entrées HA. « Couleur du thème » retire la couleur personnalisée. Les couleurs enregistrées sont appliquées dès la création des lignes de la barre latérale.
+- **Type de lien :** le bouton des réglages affiche **Lien** pour une destination interne et **Lien ext.** pour une destination HTTP(S) externe, à la place du nom du dossier. Un clic ouvre les réglages du lien. Son dossier reste conservé et figure aussi dans l’infobulle.
+- **Poignée :** triez les liens avec les autres entrées, y compris dans leur dossier. Le déplacement seul ne change pas le dossier attribué ; choisissez celui-ci dans les réglages du lien. Le tri au clavier reste disponible.
+- **Œil :** masquez ou affichez un lien sans supprimer le lien ni ses réglages.
+- **Enregistrer/Annuler :** appliquez ou abandonnez les changements de couleur, visibilité et ordre dans la fenêtre HA. Les réglages généraux des liens restent enregistrés dans le Manager.
+
+L’ordre et la visibilité des liens restent dans `ugso_sidebar_manager_v1`, les couleurs dans le relevé existant `ugso_sidebar_colors_v1`. Les identifiants des liens personnalisés ne sont jamais écrits dans l’ordre natif des panneaux HA. Réglages existants, modes d’ouverture et panneaux absents sont conservés.
+
+Les vérifications locales couvrent le paquet JavaScript compilé avec un stockage HA simulé, les libellés DE/EN/FR, la couleur, l’enregistrement/annulation, le tri, le dossier attribué et la restauration après un échec d’enregistrement. Un test réel dans HA reste à effectuer pour cet ajout.
+
 ## HACS / Marketplace
 
 Plugin frontend, pas une application Supervisor ni une carte de tableau de bord. Ajoutez `https://github.com/rockbaer2007/ha-sidebar-manager` comme dépôt personnalisé HACS, catégorie **Dashboard** (`plugin`), puis téléchargez-le. La publication n'implique pas l'inclusion au catalogue standard. Structure compatible HACS pour Marketplace ; aucun test d'exécution Marketplace distinct.
