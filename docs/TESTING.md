@@ -79,7 +79,7 @@ The automation's download-event wait timed out, although the export file was cor
 - Separator measured exactly 4 px, `rgba(0, 255, 0, 0.7)`, with 1 px margin above/below, after the group's link. It remains after the collapsed header. Settings survive browser reload. Changing the slider to zero removes the separator. Initial separators default off; group headers no longer add a top border.
 - Own group/link removed, own new tab closed. Server readback confirms normalized manager settings equal the pre-test snapshot, all other user settings/colors unchanged, Test für APP and resources unchanged, deployed bundle hash matches local.
 - Local ZIP contains the single bundle, optional `panel-custom.example.yaml`, DE/EN/FR instructions, test record and screenshots. No publication.
-- Backup retention: four complete backups temporarily remain pending concrete action-time approval to delete only oldest `4c40757b`. Retain `f3941782`, `82bbd8e7`, `1cf6590c`, the separate app-update backup and all PC backups.
+- Backup retention completed after concrete user approval: only oldest `4c40757b` deleted. The actual backup list confirms exactly three complete backups: `f3941782`, `82bbd8e7`, `1cf6590c`. The separate 119.18 MB app-update backup and all PC backups remain. No other systems changed.
 
 ## Limits
 
