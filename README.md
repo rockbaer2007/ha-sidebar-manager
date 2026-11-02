@@ -43,7 +43,9 @@ This local package includes a HACS-style `hacs.json` and a bundled single JS fil
 
 The settings include shortcuts for Logs, Automations and States, each with a selectable folder and `mdi:cog-transfer`. Existing matching URLs are reused without overwriting their names or icons. Changes apply only after Save. States uses the current `/config/tools/state` route; legacy `/developer-tools/state` links are recognized. These links do not change HA access permissions.
 
-Version 0.1.4 is prepared locally, with 50 automated tests. The latest live .177 verification remains 0.1.3 (HA 2026.10.4); .177 has not been updated for this increment. See `docs/TESTING.md`.
+Version 0.1.4 is installed and verified on .177 (HA 2026.10.4, port 80), with 50 automated tests. Logs, Automations and States open correctly; folder assignment, moving an existing link to the main menu, duplicate prevention, Cancel and persistence after reload were checked. Temporary test objects were removed and existing settings preserved. See `docs/TESTING.md`.
+
+![Shortcut settings on .177](docs/images/ha-shortcuts-014-177.png)
 
 Node 22 or newer: `npm ci`, `npm run check`, `npm run build`, `npm test`.
 

@@ -30,6 +30,8 @@ Für die Rückkehr den gesicherten alten Moduleintrag wiederherstellen und HA ne
 
 Unter „Home-Assistant-Verknüpfungen“ stehen Logs, Automationen und Zustände bereit, jeweils mit auswählbarem Unterordner und `mdi:cog-transfer`. Vorhandene passende Links werden wiederverwendet, eigene Namen und Icons erhalten. Erst Speichern übernimmt Änderungen. Zustände verwendet `/config/tools/state`; ältere Links auf `/developer-tools/state` werden erkannt. HA-Zugriffsrechte bleiben unverändert.
 
-0.1.4 ist lokal vorbereitet, mit 50 erfolgreichen automatischen Tests. Letzter echter Prüfstand auf .177 ist 0.1.3 (HA 2026.10.4); diese Änderung wurde noch nicht dort eingespielt. Details in `TESTING.md`.
+0.1.4 ist auf .177 installiert und geprüft (HA 2026.10.4, Port 80), mit 50 erfolgreichen automatischen Tests. Logs, Automationen und Zustände öffnen korrekt. Unterordner-Auswahl, Umhängen eines vorhandenen Links ins Hauptmenü, Dublettenschutz, Abbrechen und Erhalt nach Neuladen sind geprüft. Eigene Testobjekte entfernt, vorhandene Einstellungen erhalten. Details in `TESTING.md`.
+
+![Verknüpfungs-Einstellungen auf .177](images/ha-shortcuts-014-177.png)
 
 Mindestziel HA 2026.10.3; echte Prüfung ausschließlich auf .177 mit 2026.10.4. Kein Organizer-YAML-Import, keine gerätespezifischen Layouts, kein eigenes CSS oder Template-Aktionen. Kopf-/Breiteneinstellungen und automatische Organizer-Übernahme sind noch nicht enthalten. HACS-Paketstruktur lokal vorbereitet, keine Veröffentlichung. Details zur Prüfung stehen in `TESTING.md`.

@@ -30,6 +30,8 @@ Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA.
 
 Les réglages proposent Journaux, Automatisations et États, avec dossier au choix et `mdi:cog-transfer`. Les liens correspondants sont réutilisés, sans écraser leurs noms ou icônes personnalisés. Enregistrer applique les modifications. États utilise `/config/tools/state` ; les anciens liens `/developer-tools/state` sont reconnus. Les autorisations HA restent inchangées.
 
-La version 0.1.4 est préparée localement, avec 50 tests automatisés réussis. La dernière vérification réelle sur .177 reste la version 0.1.3 (HA 2026.10.4) ; cette modification n'y est pas encore installée. Voir `TESTING.md`.
+La version 0.1.4 est installée et vérifiée sur .177 (HA 2026.10.4, port 80), avec 50 tests automatisés réussis. Journaux, Automatisations et États s'ouvrent correctement. Choix du dossier, déplacement d'un lien existant vers le menu principal, prévention des doublons, annulation et conservation après rechargement sont vérifiés. Objets de test supprimés, réglages existants conservés. Voir `TESTING.md`.
+
+![Réglages des raccourcis sur .177](images/ha-shortcuts-014-177.png)
 
 Cible minimale HA 2026.10.3 ; vérification réelle uniquement sur .177 avec 2026.10.4. Pas encore d'import YAML Organizer, de présentations par appareil, de CSS libre ou d'actions à modèles. Réglages d'en-tête/largeur et migration automatique Organizer restent à faire. Structure HACS préparée localement, sans publication. Voir `TESTING.md` pour les vérifications.

@@ -2,7 +2,21 @@
 
 ## Local continuation — 2026-11-02, 0.1.4
 
-PC source backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-links-20261102`. No HA changes, no deployment and no publication. Existing variants and ZIPs retained. Syntax, bundle and 50 automated tests pass. New checks cover all three shortcut routes and selected folders, duplicate/legacy URL recognition, custom-name/icon preservation, ID collisions, absent-folder fallback, and adding a shortcut in the dialog without writing until Save (Cancel does not persist). Latest actual .177 test remains 0.1.3 as recorded below.
+Initial PC source backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-links-20261102`. Existing variants and ZIPs retained. Syntax, bundle and 50 automated tests pass. New checks cover all three shortcut routes and selected folders, duplicate/legacy URL recognition, custom-name/icon preservation, ID collisions, absent-folder fallback, renaming folders in the open dialog, and adding a shortcut without writing until Save (Cancel does not persist).
+
+### Actual 0.1.4 verification on .177 — 2026-11-02
+
+- HA accessed only at `http://192.168.178.177/` on port 80. Existing .177 File Studio backend used for verified local file deployment, with no other HA hosts accessed.
+- Full backup `82bbd8e7`, "Sidebar Manager vor HA-Verknüpfungen 0.1.4 2026-11-02", 174.73 MB, includes settings/history, all apps, media, share and SSL.
+- Complete current user preferences, configuration, Test für APP and Lovelace resources separately saved in `C:/Users/rockb/source/backups/sidebar-manager-vor-pruefung-014-20261102`.
+- Version 0.1.4 confirmed in the frontend after restart. Original module retained.
+- Add Logs to a folder then Cancel: no saved shortcut.
+- Create own folder SM 014 Prüfung; immediately rename it, select it for all three shortcuts, add and save. Reload confirms all three links and folder assignments.
+- Clicking each shortcut opens the correct page: Logs shows Home Assistant Core, Automations opens its dashboard, States shows current entity states.
+- Move the existing States shortcut into the main menu, save and reload. Logs/Automations retain their folder and States retains Main menu. All three Add buttons remain disabled as Already present.
+- Live testing exposed stale folder labels after renaming a group; fixed immediate label synchronization without rerendering the active name field. Regression added to the dialog test and verified again live.
+- Only the three created shortcuts and our own test folder removed afterward. `.local/test-014.mjs verify` confirms original user preferences/colors, normalized manager configuration, Test für APP and resources unchanged, and matching local/deployed bundle. A pre-existing dangling token for an already-deleted older test folder is normalized away; no user folder is removed.
+- Four full backups after the fresh backup; retention cleanup awaits concrete approval for oldest `a74b1275`. PC backups and app-update backup remain untouched.
 
 Unpublished Sidebar Manager 0.1.3. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
 

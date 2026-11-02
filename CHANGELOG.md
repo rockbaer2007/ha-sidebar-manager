@@ -4,7 +4,8 @@
 
 - Settings provide Logs, Automations and States shortcuts with selectable folders and `mdi:cog-transfer`.
 - Reuse existing matching links, including the legacy States route, and retain custom names/icons and all existing settings.
-- Local-only preparation and tests; no .177 deployment or publication in this increment.
+- Renamed folders immediately update all folder-selection labels without losing focus.
+- Installed and verified only on .177, port 80. No publication.
 
 ## 0.1.3 — unpublished local preview
 

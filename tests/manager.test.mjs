@@ -30,5 +30,7 @@ test('manager dialog edits remain a draft until Save and Cancel never calls pers
  const dialog=win.document.createElement('test-manager-dialog');win.document.body.append(dialog);let writes=0;
  dialog.show({hass:{language:'de'},record:example(),entries:[{key:'map',label:'Map'}],save:async()=>writes++});
  const shortcut=dialog.shadowRoot.querySelector('[data-shortcut=logs]'),select=shortcut.querySelector('select');select.value='rail';select.dispatchEvent(new win.Event('change'));shortcut.querySelector('button').click();assert.equal(findShortcut(dialog.draft,HA_SHORTCUTS[0])[1].group,'rail');assert.equal(writes,0);
- let buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Gruppe hinzufügen').click();assert.equal(dialog.draft.groups.length,2);assert.equal(writes,0);buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Abbrechen').click();assert.equal(writes,0);
+ let buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Gruppe hinzufügen').click();assert.equal(dialog.draft.groups.length,2);assert.equal(writes,0);
+ const groupName=dialog.shadowRoot.querySelector('main > .cards').lastElementChild.querySelector('input');groupName.value='Renamed folder';groupName.dispatchEvent(new win.Event('input'));assert.ok([...dialog.shadowRoot.querySelector('[data-shortcut=logs] select').options].some(o=>o.textContent==='Renamed folder'));
+ buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Abbrechen').click();assert.equal(writes,0);
 });

@@ -465,6 +465,12 @@
       [array[index], array[index + delta]] = [array[index + delta], array[index]];
       this.renderBody();
     }
+    syncGroupLabels() {
+      for (const select of this.shadowRoot.querySelectorAll("select")) for (const option of select.options) {
+        const group = this.draft.groups.find((g) => g.id === option.value);
+        if (group) option.textContent = group.name;
+      }
+    }
     groupColor(group) {
       const button = this.button(this.t.groupColor + " " + group.name, () => {
         const picker = document.createElement("ugso-sidebar-color-picker");
@@ -509,7 +515,10 @@
       this.draft.groups.forEach((g, i) => {
         const row = el("div");
         row.className = "row";
-        row.append(this.input(t.name, g.name, (v) => g.name = v), this.input(t.icon, g.icon, (v) => g.icon = v), this.groupColor(g), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
+        row.append(this.input(t.name, g.name, (v) => {
+          g.name = v;
+          this.syncGroupLabels();
+        }), this.input(t.icon, g.icon, (v) => g.icon = v), this.groupColor(g), this.input(t.collapsed, g.collapsed, (v) => g.collapsed = v, "checkbox"), this.input(t.bottom, g.bottom, (v) => g.bottom = v, "checkbox"), this.button(t.up, () => this.move(this.draft.groups, i, -1), "↑"), this.button(t.down, () => this.move(this.draft.groups, i, 1), "↓"), this.button(t.remove, () => {
           this.draft.groups.splice(i, 1);
           for (const item of Object.values(this.draft.items)) if (item.group === g.id) item.group = "";
           this.renderBody();
