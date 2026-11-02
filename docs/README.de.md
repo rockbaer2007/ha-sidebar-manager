@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.3 — lokale Vorschau
+# Sidebar Manager 0.1.4 — lokale Vorschau
 
 Eigenständige Erweiterung für Home Assistant: Farben und Transparenz, Gruppen, Ein-/Ausklappen, Anheften, eigene Links, Anzeigenamen und MDI-Icons. DE/EN/FR folgen automatisch der HA-Sprache. Noch nicht veröffentlicht.
 
@@ -18,7 +18,7 @@ Bestehende Farben bleiben unter `ugso_sidebar_colors_v1`. Die Organisation wird 
 
 ## Installation und Rückkehr
 
-Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.3/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
+Nur ein Modul laden: `/local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js`. Das neue Bundle liegt im entsprechenden Unterordner von `/config/www`. Vorhandene Themes und weitere Frontend-Einträge erhalten. Den alten Farbmodul-Eintrag ersetzen, keine zweite `frontend`-Sektion anlegen. Konfiguration prüfen, HA neu starten und Browser neu laden. Sidebar Colors und Sidebar Organizer nicht gleichzeitig mit Sidebar Manager laden.
 
 Ordner besitzen einen eigenen Farbwähler mit Transparenz. Die Farbe gilt für Icon und Gruppennamen. „Theme-Farbe“ entfernt die eigene Farbe; gespeichert wird erst mit dem Speichern im Manager.
 
@@ -28,6 +28,8 @@ Für die Rückkehr den gesicherten alten Moduleintrag wiederherstellen und HA ne
 
 ## Grenzen dieses ersten Stands
 
-Lokale Prüfung auf .177 (HA 2026.10.4), mit 47 erfolgreichen automatischen Tests. Tatsächliche Prüfungen und Erhalt von Test/Test2, Farben, nativen Einstellungen und Test für APP sind in `TESTING.md` beschrieben.
+Unter „Home-Assistant-Verknüpfungen“ stehen Logs, Automationen und Zustände bereit, jeweils mit auswählbarem Unterordner und `mdi:cog-transfer`. Vorhandene passende Links werden wiederverwendet, eigene Namen und Icons erhalten. Erst Speichern übernimmt Änderungen. Zustände verwendet `/config/tools/state`; ältere Links auf `/developer-tools/state` werden erkannt. HA-Zugriffsrechte bleiben unverändert.
+
+0.1.4 ist lokal vorbereitet, mit 50 erfolgreichen automatischen Tests. Letzter echter Prüfstand auf .177 ist 0.1.3 (HA 2026.10.4); diese Änderung wurde noch nicht dort eingespielt. Details in `TESTING.md`.
 
 Mindestziel HA 2026.10.3; echte Prüfung ausschließlich auf .177 mit 2026.10.4. Kein Organizer-YAML-Import, keine gerätespezifischen Layouts, kein eigenes CSS oder Template-Aktionen. Kopf-/Breiteneinstellungen und automatische Organizer-Übernahme sind noch nicht enthalten. HACS-Paketstruktur lokal vorbereitet, keine Veröffentlichung. Details zur Prüfung stehen in `TESTING.md`.

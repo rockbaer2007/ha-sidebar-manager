@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.3 | MIT | UGSo Software | local preview */
+/* Sidebar Manager 0.1.4 | MIT | UGSo Software | local preview */
 (() => {
   // src/core.js
-  var VERSION = "0.1.3";
+  var VERSION = "0.1.4";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -281,6 +281,22 @@
 
   // src/manager-model.js
   var MANAGER_KEY = "ugso_sidebar_manager_v1";
+  var HA_SHORTCUTS = [
+    { id: "logs", url: "/config/logs" },
+    { id: "automations", url: "/config/automation/dashboard" },
+    { id: "states", url: "/config/tools/state", aliases: ["/developer-tools/state"] }
+  ];
+  function findShortcut(record, preset) {
+    return Object.entries(record.items).find(([, v]) => [preset.url, ...preset.aliases || []].includes(v.url?.replace(/\/$/, "")));
+  }
+  function addShortcut(record, preset, title, group = "") {
+    const existing = findShortcut(record, preset);
+    if (existing) return existing[0];
+    let key = "sm-link-ha-" + preset.id;
+    if (record.items[key]) key = newId("sm-link");
+    record.items[key] = { title, icon: "mdi:cog-transfer", url: preset.url, group: record.groups.some((g) => g.id === group) ? group : "", bottom: false, hidden: false };
+    return key;
+  }
   function newId(prefix) {
     return prefix + "-" + Array.from(crypto.getRandomValues(new Uint32Array(4)), (v) => v.toString(16).padStart(8, "0")).join("");
   }
@@ -384,6 +400,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
+  Object.assign(MANAGER_STRINGS.de, { haShortcuts: "Home-Assistant-Verknüpfungen", shortcut_logs: "Logs", shortcut_automations: "Automationen", shortcut_states: "Zustände", shortcutAdd: "Hinzufügen", shortcutPresent: "Bereits vorhanden", shortcutHint: "Unterordner wählen und hinzufügen. Vorhandene Links werden wiederverwendet; ihre Zuordnung lässt sich hier ändern. Erst Speichern übernimmt Änderungen. HA-Zugriffsrechte gelten weiterhin." });
+  Object.assign(MANAGER_STRINGS.en, { haShortcuts: "Home Assistant shortcuts", shortcut_logs: "Logs", shortcut_automations: "Automations", shortcut_states: "States", shortcutAdd: "Add", shortcutPresent: "Already present", shortcutHint: "Choose a folder and add the shortcut. Existing links are reused and their folder can be changed here. Save applies changes. Home Assistant access permissions still apply." });
+  Object.assign(MANAGER_STRINGS.fr, { haShortcuts: "Raccourcis Home Assistant", shortcut_logs: "Journaux", shortcut_automations: "Automatisations", shortcut_states: "États", shortcutAdd: "Ajouter", shortcutPresent: "Déjà présent", shortcutHint: "Choisissez un dossier et ajoutez le raccourci. Les liens existants sont réutilisés et leur dossier peut être modifié ici. Enregistrer applique les changements. Les autorisations Home Assistant restent applicables." });
   Object.assign(MANAGER_STRINGS.de, { submenus: "Untermenü", moveGroup: "Untermenü verschieben", groupOrderHint: "Haupteinträge und Untermenüs am Ziehgriff gemeinsam sortieren. Erst Speichern übernimmt die Reihenfolge.", saveOrderFirst: "Reihenfolge geändert. Bitte zuerst hier Speichern oder Abbrechen, bevor Sie Gruppen bearbeiten." });
   Object.assign(MANAGER_STRINGS.en, { submenus: "Submenu", moveGroup: "Move submenu", groupOrderHint: "Sort main entries and submenus together using their drag handles. Save applies the order.", saveOrderFirst: "Order changed. Save or Cancel here before editing groups." });
   Object.assign(MANAGER_STRINGS.fr, { submenus: "Sous-menu", moveGroup: "Déplacer le sous-menu", groupOrderHint: "Triez les entrées principales et les sous-menus ensemble avec leur poignée. Enregistrer applique cet ordre.", saveOrderFirst: "Ordre modifié. Enregistrez ou annulez ici avant de modifier les groupes." });
@@ -501,6 +520,38 @@
         this.draft.groups.push({ id: newId("group"), name: t.newGroup, icon: "mdi:folder-outline", collapsed: false, bottom: false });
         this.renderBody();
       }));
+      this.main.append(el("h3", t.haShortcuts));
+      const shortcuts = el("div");
+      shortcuts.className = "cards sm-ha-shortcuts";
+      this.presetGroups ||= {};
+      for (const preset of HA_SHORTCUTS) {
+        const existing = findShortcut(this.draft, preset), row = el("div");
+        row.className = "row";
+        row.dataset.shortcut = preset.id;
+        row.append(el("strong", t["shortcut_" + preset.id]), el("small", preset.url));
+        const label = el("label", t.group), select = el("select");
+        select.setAttribute("aria-label", t.group + " " + t["shortcut_" + preset.id]);
+        for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
+          const o = el("option", g.name);
+          o.value = g.id;
+          select.append(o);
+        }
+        select.value = existing ? existing[1].group : this.presetGroups[preset.id] || "";
+        select.onchange = () => {
+          this.presetGroups[preset.id] = select.value;
+          if (existing) this.draft.items[existing[0]].group = select.value;
+        };
+        label.append(select);
+        row.append(label);
+        const add = this.button(existing ? t.shortcutPresent : t.shortcutAdd, () => {
+          addShortcut(this.draft, preset, t["shortcut_" + preset.id], select.value);
+          this.renderBody();
+        });
+        add.disabled = !!existing;
+        row.append(add);
+        shortcuts.append(row);
+      }
+      this.main.append(shortcuts, el("p", t.shortcutHint));
       this.main.append(el("h3", t.items));
       const items = el("div");
       items.className = "cards";

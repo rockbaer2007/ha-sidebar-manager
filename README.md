@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.3 — local preview
+# Sidebar Manager 0.1.4 — local preview
 
 [Deutsch](docs/README.de.md) · English · [Français](docs/README.fr.md)
 
@@ -32,7 +32,7 @@ Use only the new module, never alongside Sidebar Colors or Sidebar Organizer:
 ```yaml
 frontend:
   extra_module_url:
-    - /local/ugso-sidebar-manager/0.1.3/ha-sidebar-manager.js
+    - /local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js
 ```
 
 Copy `dist/ha-sidebar-manager.js` to the matching directory under `/config/www`. Preserve existing frontend/themes configuration; replace the old colors module entry rather than duplicating `frontend`. Validate the HA configuration, restart HA and reload the browser. The previous module and configuration are retained in the PC backup for rollback.
@@ -41,7 +41,9 @@ This local package includes a HACS-style `hacs.json` and a bundled single JS fil
 
 ## Development
 
-Local verification on .177 (HA 2026.10.4), with 47 automated tests. See `docs/TESTING.md` for the actual checks and preservation of Test/Test2, colors, native preferences and Test für APP.
+The settings include shortcuts for Logs, Automations and States, each with a selectable folder and `mdi:cog-transfer`. Existing matching URLs are reused without overwriting their names or icons. Changes apply only after Save. States uses the current `/config/tools/state` route; legacy `/developer-tools/state` links are recognized. These links do not change HA access permissions.
+
+Version 0.1.4 is prepared locally, with 50 automated tests. The latest live .177 verification remains 0.1.3 (HA 2026.10.4); .177 has not been updated for this increment. See `docs/TESTING.md`.
 
 Node 22 or newer: `npm ci`, `npm run check`, `npm run build`, `npm test`.
 

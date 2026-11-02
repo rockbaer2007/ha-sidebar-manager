@@ -1,5 +1,9 @@
 # Local verification — 2026-11-01
 
+## Local continuation — 2026-11-02, 0.1.4
+
+PC source backup: `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-links-20261102`. No HA changes, no deployment and no publication. Existing variants and ZIPs retained. Syntax, bundle and 50 automated tests pass. New checks cover all three shortcut routes and selected folders, duplicate/legacy URL recognition, custom-name/icon preservation, ID collisions, absent-folder fallback, and adding a shortcut in the dialog without writing until Save (Cancel does not persist). Latest actual .177 test remains 0.1.3 as recorded below.
+
 Unpublished Sidebar Manager 0.1.3. Live target exclusively `.177`, Home Assistant 2026.10.4 on port 80. No other HA host accessed. Earlier local packages and source snapshots are retained.
 
 ## Safety

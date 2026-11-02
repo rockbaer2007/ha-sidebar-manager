@@ -1,5 +1,17 @@
 import {clone, stable,normalizeColor} from './core.js';
 export const MANAGER_KEY='ugso_sidebar_manager_v1';
+export const HA_SHORTCUTS=[
+ {id:'logs',url:'/config/logs'},
+ {id:'automations',url:'/config/automation/dashboard'},
+ {id:'states',url:'/config/tools/state',aliases:['/developer-tools/state']}
+];
+export function findShortcut(record,preset){return Object.entries(record.items).find(([,v])=>[preset.url,...preset.aliases||[]].includes(v.url?.replace(/\/$/,'')));}
+export function addShortcut(record,preset,title,group=''){
+ const existing=findShortcut(record,preset);if(existing)return existing[0];
+ let key='sm-link-ha-'+preset.id;if(record.items[key])key=newId('sm-link');
+ record.items[key]={title,icon:'mdi:cog-transfer',url:preset.url,group:record.groups.some(g=>g.id===group)?group:'',bottom:false,hidden:false};
+ return key;
+}
 // randomUUID is restricted to secure contexts; HA is also used over LAN HTTP.
 export function newId(prefix){return prefix+'-'+Array.from(crypto.getRandomValues(new Uint32Array(4)),v=>v.toString(16).padStart(8,'0')).join('');}
 const text=v=>typeof v==='string'?v.trim().slice(0,160):'';

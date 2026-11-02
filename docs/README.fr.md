@@ -1,4 +1,4 @@
-# Sidebar Manager 0.1.3 — aperçu local
+# Sidebar Manager 0.1.4 — aperçu local
 
 Extension indépendante pour Home Assistant : couleurs et opacité, groupes repliables, entrées épinglées, liens personnalisés, noms et icônes MDI. La langue DE/EN/FR suit automatiquement HA. Aucune publication.
 
@@ -18,7 +18,7 @@ L'export/import JSON couvre l'organisation (groupes, liens, noms, icônes, masqu
 
 ## Installation et retour
 
-Charger un seul module : `/local/ugso-sidebar-manager/0.1.3/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
+Charger un seul module : `/local/ugso-sidebar-manager/0.1.4/ha-sidebar-manager.js`, copié sous `/config/www`. Préserver les thèmes et les autres entrées frontend. Remplacer l'ancien module de couleurs ; ne pas dupliquer la section `frontend`. Valider la configuration, redémarrer HA et recharger le navigateur. Ne pas charger Sidebar Colors ou Sidebar Organizer simultanément.
 
 Les dossiers possèdent un sélecteur de couleur avec opacité, appliquée à leur icône et leur nom. « Couleur du thème » retire la couleur personnalisée. Enregistrer dans le Manager confirme le choix.
 
@@ -28,6 +28,8 @@ Pour revenir, restaurer l'ancien chemin du module sauvegardé et redémarrer HA.
 
 ## Limites
 
-Vérification locale sur .177 (HA 2026.10.4), avec 47 tests automatisés réussis. Les contrôles réels et la conservation de Test/Test2, couleurs, réglages natifs et Test für APP sont décrits dans `TESTING.md`.
+Les réglages proposent Journaux, Automatisations et États, avec dossier au choix et `mdi:cog-transfer`. Les liens correspondants sont réutilisés, sans écraser leurs noms ou icônes personnalisés. Enregistrer applique les modifications. États utilise `/config/tools/state` ; les anciens liens `/developer-tools/state` sont reconnus. Les autorisations HA restent inchangées.
+
+La version 0.1.4 est préparée localement, avec 50 tests automatisés réussis. La dernière vérification réelle sur .177 reste la version 0.1.3 (HA 2026.10.4) ; cette modification n'y est pas encore installée. Voir `TESTING.md`.
 
 Cible minimale HA 2026.10.3 ; vérification réelle uniquement sur .177 avec 2026.10.4. Pas encore d'import YAML Organizer, de présentations par appareil, de CSS libre ou d'actions à modèles. Réglages d'en-tête/largeur et migration automatique Organizer restent à faire. Structure HACS préparée localement, sans publication. Voir `TESTING.md` pour les vérifications.

@@ -1,4 +1,4 @@
-import {normalizeManager,newId} from './manager-model.js';
+import {normalizeManager,newId,HA_SHORTCUTS,findShortcut,addShortcut} from './manager-model.js';
 import {clone,rgba} from './core.js';
 import {managerStrings} from './manager-i18n.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
@@ -39,6 +39,18 @@ export class ManagerDialog extends HTMLElement{
   const groups=el('div');groups.className='cards';
   this.draft.groups.forEach((g,i)=>{const row=el('div');row.className='row';row.append(this.input(t.name,g.name,v=>g.name=v),this.input(t.icon,g.icon,v=>g.icon=v),this.groupColor(g),this.input(t.collapsed,g.collapsed,v=>g.collapsed=v,'checkbox'),this.input(t.bottom,g.bottom,v=>g.bottom=v,'checkbox'),this.button(t.up,()=>this.move(this.draft.groups,i,-1),'↑'),this.button(t.down,()=>this.move(this.draft.groups,i,1),'↓'),this.button(t.remove,()=>{this.draft.groups.splice(i,1);for(const item of Object.values(this.draft.items))if(item.group===g.id)item.group='';this.renderBody();},'×'));groups.append(row);});
   this.main.append(groups,this.button(t.addGroup,()=>{this.draft.groups.push({id:newId('group'),name:t.newGroup,icon:'mdi:folder-outline',collapsed:false,bottom:false});this.renderBody();}));
+  this.main.append(el('h3',t.haShortcuts));
+  const shortcuts=el('div');shortcuts.className='cards sm-ha-shortcuts';this.presetGroups||={};
+  for(const preset of HA_SHORTCUTS){
+   const existing=findShortcut(this.draft,preset),row=el('div');row.className='row';row.dataset.shortcut=preset.id;
+   row.append(el('strong',t['shortcut_'+preset.id]),el('small',preset.url));
+   const label=el('label',t.group),select=el('select');select.setAttribute('aria-label',t.group+' '+t['shortcut_'+preset.id]);
+   for(const g of [{id:'',name:t.none},...this.draft.groups]){const o=el('option',g.name);o.value=g.id;select.append(o);}
+   select.value=existing?existing[1].group:this.presetGroups[preset.id]||'';
+   select.onchange=()=>{this.presetGroups[preset.id]=select.value;if(existing)this.draft.items[existing[0]].group=select.value;};label.append(select);row.append(label);
+   const add=this.button(existing?t.shortcutPresent:t.shortcutAdd,()=>{addShortcut(this.draft,preset,t['shortcut_'+preset.id],select.value);this.renderBody();});add.disabled=!!existing;row.append(add);shortcuts.append(row);
+  }
+  this.main.append(shortcuts,el('p',t.shortcutHint));
   this.main.append(el('h3',t.items));const items=el('div');items.className='cards';
   const keys=[...new Set([...this.draft.order,...this.entries.map(e=>e.key),...Object.keys(this.draft.items)])];
   keys.forEach((key,i)=>{

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 — unpublished local preview
+
+- Settings provide Logs, Automations and States shortcuts with selectable folders and `mdi:cog-transfer`.
+- Reuse existing matching links, including the legacy States route, and retain custom names/icons and all existing settings.
+- Local-only preparation and tests; no .177 deployment or publication in this increment.
+
 ## 0.1.3 — unpublished local preview
 
 - All folders and main entries share the native drag-and-drop list; folders can be placed between main entries, without extra arrow buttons.
