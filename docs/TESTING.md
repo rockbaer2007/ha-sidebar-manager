@@ -10,7 +10,7 @@
 - Collapse: computed separator display is `none`. Expand/default after reload: separator is visible at the end of the block. Folder membership and other groups remain intact.
 - Own folder/link removed, original Test/Test2 order restored. Server readback confirms manager preferences equal the pre-test normalized snapshot, all native user preferences/colors unchanged, Test für APP/resources unchanged and deployed bundle SHA-256 matches local.
 - Previous 0.1.6 report below describes the then-current always-visible separator; 0.1.7 intentionally supersedes that behavior.
-- Backup retention pending concrete action-time approval: delete only oldest `1cf6590c`; retain `c77d2ea8`, `f3941782`, `82bbd8e7`, the app-update backup and all PC snapshots.
+- Backup retention completed after concrete user approval: only oldest `1cf6590c` deleted. HA confirms three manual full backups, 524.62 MB total: `c77d2ea8`, `f3941782`, `82bbd8e7`. The separate 119.18 MB app-update backup and all PC snapshots remain.
 - Local ZIP 0.1.7 and DE/EN/FR instructions updated. Nothing published.
 
 ## Pale-yellow shortcut names — 2026-11-02, 0.1.5
