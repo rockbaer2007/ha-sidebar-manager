@@ -86,4 +86,3 @@ for(const [version,tag] of [['2026.10.3','ha-md-list-item'],['2026.11.0','ha-lis
   }finally{sidebar.remove();await win.happyDOM.abort();}
  });
 }
-
