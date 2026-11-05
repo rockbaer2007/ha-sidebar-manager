@@ -2,6 +2,10 @@
 
 **0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
+[![Installer avec HACS / Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
+
+**HACS / Marketplace :** Ouvrir Sidebar Manager dans votre installation Home Assistant avec le bouton ci-dessus, puis le télécharger. Terminer ensuite la configuration dans la section [HACS / Marketplace](#hacs--marketplace).
+
 La version 0.1.8 ajoute les liens personnalisés à **Modifier la barre latérale**, avec couleur/opacité, visibilité et poignée de tri. Le bouton affiche **Lien** ou **Lien ext.** L’utilisateur a confirmé la réussite de la vérification fonctionnelle le 2 novembre 2026 ; 70 tests automatisés réussissent.
 
 Dossiers, couleurs, opacité et liens personnalisés dans « Modifier la barre latérale ». Triez dossiers et entrées principales avec les poignées natives. Aucun fichier système HA n'est remplacé.

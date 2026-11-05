@@ -4,6 +4,10 @@
 
 **0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
+[![Install with HACS / Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
+
+**HACS / Marketplace:** Open Sidebar Manager in your Home Assistant installation using the button above, then download it. Complete the configuration under [Install with HACS / Marketplace](#install-with-hacs--marketplace).
+
 Version 0.1.8 adds custom links to **Edit sidebar** with colors/opacity, visibility and drag sorting. The settings button reads **Link** or **Ext. link**. The user confirmed successful functional verification on 2 November 2026; 70 automated tests pass.
 
 Organize Home Assistant's sidebar with folders, colors, opacity and custom links, directly from **Edit sidebar**. Move main entries and folders with the native drag handles. No HA core files are replaced.

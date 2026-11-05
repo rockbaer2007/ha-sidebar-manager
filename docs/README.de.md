@@ -2,6 +2,10 @@
 
 **0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
+[![Mit HACS / Marketplace installieren](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
+
+**HACS / Marketplace:** Über den Button Sidebar Manager in deiner Home-Assistant-Installation öffnen und herunterladen. Anschließend die Konfiguration im Abschnitt [HACS / Marketplace](#hacs--marketplace) durchführen.
+
 Version 0.1.8 ergänzt eigene Links in **Seitenleiste bearbeiten**, mit Farben/Transparenz, Auge und Ziehgriff. Die Beschriftung lautet **Link** beziehungsweise **ext. Link**. Der Anwender hat die erfolgreiche Funktionsprüfung am 02.11.2026 bestätigt; 70 automatische Tests sind erfolgreich.
 
 Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeiten“. Haupteinträge und Ordner gemeinsam am nativen Ziehgriff sortieren. Keine HA-Systemdateien werden ersetzt.
