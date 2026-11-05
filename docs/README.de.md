@@ -1,12 +1,18 @@
 # Sidebar Manager
 
-**0.1.8 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
 Version 0.1.8 ergänzt eigene Links in **Seitenleiste bearbeiten**, mit Farben/Transparenz, Auge und Ziehgriff. Die Beschriftung lautet **Link** beziehungsweise **ext. Link**. Der Anwender hat die erfolgreiche Funktionsprüfung am 02.11.2026 bestätigt; 70 automatische Tests sind erfolgreich.
 
 Ordner, Farben, Transparenz und eigene Links direkt in „Seitenleiste bearbeiten“. Haupteinträge und Ordner gemeinsam am nativen Ziehgriff sortieren. Keine HA-Systemdateien werden ersetzt.
 
 [English](../README.md) · [Français](README.fr.md) · [Dokumentation](https://opensource.ugso-software.de/projects/sidebar-manager/) · [Downloads](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
+
+## HA-2026.11-Kompatibilität — 0.1.9
+
+Die Farbanwendung im nativen Bearbeitungsdialog unterstützt sowohl `ha-md-list-item` als auch das neue `ha-list-item-button`. Vorhandene Farben, Transparenz und Speicherschlüssel bleiben erhalten; keine Migration nötig. Mindestversion weiterhin HA 2026.10.3.
+
+Auf .177 (Port 80), Core 2026.11.0 / Frontend 20261028.4 geprüft: Text-/Iconfarben der Einträge und Gruppen, Transparenz, Abbrechen, Speichern, Theme-Rücksetzung und vollständiges Browser-Neuladen. Eigene Testgruppe/-verknüpfung entfernt; exportiertes Layout entspricht der Sicherung vor dem Test. 72 automatische Tests bestehen. Nur das verwendete Paket aktualisieren; Colors und Manager nicht gleichzeitig laden.
 
 ## Neu in 0.1.8: Links im Seitenleisten-Editor
 

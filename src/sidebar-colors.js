@@ -156,7 +156,7 @@ function syncRows(session) {
   const displayEditors=[...session.dialog.shadowRoot.querySelectorAll('ha-items-display-editor')];
   for(const display of displayEditors)if(display.shadowRoot)session.observer?.observe(display.shadowRoot,{childList:true,subtree:true});
   for(const item of displayEditors.flatMap(e=>e.items||[]))if(!item.value.startsWith('sm-group:'))makeButton(session,item);
-  for(const row of displayEditors.flatMap(e=>[...e.shadowRoot?.querySelectorAll("ha-md-list-item")||[]])) {
+  for(const row of displayEditors.flatMap(e=>[...e.shadowRoot?.querySelectorAll("ha-md-list-item,ha-list-item-button")||[]])) {
     if(row.querySelector('[data-sm-group]'))continue;
     const panel=row.querySelector('[data-panel]')?.dataset.panel||row.value;
     const c=rgba(session.draft.colors[panel]);

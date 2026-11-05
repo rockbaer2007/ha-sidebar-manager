@@ -54,7 +54,7 @@ function render(dialog,s){
   s.editor.value={order:s.order,hidden:[...s.hidden]};
  }
  s.editor.hass=dialog.hass;s.editor.inert=!!s.saving;
- for(const row of s.editor.shadowRoot?.querySelectorAll('ha-md-list-item')||[]){
+ for(const row of s.editor.shadowRoot?.querySelectorAll('ha-md-list-item,ha-list-item-button')||[]){
   const g=s.draft.groups.find(g=>g.id===row.querySelector('[data-sm-group]')?.dataset.smGroup);if(!g)continue;
   for(const n of row.querySelectorAll('[slot=headline],.icon'))n.style.color=rgba(g.color)||'';
  }

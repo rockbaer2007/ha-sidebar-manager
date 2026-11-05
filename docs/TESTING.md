@@ -1,5 +1,13 @@
 # Verification history
 
+## HA 2026.11 compatibility — 0.1.9
+
+Supports both the legacy `ha-md-list-item` and HA 2026.11's `ha-list-item-button` when coloring native editor rows. Existing colors, opacity and storage keys are preserved; no migration is required. Minimum HA remains 2026.10.3.
+
+Verified on .177 (port 80), Core 2026.11.0 / frontend 20261028.4: entry and group text/icon colors, opacity, Cancel, Save, theme reset and a full browser reload. Disposable group/link removed; exported layout matches the pre-test backup. 72 automated tests pass. Update only the package you use; do not load Colors and Manager together.
+
+Source bundles and .177 full backup `3c252cf9` were created first. The previous native settings and “Test für APP” were preserved. After approved removal of the oldest full backup, .177 retains three full backups (`3c252cf9`, `2157cbf4`, `2b60a8a7`); app-update and PC backups remain.
+
 ## Verification and user acceptance — 0.1.8, 2026-11-02
 
 Source backup created before editing. Codex did not access an HA host for this increment or publication. The user tested the supplied local 0.1.8 package and explicitly confirmed that everything works. The host and HA version of that acceptance test were not separately specified; the earlier .177/2026.10.4 verification below remains a distinct historical test.

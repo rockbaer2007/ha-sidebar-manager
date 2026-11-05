@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.8 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.9 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.8";
+  var VERSION = "0.1.9";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -814,7 +814,7 @@
     }
     s.editor.hass = dialog.hass;
     s.editor.inert = !!s.saving;
-    for (const row of s.editor.shadowRoot?.querySelectorAll("ha-md-list-item") || []) {
+    for (const row of s.editor.shadowRoot?.querySelectorAll("ha-md-list-item,ha-list-item-button") || []) {
       const g = s.draft.groups.find((g2) => g2.id === row.querySelector("[data-sm-group]")?.dataset.smGroup);
       if (!g) continue;
       for (const n of row.querySelectorAll("[slot=headline],.icon")) n.style.color = rgba(g.color) || "";
@@ -1560,7 +1560,7 @@
     const displayEditors = [...session.dialog.shadowRoot.querySelectorAll("ha-items-display-editor")];
     for (const display of displayEditors) if (display.shadowRoot) session.observer?.observe(display.shadowRoot, { childList: true, subtree: true });
     for (const item of displayEditors.flatMap((e) => e.items || [])) if (!item.value.startsWith("sm-group:")) makeButton(session, item);
-    for (const row of displayEditors.flatMap((e) => [...e.shadowRoot?.querySelectorAll("ha-md-list-item") || []])) {
+    for (const row of displayEditors.flatMap((e) => [...e.shadowRoot?.querySelectorAll("ha-md-list-item,ha-list-item-button") || []])) {
       if (row.querySelector("[data-sm-group]")) continue;
       const panel = row.querySelector("[data-panel]")?.dataset.panel || row.value;
       const c = rgba(session.draft.colors[panel]);

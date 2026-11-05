@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.9 — 2026-11-05
+
+Supports both the legacy `ha-md-list-item` and HA 2026.11's `ha-list-item-button` when coloring native editor rows. Existing colors, opacity and storage keys are preserved; no migration is required. Minimum HA remains 2026.10.3.
+
+Verified on .177 (port 80), Core 2026.11.0 / frontend 20261028.4: entry and group text/icon colors, opacity, Cancel, Save, theme reset and a full browser reload. Disposable group/link removed; exported layout matches the pre-test backup. 72 automated tests pass. Update only the package you use; do not load Colors and Manager together.
+
+
 ## 0.1.8 — 2026-11-02
 
 - Include all saved internal and external links in the native sidebar editor, including hidden links. Links without a saved mixed position start at the end.

@@ -1,12 +1,18 @@
 # Sidebar Manager
 
-**0.1.8 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
 La version 0.1.8 ajoute les liens personnalisés à **Modifier la barre latérale**, avec couleur/opacité, visibilité et poignée de tri. Le bouton affiche **Lien** ou **Lien ext.** L’utilisateur a confirmé la réussite de la vérification fonctionnelle le 2 novembre 2026 ; 70 tests automatisés réussissent.
 
 Dossiers, couleurs, opacité et liens personnalisés dans « Modifier la barre latérale ». Triez dossiers et entrées principales avec les poignées natives. Aucun fichier système HA n'est remplacé.
 
 [English](../README.md) · [Deutsch](README.de.md) · [Documentation](https://opensource.ugso-software.de/fr/projects/sidebar-manager/) · [Téléchargements](https://github.com/rockbaer2007/ha-sidebar-manager/releases/latest)
+
+## Compatibilité HA 2026.11 — 0.1.9
+
+Les couleurs des lignes de l’éditeur natif prennent en charge `ha-md-list-item` et le nouveau `ha-list-item-button`. Couleurs, opacité et clés de stockage existantes conservées ; aucune migration nécessaire. Version minimale : HA 2026.10.3.
+
+Vérifié sur .177 (port 80), Core 2026.11.0 / frontend 20261028.4 : couleurs du texte/des icônes des entrées et groupes, opacité, annulation, enregistrement, réinitialisation au thème et rechargement complet du navigateur. Groupe/lien de test supprimés ; disposition exportée identique à la sauvegarde initiale. 72 tests automatisés réussis. Mettre à jour uniquement le paquet utilisé ; ne pas charger Colors et Manager simultanément.
 
 ## Nouveautés de 0.1.8 : liens dans l’éditeur de barre latérale
 
