@@ -1,4 +1,22 @@
-# Sidebar Manager 0.1.9
+# Sidebar Manager 0.1.10
+
+## Home Assistant shortcuts
+
+Adds Entities, Marketplace, Labels and Actions to Home Assistant shortcuts, with distinct editable default icons for all seven presets. The shortcut section has two responsive columns, or one on narrow screens. Existing links and custom icons remain unchanged.
+
+> **Marketplace shortcut: Home Assistant 2026.11.0 or newer is required.** This preset is hidden on older or unknown versions. The package minimum remains HA 2026.10.3; other presets remain available. The shortcut does not install Marketplace or grant additional permissions.
+
+| Shortcut | Default icon | Target |
+| --- | --- | --- |
+| Logs | `mdi:history` | `/config/logs` |
+| Automations | `mdi:robot` | `/config/automation/dashboard` |
+| Entities | `mdi:shape` | `/config/entities` |
+| Marketplace | `mdi:store` | `/marketplace/browse?group=status` |
+| Labels | `mdi:label` | `/config/labels` |
+| States | `mdi:list-status` | `/config/tools/state` |
+| Actions | `mdi:run` | `/config/tools/action` |
+
+Build, syntax checks and 73 automated tests pass. Verified on .177 (HA 2026.11.0): desktop layout, all four added destinations, icons, folder assignment, Cancel, Save and full reload. Temporary links removed; original user settings, colors and dashboard/resources match the PC backup exactly. Older-version gating is tested automatically; no live mobile or older-HA test claimed. Create a backup before updating and reload the browser afterward. Existing saved icons remain unchanged; the table specifies editable defaults for newly added links.
 
 ## HA 2026.11 compatibility — 0.1.9
 

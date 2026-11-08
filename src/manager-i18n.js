@@ -7,6 +7,9 @@ Object.assign(MANAGER_STRINGS.de,{none:'Hauptmenü',move:'In Ordner verschieben'
 Object.assign(MANAGER_STRINGS.en,{none:'Main menu',move:'Move to folder',groupColor:'Folder color'});
 Object.assign(MANAGER_STRINGS.fr,{none:'Menu principal',move:'Déplacer dans un dossier',groupColor:'Couleur du dossier'});
 export const managerStrings=hass=>MANAGER_STRINGS[(hass?.language||hass?.locale?.language||'en').split('-')[0]]||MANAGER_STRINGS.en;
+Object.assign(MANAGER_STRINGS.de,{shortcut_entities:'Entitäten',shortcut_marketplace:'Marketplace',shortcut_labels:'Labels',shortcut_actions:'Aktionen'});
+Object.assign(MANAGER_STRINGS.en,{shortcut_entities:'Entities',shortcut_marketplace:'Marketplace',shortcut_labels:'Labels',shortcut_actions:'Actions'});
+Object.assign(MANAGER_STRINGS.fr,{shortcut_entities:'Entités',shortcut_marketplace:'Marketplace',shortcut_labels:'Étiquettes',shortcut_actions:'Actions'});
 Object.assign(MANAGER_STRINGS.de,{internalLink:'Link',externalLink:'ext. Link',editLink:'Link bearbeiten'});
 Object.assign(MANAGER_STRINGS.en,{internalLink:'Link',externalLink:'Ext. link',editLink:'Edit link'});
 Object.assign(MANAGER_STRINGS.fr,{internalLink:'Lien',externalLink:'Lien ext.',editLink:'Modifier le lien'});

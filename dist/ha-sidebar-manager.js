@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.9 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.10 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.9";
+  var VERSION = "0.1.10";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -285,10 +285,24 @@
   var isExternalUrl = (value) => typeof value === "string" && /^https?:\/\//i.test(value);
   var separatorWidth = (value) => Number.isInteger(value) ? Math.max(0, Math.min(4, value)) : 0;
   var HA_SHORTCUTS = [
-    { id: "logs", url: "/config/logs" },
-    { id: "automations", url: "/config/automation/dashboard" },
-    { id: "states", url: "/config/tools/state", aliases: ["/developer-tools/state"] }
+    { id: "logs", url: "/config/logs", icon: "mdi:history" },
+    { id: "automations", url: "/config/automation/dashboard", icon: "mdi:robot" },
+    { id: "entities", url: "/config/entities", icon: "mdi:shape" },
+    { id: "marketplace", url: "/marketplace/browse?group=status", icon: "mdi:store", minimumVersion: "2026.11.0" },
+    { id: "labels", url: "/config/labels", icon: "mdi:label" },
+    { id: "states", url: "/config/tools/state", aliases: ["/developer-tools/state"], icon: "mdi:list-status" },
+    { id: "actions", url: "/config/tools/action", icon: "mdi:run" }
   ];
+  function shortcutAvailable(preset, version) {
+    if (!preset.minimumVersion) return true;
+    const match = /^(\d+)\.(\d+)\.(\d+)(.*)$/.exec(version || "");
+    if (!match) return false;
+    const current = match.slice(1, 4).map(Number), minimum = preset.minimumVersion.split(".").map(Number);
+    for (let i = 0; i < 3; i++) {
+      if (current[i] !== minimum[i]) return current[i] > minimum[i];
+    }
+    return !match[4];
+  }
   function findShortcut(record, preset) {
     return Object.entries(record.items).find(([, v]) => [preset.url, ...preset.aliases || []].includes(v.url?.replace(/\/$/, "")));
   }
@@ -297,7 +311,7 @@
     if (existing) return existing[0];
     let key = "sm-link-ha-" + preset.id;
     if (record.items[key]) key = newId("sm-link");
-    record.items[key] = { title, icon: "mdi:cog-transfer", url: preset.url, group: record.groups.some((g) => g.id === group) ? group : "", bottom: false, hidden: false };
+    record.items[key] = { title, icon: preset.icon, url: preset.url, group: record.groups.some((g) => g.id === group) ? group : "", bottom: false, hidden: false };
     return key;
   }
   function newId(prefix) {
@@ -404,6 +418,9 @@
   Object.assign(MANAGER_STRINGS.en, { none: "Main menu", move: "Move to folder", groupColor: "Folder color" });
   Object.assign(MANAGER_STRINGS.fr, { none: "Menu principal", move: "Déplacer dans un dossier", groupColor: "Couleur du dossier" });
   var managerStrings = (hass) => MANAGER_STRINGS[(hass?.language || hass?.locale?.language || "en").split("-")[0]] || MANAGER_STRINGS.en;
+  Object.assign(MANAGER_STRINGS.de, { shortcut_entities: "Entitäten", shortcut_marketplace: "Marketplace", shortcut_labels: "Labels", shortcut_actions: "Aktionen" });
+  Object.assign(MANAGER_STRINGS.en, { shortcut_entities: "Entities", shortcut_marketplace: "Marketplace", shortcut_labels: "Labels", shortcut_actions: "Actions" });
+  Object.assign(MANAGER_STRINGS.fr, { shortcut_entities: "Entités", shortcut_marketplace: "Marketplace", shortcut_labels: "Étiquettes", shortcut_actions: "Actions" });
   Object.assign(MANAGER_STRINGS.de, { internalLink: "Link", externalLink: "ext. Link", editLink: "Link bearbeiten" });
   Object.assign(MANAGER_STRINGS.en, { internalLink: "Link", externalLink: "Ext. link", editLink: "Edit link" });
   Object.assign(MANAGER_STRINGS.fr, { internalLink: "Lien", externalLink: "Lien ext.", editLink: "Modifier le lien" });
@@ -532,7 +549,7 @@
         if (!this.busy) this.remove();
       }, "×"));
       const accent = el("style");
-      accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}";
+      accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}.sm-ha-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-ha-shortcuts>.row{min-width:0}.sm-ha-shortcuts small{overflow-wrap:anywhere}.sm-ha-shortcuts select{max-width:100%}@media(max-width:600px){.sm-ha-shortcuts{grid-template-columns:minmax(0,1fr)}}";
       this.main = el("main");
       this.foot = el("footer");
       this.modal.append(head, this.main, this.foot);
@@ -569,6 +586,7 @@
       shortcuts.className = "cards sm-ha-shortcuts";
       this.presetGroups ||= {};
       for (const preset of HA_SHORTCUTS) {
+        if (!shortcutAvailable(preset, this.hass?.config?.version)) continue;
         const existing = findShortcut(this.draft, preset), row = el("div");
         row.className = "row";
         row.dataset.shortcut = preset.id;

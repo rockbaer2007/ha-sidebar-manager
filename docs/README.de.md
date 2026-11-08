@@ -1,6 +1,10 @@
 # Sidebar Manager
 
-**0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+> **Marketplace-Verknüpfung erst ab HA 2026.11.0.** Auf älteren oder unbekannten Versionen ausgeblendet; sie installiert Marketplace nicht. Andere Verknüpfungen und die Paket-Mindestversion HA 2026.10.3 bleiben unverändert. Gespeicherte Icons bleiben erhalten; neue Links nutzen die unten beschriebenen änderbaren Vorgaben.
+
+Version 0.1.10 ergänzt die Home-Assistant-Verknüpfungen: Logs (`mdi:history`), Automationen (`mdi:robot`), Entitäten (`mdi:shape`, `/config/entities`), Marketplace (`mdi:store`, `/marketplace/browse?group=status`), Labels (`mdi:label`, `/config/labels`), Zustände (`mdi:list-status`) und Aktionen (`mdi:run`, `/config/tools/action`). Marketplace wird erst ab HA 2026.11.0 angeboten. Der Bereich hat zwei Spalten, auf schmalen Bildschirmen eine. Icons sind änderbare Vorgaben für neue Links; vorhandene Links, Namen, Icons und Gruppenzuordnungen bleiben erhalten. Am 08.11.2026 auf .177 mit HA 2026.11.0 geprüft: zweispaltige Desktop-Darstellung, alle vier neuen Linkziele, Standardicons, Ordnerzuordnung, Abbrechen, Speichern und Neuladen. Testlinks entfernt; ursprüngliche Benutzereinstellungen stimmen exakt mit der PC-Sicherung überein. Die Marketplace-Sperre für ältere Versionen ist automatisch getestet.
 
 [![Mit HACS / Marketplace installieren](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
 

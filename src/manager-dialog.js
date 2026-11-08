@@ -1,4 +1,4 @@
-import {normalizeManager,newId,HA_SHORTCUTS,findShortcut,addShortcut,isExternalUrl,separatorWidth} from './manager-model.js';
+import {normalizeManager,newId,HA_SHORTCUTS,shortcutAvailable,findShortcut,addShortcut,isExternalUrl,separatorWidth} from './manager-model.js';
 import {clone,rgba} from './core.js';
 import {managerStrings} from './manager-i18n.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
@@ -39,7 +39,7 @@ export class ManagerDialog extends HTMLElement{
   const style=el('style');style.textContent=`:host{font:14px var(--ha-font-family,Arial,sans-serif);color:var(--primary-text-color,#222)}*{box-sizing:border-box}dialog{color:inherit;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#888);border-radius:16px;width:min(1050px,94vw);max-height:90dvh;padding:0}dialog::backdrop{background:#0008}header,footer{padding:16px 20px;display:flex;gap:8px;align-items:center;background:var(--secondary-background-color,#eee)}h2{font-size:20px;margin:0;flex:1}h3{margin:14px 0 8px}main{padding:0 20px 16px;overflow:auto;max-height:calc(90dvh - 150px)}p{line-height:1.5}.cards{display:grid;gap:8px}.row{border:1px solid var(--divider-color,#aaa);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>strong{width:100%;overflow-wrap:anywhere}.row small{width:100%;opacity:.7}.row label{display:flex;gap:6px;align-items:center}.row label:has(input[type=text]){flex:1;min-width:160px}input,select,textarea{background:var(--primary-background-color,#fff);color:inherit;border:1px solid var(--divider-color,#888);border-radius:5px;padding:7px;font:inherit;min-width:0}input[type=text]{width:100%}button{font:inherit;border:1px solid var(--divider-color,#aaa);border-radius:7px;padding:8px 12px;min-height:36px;background:var(--secondary-background-color,#eee);color:inherit;cursor:pointer}button:hover{border-color:var(--primary-color,#03a9f4)}footer{justify-content:flex-end;flex-wrap:wrap}footer button{min-width:115px}.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}textarea{width:100%;height:120px}.status{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:wait}input[type=checkbox]{accent-color:var(--primary-color,#03a9f4)}@media(max-width:600px){main{padding:0 10px 10px}.row{gap:8px}.row label:has(input[type=text]){min-width:100%;}.row select{max-width:150px}header,footer{padding:12px}footer button{min-width:100px}}`;
   this.modal=el('dialog');this.modal.setAttribute('aria-label',this.t.title);
   const head=el('header');head.append(el('h2',this.t.title),this.button(this.t.cancel,()=>{if(!this.busy)this.remove();},'×'));
-  const accent=el('style');accent.textContent='.sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}';
+  const accent=el('style');accent.textContent='.sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}.sm-ha-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-ha-shortcuts>.row{min-width:0}.sm-ha-shortcuts small{overflow-wrap:anywhere}.sm-ha-shortcuts select{max-width:100%}@media(max-width:600px){.sm-ha-shortcuts{grid-template-columns:minmax(0,1fr)}}';
   this.main=el('main');this.foot=el('footer');this.modal.append(head,this.main,this.foot);this.shadowRoot.replaceChildren(style,accent,this.modal);this.renderBody();
  }
  renderBody(){
@@ -50,6 +50,7 @@ export class ManagerDialog extends HTMLElement{
   const shortcutHeading=el('h3',t.haShortcuts);shortcutHeading.className='sm-ha-shortcut-title';this.main.append(shortcutHeading);
   const shortcuts=el('div');shortcuts.className='cards sm-ha-shortcuts';this.presetGroups||={};
   for(const preset of HA_SHORTCUTS){
+   if(!shortcutAvailable(preset,this.hass?.config?.version))continue;
    const existing=findShortcut(this.draft,preset),row=el('div');row.className='row';row.dataset.shortcut=preset.id;
    const title=el('strong',t['shortcut_'+preset.id]);title.className='sm-ha-shortcut-title';row.append(title,el('small',preset.url));
    const label=el('label',t.group),select=el('select');select.setAttribute('aria-label',t.group+' '+t['shortcut_'+preset.id]);

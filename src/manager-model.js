@@ -4,15 +4,26 @@ export const WEB_PANEL='ugso-sidebar-web';
 export const isExternalUrl=value=>typeof value==='string'&&/^https?:\/\//i.test(value);
 export const separatorWidth=value=>Number.isInteger(value)?Math.max(0,Math.min(4,value)):0;
 export const HA_SHORTCUTS=[
- {id:'logs',url:'/config/logs'},
- {id:'automations',url:'/config/automation/dashboard'},
- {id:'states',url:'/config/tools/state',aliases:['/developer-tools/state']}
+ {id:'logs',url:'/config/logs',icon:'mdi:history'},
+ {id:'automations',url:'/config/automation/dashboard',icon:'mdi:robot'},
+ {id:'entities',url:'/config/entities',icon:'mdi:shape'},
+ {id:'marketplace',url:'/marketplace/browse?group=status',icon:'mdi:store',minimumVersion:'2026.11.0'},
+ {id:'labels',url:'/config/labels',icon:'mdi:label'},
+ {id:'states',url:'/config/tools/state',aliases:['/developer-tools/state'],icon:'mdi:list-status'},
+ {id:'actions',url:'/config/tools/action',icon:'mdi:run'}
 ];
+export function shortcutAvailable(preset,version){
+ if(!preset.minimumVersion)return true;
+ const match=/^(\d+)\.(\d+)\.(\d+)(.*)$/.exec(version||'');if(!match)return false;
+ const current=match.slice(1,4).map(Number),minimum=preset.minimumVersion.split('.').map(Number);
+ for(let i=0;i<3;i++){if(current[i]!==minimum[i])return current[i]>minimum[i];}
+ return !match[4];
+}
 export function findShortcut(record,preset){return Object.entries(record.items).find(([,v])=>[preset.url,...preset.aliases||[]].includes(v.url?.replace(/\/$/,'')));}
 export function addShortcut(record,preset,title,group=''){
  const existing=findShortcut(record,preset);if(existing)return existing[0];
  let key='sm-link-ha-'+preset.id;if(record.items[key])key=newId('sm-link');
- record.items[key]={title,icon:'mdi:cog-transfer',url:preset.url,group:record.groups.some(g=>g.id===group)?group:'',bottom:false,hidden:false};
+ record.items[key]={title,icon:preset.icon,url:preset.url,group:record.groups.some(g=>g.id===group)?group:'',bottom:false,hidden:false};
  return key;
 }
 // randomUUID is restricted to secure contexts; HA is also used over LAN HTTP.

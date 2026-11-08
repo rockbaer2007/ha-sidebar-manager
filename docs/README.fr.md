@@ -1,6 +1,10 @@
 # Sidebar Manager
 
-**0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+> **Raccourci Marketplace à partir de HA 2026.11.0 uniquement.** Masqué sur les versions anciennes ou inconnues ; il n’installe pas Marketplace. Les autres raccourcis et le minimum HA 2026.10.3 restent inchangés. Les icônes enregistrées sont conservées ; les nouveaux liens utilisent les valeurs par défaut modifiables décrites ci-dessous.
+
+La version 0.1.10 propose les raccourcis Journaux (`mdi:history`), Automatisations (`mdi:robot`), Entités (`mdi:shape`, `/config/entities`), Marketplace (`mdi:store`, `/marketplace/browse?group=status`), Étiquettes (`mdi:label`, `/config/labels`), États (`mdi:list-status`) et Actions (`mdi:run`, `/config/tools/action`). Marketplace est proposé uniquement à partir de HA 2026.11.0. La section utilise deux colonnes, une sur écran étroit. Les icônes par défaut des nouveaux liens restent modifiables ; les liens, noms, icônes et groupes existants sont conservés. Vérifié le 8 novembre 2026 sur .177 avec HA 2026.11.0 : deux colonnes sur ordinateur, quatre nouvelles destinations, icônes par défaut, dossier, annulation, enregistrement et rechargement. Liens de test supprimés ; réglages utilisateur identiques à la sauvegarde PC. Le filtrage Marketplace des anciennes versions est testé automatiquement.
 
 [![Installer avec HACS / Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
 

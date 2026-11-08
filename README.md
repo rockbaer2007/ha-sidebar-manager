@@ -2,7 +2,11 @@
 
 <img src="docs/images/icon.svg" width="80" height="80" alt="Sidebar Manager" />
 
-**0.1.9 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+> **Marketplace shortcut requires HA 2026.11.0 or newer.** Hidden on older or unknown versions; it does not install Marketplace. Other shortcuts and the package minimum of HA 2026.10.3 are unchanged. Existing saved icons are preserved; new presets use the editable defaults described below.
+
+Version 0.1.10 expands Home Assistant shortcuts to Logs (`mdi:history`), Automations (`mdi:robot`), Entities (`mdi:shape`, `/config/entities`), Marketplace (`mdi:store`, `/marketplace/browse?group=status`), Labels (`mdi:label`, `/config/labels`), States (`mdi:list-status`) and Actions (`mdi:run`, `/config/tools/action`). Marketplace is offered only on HA 2026.11.0 or newer. The section uses two columns, or one on narrow screens. Icons are defaults for new links and remain editable; existing links, names, icons and group assignments are preserved. Verified on .177 with HA 2026.11.0 on 8 November 2026: desktop two-column layout, all four added link targets, default icons, folder assignment, Cancel, Save and reload. Temporary links removed; original user preferences match the PC backup exactly. Earlier-version Marketplace gating is covered by automated tests.
 
 [![Install with HACS / Marketplace](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rockbaer2007&repository=ha-sidebar-manager&category=plugin)
 

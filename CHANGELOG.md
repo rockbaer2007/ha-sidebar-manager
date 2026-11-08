@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10 — 2026-11-08
+
+- Seven Home Assistant shortcut presets with individual, editable default icons; Marketplace requires HA 2026.11.0 or newer.
+- Responsive two-column shortcut section, one column on narrow screens. Existing saved links and custom icons are reused without migration.
+- DE/EN/FR documentation updated. Local automated validation only; no new HA runtime test or deployment.
+
 ## 0.1.9 — 2026-11-05
 
 Supports both the legacy `ha-md-list-item` and HA 2026.11's `ha-list-item-button` when coloring native editor rows. Existing colors, opacity and storage keys are preserved; no migration is required. Minimum HA remains 2026.10.3.

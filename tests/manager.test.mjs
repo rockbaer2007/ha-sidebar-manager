@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
-import {normalizeManager,layoutEntries,safeUrl,saveManager,newId,saveManagerWithFollowup,HA_SHORTCUTS,findShortcut,addShortcut,separatorWidth} from '../src/manager-model.js';
+import {normalizeManager,layoutEntries,safeUrl,saveManager,newId,saveManagerWithFollowup,HA_SHORTCUTS,shortcutAvailable,findShortcut,addShortcut,separatorWidth} from '../src/manager-model.js';
 import {MANAGER_STRINGS} from '../src/manager-i18n.js';
 const example=()=>normalizeManager({version:1,groups:[{id:'rail',name:'Rail',collapsed:true}],order:['map','home'],items:{map:{group:'rail'},missing:{title:'Preserved'},'sm-link-doc':{title:'Docs',url:'https://example.com',bottom:true}}});
 test('IDs work on LAN HTTP without crypto.randomUUID',()=>{const old=crypto.randomUUID;try{crypto.randomUUID=undefined;assert.match(newId('group'),/^group-[0-9a-f]{32}$/);}finally{crypto.randomUUID=old;}});
@@ -22,8 +22,15 @@ test('unrelated manager metadata survives save, no write after concurrent edit',
 test('blocked backup prevents writes and lost acknowledgement is verified',async()=>{const base=normalizeManager(null),draft=example();let stored=null,writes=0;await assert.rejects(saveManager({base,draft,read:async()=>stored,write:async()=>writes++,backup:async()=>{throw Error('quota');}}));assert.equal(writes,0);await saveManager({base,draft,read:async()=>stored,write:async v=>{stored=v;throw Error('disconnect');},backup:async()=>{}});assert.deepEqual(normalizeManager(stored),draft);});
 test('all manager UI strings are complete in DE EN FR',()=>{for(const locale of ['en','fr'])assert.deepEqual(Object.keys(MANAGER_STRINGS[locale]).sort(),Object.keys(MANAGER_STRINGS.de).sort());});
 
-test('HA shortcuts create safe internal links in the selected folder without overwriting data',()=>{const r=example();for(const preset of HA_SHORTCUTS){const key=addShortcut(r,preset,MANAGER_STRINGS.de['shortcut_'+preset.id],'rail');assert.equal(r.items[key].group,'rail');assert.equal(r.items[key].icon,'mdi:cog-transfer');assert.equal(r.items[key].url,preset.url);}assert.equal(r.items.missing.title,'Preserved');assert.equal(findShortcut(r,HA_SHORTCUTS[2])[1].url,'/config/tools/state');});
-test('existing shortcut URLs and legacy States links are reused without changing custom names',()=>{const r=example();r.items['sm-link-custom']={title:'My states',icon:'mdi:eye',group:'',url:'/developer-tools/state/'};const key=addShortcut(r,HA_SHORTCUTS[2],'States','rail');assert.equal(key,'sm-link-custom');assert.equal(r.items[key].title,'My states');assert.equal(r.items[key].group,'');assert.equal(r.items[key].icon,'mdi:eye');});
+test('HA shortcuts create safe internal links in the selected folder without overwriting data',()=>{const r=example();for(const preset of HA_SHORTCUTS){const key=addShortcut(r,preset,MANAGER_STRINGS.de['shortcut_'+preset.id],'rail');assert.equal(r.items[key].group,'rail');assert.equal(r.items[key].icon,preset.icon);assert.equal(r.items[key].url,preset.url);}assert.equal(r.items.missing.title,'Preserved');assert.equal(findShortcut(r,HA_SHORTCUTS.find(p=>p.id==='states'))[1].url,'/config/tools/state');});
+test('existing shortcut URLs and legacy States links are reused without changing custom names',()=>{const r=example();r.items['sm-link-custom']={title:'My states',icon:'mdi:eye',group:'',url:'/developer-tools/state/'};const key=addShortcut(r,HA_SHORTCUTS.find(p=>p.id==='states'),'States','rail');assert.equal(key,'sm-link-custom');assert.equal(r.items[key].title,'My states');assert.equal(r.items[key].group,'');assert.equal(r.items[key].icon,'mdi:eye');});
+
+test('Marketplace requires stable HA 2026.11.0 or newer; unknown versions fail closed',()=>{
+ const preset=HA_SHORTCUTS.find(p=>p.id==='marketplace');
+ for(const version of [undefined,'','unknown','2026.10.4','2026.11.0b0','2026.11.0.dev0'])assert.equal(shortcutAvailable(preset,version),false,version);
+ for(const version of ['2026.11.0','2026.11.1','2026.12.0','2027.1.0'])assert.equal(shortcutAvailable(preset,version),true,version);
+ for(const preset of HA_SHORTCUTS.filter(p=>p.id!=='marketplace'))assert.equal(shortcutAvailable(preset,undefined),true);
+});
 test('shortcut ID collisions preserve existing links and missing folders fall back to main menu',()=>{const r=example();r.items['sm-link-ha-logs']={title:'Keep',url:'/home'};const key=addShortcut(r,HA_SHORTCUTS[0],'Logs','deleted');assert.notEqual(key,'sm-link-ha-logs');assert.equal(r.items['sm-link-ha-logs'].url,'/home');assert.equal(r.items[key].group,'');});
 test('failed native save compensates only the confirmed group-order write',async()=>{const base=example(),draft=example();draft.groups[0].name='Changed';let stored={...base,metadata:'keep'};const before=structuredClone(stored);await assert.rejects(saveManagerWithFollowup({base,draft,read:async()=>stored,write:async value=>stored=value,backup:async()=>{}},async()=>{throw Error('native_failed');}),/native_failed/);assert.deepEqual(stored,before);});
 test('group-order compensation preserves another client\'s newer layout',async()=>{const base=example(),draft=example();draft.groups[0].name='Changed';let stored=base;await assert.rejects(saveManagerWithFollowup({base,draft,read:async()=>stored,write:async value=>stored=value,backup:async()=>{}},async()=>{stored={...stored,anotherClient:'new'};throw Error('native_failed');}),/rollback_conflict/);assert.equal(stored.anotherClient,'new');});
@@ -32,6 +39,11 @@ test('manager dialog edits remain a draft until Save and Cancel never calls pers
  const {ManagerDialog}=await import('../src/manager-dialog.js');win.customElements.define('test-manager-dialog',ManagerDialog);
  const dialog=win.document.createElement('test-manager-dialog');win.document.body.append(dialog);let writes=0;
  dialog.show({hass:{language:'de'},record:example(),entries:[{key:'map',label:'Map'}],save:async()=>writes++});
+ assert.equal(dialog.shadowRoot.querySelectorAll('[data-shortcut]').length,6);
+ assert.equal(dialog.shadowRoot.querySelector('[data-shortcut=marketplace]'),null);
+ dialog.hass.config={version:'2026.11.0'};dialog.renderBody();
+ assert.equal(dialog.shadowRoot.querySelectorAll('[data-shortcut]').length,7);
+ assert.ok(dialog.shadowRoot.querySelector('[data-shortcut=marketplace]'));
  const shortcut=dialog.shadowRoot.querySelector('[data-shortcut=logs]'),select=shortcut.querySelector('select');select.value='rail';select.dispatchEvent(new win.Event('change'));shortcut.querySelector('button').click();assert.equal(findShortcut(dialog.draft,HA_SHORTCUTS[0])[1].group,'rail');assert.equal(writes,0);
  let buttons=[...dialog.shadowRoot.querySelectorAll('button')];buttons.find(b=>b.textContent==='Gruppe hinzufügen').click();assert.equal(dialog.draft.groups.length,2);assert.equal(writes,0);
  const groupName=dialog.shadowRoot.querySelector('main > .cards').lastElementChild.querySelector('input');groupName.value='Renamed folder';groupName.dispatchEvent(new win.Event('input'));assert.ok([...dialog.shadowRoot.querySelector('[data-shortcut=logs] select').options].some(o=>o.textContent==='Renamed folder'));

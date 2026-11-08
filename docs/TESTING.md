@@ -1,5 +1,22 @@
 # Verification history
 
+## Live verification — 0.1.10, 2026-11-08
+
+- Test host only: .177, port 80, HA Core 2026.11.0. Fresh full backup `16de31bd`, 157.41 MB, completed before deployment; settings/history, all apps, media, share, local apps and SSL included.
+- PC configuration, user settings, dashboard/resources and previous module copied to `C:/Users/rockb/source/backups/sidebar-manager-0110-test-20261108`.
+- Uploaded versioned 0.1.10 module, updated only the two existing frontend/iframe module URLs, validated HA configuration and restarted HA successfully.
+- Live verified two-column desktop shortcut section; Entities, Marketplace, Labels and Actions create the requested URLs and icons. Entities assigned to existing Test2 folder. Cancel leaves stored preferences unchanged. Save survives full browser reload; all four destination pages open correctly.
+- Removed only the four temporary test links using the Manager UI. Exact byte comparison confirms original user preferences (including colors/groups), test dashboard and resources match the PC backup.
+- Marketplace is visible on 2026.11.0. Older versions/prerelease gating and the remaining preset defaults are covered by 73 automated tests; no live older-version or mobile test claimed.
+- User explicitly approved deleting oldest full backup `2b60a8a7`. Deleted via HA UI; three newer manual full backups and the app-update backup remain. PC backups retained.
+- Screenshot: `.local/screenshots/shortcuts-0110-desktop.png`. No GitHub publication.
+
+## Initial local preparation — 0.1.10, 2026-11-08
+
+- Source backup created under `C:/Users/rockb/source/backups/sidebar-manager-vor-ha-verknuepfungen-*.zip` before editing. No HA configuration changed.
+- Syntax checks, production bundle build and all 73 automated tests pass. Tests cover Marketplace version boundaries (including missing versions and 2026.11.0 prereleases), preserved custom icons/legacy States URLs, draft cancellation and DE/EN/FR UI keys.
+- Seven shortcut presets; responsive CSS uses two columns above 600 px and one below. No new visual browser or HA runtime verification, deployment or publication performed.
+
 ## HA 2026.11 compatibility — 0.1.9
 
 Supports both the legacy `ha-md-list-item` and HA 2026.11's `ha-list-item-button` when coloring native editor rows. Existing colors, opacity and storage keys are preserved; no migration is required. Minimum HA remains 2026.10.3.
