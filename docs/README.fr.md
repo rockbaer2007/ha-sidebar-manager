@@ -1,6 +1,8 @@
 # Sidebar Manager
 
-**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.11 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+La version 0.1.11 aligne la taille des icônes des groupes et des liens sur celle de Home Assistant (24 px) et les centre dans la barre latérale réduite.
 
 > **Raccourci Marketplace à partir de HA 2026.11.0 uniquement.** Masqué sur les versions anciennes ou inconnues ; il n’installe pas Marketplace. Les autres raccourcis et le minimum HA 2026.10.3 restent inchangés. Les icônes enregistrées sont conservées ; les nouveaux liens utilisent les valeurs par défaut modifiables décrites ci-dessous.
 

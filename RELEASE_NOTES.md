@@ -1,6 +1,12 @@
-# Sidebar Manager 0.1.10
+# Sidebar Manager 0.1.11
 
-## Home Assistant shortcuts
+Group and custom-link icons now match the native Home Assistant icons at 24 × 24 px and sit on the same horizontal centerline in the collapsed sidebar. Verified in both sidebar layouts on Home Assistant 2026.11.0. Existing settings require no migration.
+
+DE: Gruppen- und Link-Icons sind 24 × 24 px groß und sitzen in der eingeklappten Seitenleiste auf derselben Mittelachse wie die Original-Icons.
+
+FR : les icônes des groupes et des liens mesurent 24 × 24 px et sont centrées comme les icônes natives dans la barre latérale réduite.
+
+## Home Assistant shortcuts — 0.1.10
 
 Adds Entities, Marketplace, Labels and Actions to Home Assistant shortcuts, with distinct editable default icons for all seven presets. The shortcut section has two responsive columns, or one on narrow screens. Existing links and custom icons remain unchanged.
 

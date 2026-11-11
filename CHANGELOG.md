@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.11 — 2026-11-11
+
+- Match group and custom-link icons to Home Assistant's 24 px icons and center them in the collapsed sidebar. Verified on .177 with Home Assistant 2026.11.0.
+
 ## 0.1.10 — 2026-11-08
 
 - Seven Home Assistant shortcut presets with individual, editable default icons; Marketplace requires HA 2026.11.0 or newer.

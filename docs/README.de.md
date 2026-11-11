@@ -1,6 +1,8 @@
 # Sidebar Manager
 
-**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.11 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+Version 0.1.11 passt Gruppen- und Link-Icons an die 24-Pixel-Größe von Home Assistant an und zentriert sie in der eingeklappten Seitenleiste.
 
 > **Marketplace-Verknüpfung erst ab HA 2026.11.0.** Auf älteren oder unbekannten Versionen ausgeblendet; sie installiert Marketplace nicht. Andere Verknüpfungen und die Paket-Mindestversion HA 2026.10.3 bleiben unverändert. Gespeicherte Icons bleiben erhalten; neue Links nutzen die unten beschriebenen änderbaren Vorgaben.
 

@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.10 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.11 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.10";
+  var VERSION = "0.1.11";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -1137,7 +1137,28 @@
     }
     if (!s.iconStyle) {
       s.iconStyle = el3("style");
-      s.iconStyle.textContent = "[data-sm-group]{display:flex;align-items:center;gap:8px;border-top:0}[data-sm-group] ha-icon{--mdc-icon-size:20px;flex:none}[data-sm-group] .sm-group-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}:host(:not([expanded])) [data-sm-group] .sm-group-label{display:none}:host(:not([expanded])) [data-sm-group]::after{display:none}";
+      s.iconStyle.textContent = `
+   [data-sm-group]{display:flex;align-items:center;gap:8px;border-top:0}
+   :is([data-sm-group],.sm-entry) > ha-icon,[data-sm-icon]{
+    --mdc-icon-size:var(--ha-space-6,24px);
+    width:var(--ha-space-6,24px);
+    height:var(--ha-space-6,24px);
+    flex:none;
+   }
+   [data-sm-group] .sm-group-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+   :host(:not([expanded])) :is([data-sm-group],.sm-entry){
+    box-sizing:border-box;
+    flex:none;
+    width:var(--ha-space-12,48px);
+    min-height:var(--ha-space-10,40px);
+    margin:0 var(--ha-space-1,4px) var(--ha-space-1,4px);
+    padding:0;
+    gap:0;
+    justify-content:center;
+   }
+   :host(:not([expanded])) [data-sm-group] .sm-group-label,
+   :host(:not([expanded])) [data-sm-group]::after{display:none}
+  `;
       root.append(s.iconStyle);
     }
     for (const [id, node] of s.custom) if (!config.items[id]?.url) {

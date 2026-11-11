@@ -2,7 +2,9 @@
 
 <img src="docs/images/icon.svg" width="80" height="80" alt="Sidebar Manager" />
 
-**0.1.10 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.11 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+Version 0.1.11 matches group and custom-link icons to Home Assistant's 24 px icons and centers them in the collapsed sidebar.
 
 > **Marketplace shortcut requires HA 2026.11.0 or newer.** Hidden on older or unknown versions; it does not install Marketplace. Other shortcuts and the package minimum of HA 2026.10.3 are unchanged. Existing saved icons are preserved; new presets use the editable defaults described below.
 
