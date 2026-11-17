@@ -31,3 +31,27 @@ Object.assign(MANAGER_STRINGS.fr,{backupFile:'Choisir un fichier de sauvegarde J
 Object.assign(MANAGER_STRINGS.de,{removeProfile:'Profil löschen',removeProfileConfirm:'Gemeinsames Profil „{name}“ löschen?'});
 Object.assign(MANAGER_STRINGS.en,{removeProfile:'Delete profile',removeProfileConfirm:'Delete shared profile “{name}”?'});
 Object.assign(MANAGER_STRINGS.fr,{removeProfile:'Supprimer le profil',removeProfileConfirm:'Supprimer le profil partagé « {name} » ?'});
+Object.assign(MANAGER_STRINGS.de,{
+ profiles:'Sidebar-Profile',manageProfiles:'Profile verwalten',activeProfile:'Aktive Sidebar',ownProfile:'Eigene Sidebar',
+ enforceProfile:'Dieses Profil für alle verbindlich anwenden',globalActive:'Globales Profil aktiv: {name}',
+ sharedReadOnly:'Gemeinsames Profil aktiv. Wechsle zum Bearbeiten zu deiner eigenen Sidebar.',
+ editProfile:'Vorlage bearbeiten',replaceProfile:'Vorlage durch meine gespeicherte Sidebar ersetzen',
+ shareProfilesHint:'Neue Profile übernehmen deine gespeicherte Sidebar. Die Profildaten sind für angemeldete HA-Benutzer lesbar. Teile nur dafür bestimmte Links.',
+ removeMissing:'Gespeicherten Eintrag entfernen',closeProfiles:'Schließen',loadingProfiles:'Profile werden geladen …',
+});
+Object.assign(MANAGER_STRINGS.en,{
+ profiles:'Sidebar profiles',manageProfiles:'Manage profiles',activeProfile:'Active sidebar',ownProfile:'My own sidebar',
+ enforceProfile:'Enforce this profile for everyone',globalActive:'Global profile active: {name}',
+ sharedReadOnly:'Shared profile active. Switch to your own sidebar to edit your settings.',
+ editProfile:'Edit template',replaceProfile:'Replace template with my saved sidebar',
+ shareProfilesHint:'New profiles start from your saved sidebar. Signed-in HA users can read profile data. Include only links you want to share.',
+ removeMissing:'Remove saved entry',closeProfiles:'Close',loadingProfiles:'Loading profiles …',
+});
+Object.assign(MANAGER_STRINGS.fr,{
+ profiles:'Profils de barre latérale',manageProfiles:'Gérer les profils',activeProfile:'Barre latérale active',ownProfile:'Ma barre latérale',
+ enforceProfile:'Imposer ce profil à tous',globalActive:'Profil global actif : {name}',
+ sharedReadOnly:'Profil partagé actif. Revenez à votre barre latérale pour modifier vos réglages.',
+ editProfile:'Modifier le modèle',replaceProfile:'Remplacer le modèle par ma barre latérale enregistrée',
+ shareProfilesHint:'Les nouveaux profils reprennent votre barre latérale enregistrée. Les utilisateurs HA connectés peuvent lire les données des profils. Ajoutez uniquement les liens à partager.',
+ removeMissing:'Supprimer l’entrée enregistrée',closeProfiles:'Fermer',loadingProfiles:'Chargement des profils …',
+});

@@ -1,4 +1,10 @@
-# Sidebar Manager 0.1.12
+# Sidebar Manager 0.1.13
+
+- **EN:** A dedicated dialog lets users choose their own sidebar or an assigned read-only profile. Administrators can enforce one profile for everyone. The trash icon removes saved settings for missing sidebar entries.
+- **DE:** Im neuen Popup wählen Benutzer ihre eigene Sidebar oder ein zugewiesenes, schreibgeschütztes Profil. Administratoren können ein globales Profil verbindlich setzen. Der Papierkorb entfernt gespeicherte Einstellungen für fehlende Einträge.
+- **FR:** La nouvelle fenêtre permet de choisir sa barre latérale personnelle ou un profil attribué en lecture seule. Les administrateurs peuvent imposer un profil global. La corbeille supprime les réglages enregistrés pour les entrées absentes.
+
+## Sidebar Manager 0.1.12
 
 - **EN:** Select a JSON backup file directly. Full backups include groups, links, colors, sidebar order, and visibility. Administrators can assign named profiles to selected users or set a default for everyone. Users can keep their own sidebar or save a personal copy.
 - **DE:** JSON-Sicherungen lassen sich direkt auswählen. Sie enthalten Gruppen, Links, Farben, Reihenfolge und Sichtbarkeit. Administratoren können Profile ausgewählten Benutzern zuweisen oder als Standard für alle festlegen. Benutzer können ihre eigene Sidebar behalten oder eine persönliche Kopie übernehmen.

@@ -2,7 +2,8 @@ import {clone,stable,rgba} from './core.js';
 import {MANAGER_KEY,WEB_PANEL,normalizeManager,layoutEntries,saveManager,isExternalUrl} from './manager-model.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {managerStrings} from './manager-i18n.js';
-import {PROFILES_KEY,PREFERENCE_KEY,normalizeSidebar,makeBackup,readPreferences,resolveProfile,savePreferences} from './sidebar-preferences.js';
+import {openProfiles} from './sidebar-profiles-dialog.js';
+import {PROFILES_KEY,PREFERENCE_KEY,normalizeSidebar,makeBackup,readPreferences,profileChoices,savePreferences} from './sidebar-preferences.js';
 import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,nativeGroupsBusy} from './native-groups.js';
 export {withNativeGroupsSave} from './native-groups.js';
 let config=normalizeManager(null),hassRef,identity,off,epoch=0,loaded=false;
@@ -22,16 +23,19 @@ const legacySidebar=()=>normalizeSidebar({
 function readLegacyList(key){try{return JSON.parse(localStorage.getItem(key));}catch{return [];}}
 export function sharedColors(){return appliedProfile?.backup.colors;}
 export function sharedLayout(hass){return hass?.user?.id===identity?.id?appliedProfile?.backup.layout:undefined;}
+export function profileReadOnly(hass){return !!hass?.user?.id&&!!sharedLayout(hass);}
 function refreshProfile(){
- appliedProfile=profilePreference===undefined||personalNative===undefined||profilePreference?.personal?undefined:resolveProfile(profileRecord,identity?.id);
- collapsed.clear();
+ const next=profileChoices(profileRecord,identity?.id,profilePreference);
+ const active=next.global??(profilePreference===undefined?undefined:next.selected);
+ if(stable(appliedProfile)!==stable(active))collapsed.clear();
+ appliedProfile=active;
  refreshManager();
  window.dispatchEvent(new Event('ugso-sidebar-profile-changed'));
 }
 async function connectProfiles(hass,generation){
  const bindings=[
   ['system',PROFILES_KEY,value=>{profileRecord=value;}],
-  ['user',PREFERENCE_KEY,value=>{profilePreference=value;}],
+  ['user',PREFERENCE_KEY,value=>{profilePreference=value??null;}],
   ['user','sidebar',value=>{personalNative=normalizeSidebar({...legacySidebar(),...value});}],
  ];
  await Promise.allSettled(bindings.map(async ([scope,key,receive])=>{
@@ -57,25 +61,23 @@ async function connect(hass){
  void connectProfiles(hass,current);
  try{const value=normalizeManager(await read(hass));if(current!==epoch)return;config=value;loaded=true;refreshManager();const un=await hass.connection.subscribeMessage(e=>{if(current!==epoch)return;try{config=normalizeManager(e.value);loaded=true;collapsed.clear();refreshManager();}catch{console.warn('[Sidebar Manager] Unsupported stored layout; no automatic write.');}},{type:'frontend/subscribe_user_data',key:MANAGER_KEY});if(current===epoch)off=un;else un();}catch{console.warn('[Sidebar Manager] Layout unavailable; stored data left untouched.');}
 }
-export function openManager(sidebar,focusKey,focusGroup){
- if([...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog))))return;
- const hass=sidebar.hass;if(!loaded||hass.user.id!==identity?.id)return;
- if(document.querySelector('ugso-sidebar-manager-dialog'))return;
- const base=clone(config),owner=identity,currentEpoch=epoch,dialog=el('ugso-sidebar-manager-dialog');document.body.append(dialog);
+function actions(hass){
+ const owner=identity,currentEpoch=epoch;
  const verifyOwner=()=>{if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');};
- const backup=before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),...before}));
- const profiles={
+ const readTransfer=()=>readPreferences(key=>readKey(hass,key),legacySidebar());
+ return {verifyOwner,readTransfer,profiles:{
   load:async()=>{
    const [record,preference,users]=await Promise.all([
     request(hass,'frontend/get_system_data',PROFILES_KEY).then(result=>result.value),
     readKey(hass,PREFERENCE_KEY),
     hass.user.is_admin?hass.connection.sendMessagePromise({type:'config/auth/list'}):[],
    ]);
-   return {record:record??{version:1,profiles:[]},personal:!!preference?.personal,
-    assigned:resolveProfile(record,hass.user.id),users:users.filter(user=>user.is_active&&!user.system_generated)};
+   return {record:record??{version:1,profiles:[]},...profileChoices(record,hass.user.id,preference),
+    users:users.filter(user=>user.is_active&&!user.system_generated)};
   },
   write:async(base,next)=>{
    verifyOwner();
+   if(!hass.user.is_admin)throw Error('conflict');
    const actual=(await request(hass,'frontend/get_system_data',PROFILES_KEY)).value??{version:1,profiles:[]};
    if(stable(base)!==stable(actual))throw Error('conflict');
    verifyOwner();
@@ -83,15 +85,26 @@ export function openManager(sidebar,focusKey,focusGroup){
    verifyOwner();
    profileRecord=next;refreshProfile();
   },
-  prefer:async personal=>{
-   verifyOwner();await writeKey(hass,PREFERENCE_KEY,{personal});verifyOwner();
-   profilePreference={personal};refreshProfile();
+  prefer:async profileId=>{
+   verifyOwner();
+   const record=(await request(hass,'frontend/get_system_data',PROFILES_KEY)).value;
+   const {assigned,global}=profileChoices(record,hass.user.id);
+   if(global||(profileId!==null&&!assigned.some(profile=>profile.id===profileId)))throw Error('conflict');
+   verifyOwner();await writeKey(hass,PREFERENCE_KEY,{profileId});verifyOwner();
+   profilePreference={profileId};refreshProfile();
   },
- };
- dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,profiles,
-  readTransfer:()=>readPreferences(key=>readKey(hass,key),legacySidebar()),
+ }};
+}
+export function openManager(sidebar,focusKey,focusGroup){
+ if([...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog))))return;
+ const hass=sidebar.hass;if(!loaded||hass.user.id!==identity?.id||profileReadOnly(hass))return;
+ if(document.querySelector('ugso-sidebar-manager-dialog'))return;
+ const base=clone(config),dialog=el('ugso-sidebar-manager-dialog');document.body.append(dialog);
+ const {verifyOwner,readTransfer}=actions(hass);
+ const backup=before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),...before}));
+ dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,readTransfer,
   save:async (draft,transfer,transferBase)=>{
-  if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');
+  verifyOwner();if(profileReadOnly(hass))throw Error('conflict');
   if(transfer?.colors){
    await savePreferences({base:transferBase,draft:{...transfer,layout:draft},read:key=>readKey(hass,key),
     write:(key,value)=>{verifyOwner();return writeKey(hass,key,value);},backup});
@@ -112,9 +125,44 @@ export function attachManagerButton(nativeDialog){
  if(!nativeDialog._open)return;
  const content=nativeDialog.shadowRoot?.querySelector('.content');if(!content)return;
  let button=content.querySelector('[data-sm-open]');if(!button){button=el('button');button.dataset.smOpen='';button.type='button';button.style.cssText='margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer';button.onclick=()=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar);};content.prepend(button);}
- if(loaded)attachNativeGroups(nativeDialog,{record:config,identity,getIdentity:()=>identity,read:()=>read(nativeDialog.hass),write:value=>request(nativeDialog.hass,'frontend/set_user_data',MANAGER_KEY,value),backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+nativeDialog.hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}});
- const title=managerStrings(nativeDialog.hass).open;if(button.textContent!==title)button.textContent=title;button.disabled=!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
+ const hass=nativeDialog.hass,t=managerStrings(hass),locked=profileReadOnly(hass),global=profileChoices(profileRecord,hass.user.id).global;
+ let profileRow=content.querySelector('[data-sm-profile-row]');
+ if(!profileRow){
+  profileRow=el('div');profileRow.dataset.smProfileRow='';
+  const profilesButton=el('button');profilesButton.type='button';profilesButton.style.cssText=button.style.cssText;
+  const hint=el('p');hint.style.cssText='margin:4px 0;color:var(--secondary-text-color)';
+  profileRow.append(profilesButton,hint);button.after(profileRow);
+  profilesButton.onclick=()=>{
+   const currentHass=nativeDialog.hass;
+   const {profiles,readTransfer,verifyOwner}=actions(currentHass);
+   openProfiles({hass:currentHass,t:managerStrings(currentHass),profiles,edit:(record,profile)=>{
+    const sidebar=[...instances].find(s=>s.isConnected&&s.hass?.user?.id===currentHass.user.id);
+    if(!sidebar||!currentHass.user.is_admin)return;
+    const draft=el('ugso-sidebar-manager-dialog'),data=profile.backup;
+    document.body.append(draft);
+    draft.show({hass:currentHass,title:profile.name,record:data.layout,entries:entries(sidebar),
+     readTransfer:async()=>({layout:data.layout,colors:data.colors,sidebar:data.sidebar,native:data.sidebar}),
+     save:(layout,transfer)=>profiles.write(record,{...record,profiles:record.profiles.map(item=>item.id===profile.id
+      ?{...item,backup:makeBackup(layout,transfer?.colors??data.colors,transfer?.sidebar??data.sidebar)}:item)})});
+   },snapshot:async()=>{
+    const data=await readTransfer();verifyOwner();return makeBackup(data.layout,data.colors,data.native);
+   }});
+  };
+ }
+ const [profilesButton,hint]=profileRow.children;
+ if(profilesButton.textContent!==t.profiles)profilesButton.textContent=t.profiles;
+ profilesButton.hidden=!!global&&!hass.user.is_admin;
+ profilesButton.disabled=!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
+ const note=global?t.globalActive.replace('{name}',global.name):(locked?t.sharedReadOnly:'');
+ if(hint.textContent!==note)hint.textContent=note;hint.hidden=!note;
+ if(loaded&&!locked)attachNativeGroups(nativeDialog,{record:config,identity,getIdentity:()=>identity,read:()=>read(hass),write:value=>request(hass,'frontend/set_user_data',MANAGER_KEY,value),backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}});
+ if(button.textContent!==t.open)button.textContent=t.open;button.disabled=locked||!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
+ const root=nativeDialog.shadowRoot;
+ let lockStyle=root.querySelector('[data-sm-profile-style]');
+ if(!lockStyle){lockStyle=el('style');lockStyle.dataset.smProfileStyle='';lockStyle.textContent=':host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction],:host([data-sm-profile-readonly]) ha-icon-overflow-menu{pointer-events:none;opacity:.5}';root.append(lockStyle);}
+ nativeDialog.toggleAttribute('data-sm-profile-readonly',locked);
  const editors=[...nativeDialog.shadowRoot.querySelectorAll('ha-items-display-editor')];
+ for(const editor of editors)editor.inert=locked;
  for(const badge of editors.flatMap(e=>[...e.shadowRoot?.querySelectorAll('[data-sm-move]')||[]])){updateMoveBadge(badge,nativeDialog.hass);if(nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog))badge.disabled=true;}
 }
 export function endManagerDialog(dialog){editDialogs.delete(dialog);endNativeGroups(dialog);}
@@ -144,7 +192,7 @@ function applyLayout(sidebar){
    if(stable(sidebar._panelOrder)!==stable(native.panelOrder))sidebar._panelOrder=native.panelOrder;
    if(stable(sidebar._hiddenPanels)!==stable(native.hiddenPanels))sidebar._hiddenPanels=native.hiddenPanels;
   }
-  s.profileNative=!!active;
+  if(active||native)s.profileNative=!!active;
  }
  const config=active?.layout??personalLayout();
  const slot=root.querySelector('slot[name=main-navigation]');if(!slot)return;

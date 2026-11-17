@@ -2,11 +2,13 @@
 
 <img src="docs/images/icon.svg" width="80" height="80" alt="Sidebar Manager" />
 
-**0.1.12 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.13 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
 Under **Manage groups and links**, download a complete sidebar backup or select a JSON file to import. The preview appears before saving. Backups include groups, links, colors, and the order and visibility of Home Assistant sidebar entries. Older layout backups still work.
 
-Under **Shared sidebar profiles**, administrators can assign a named profile to selected users or set it as the default for everyone. Users can switch back to their own sidebar or save a personal copy. Share only links intended for other users of the Home Assistant installation.
+In **Edit sidebar → Sidebar profiles**, users can switch between their own sidebar and assigned read-only profiles. Administrators can manage templates, assign several profiles to each user, or enforce one profile for everyone. While enforcement is active, only administrators see the profile button. Other users see the active profile name. The previous selection returns when enforcement ends. Share only links intended for other users of the Home Assistant installation.
+
+In **Manage groups and links**, the trash icon removes saved customizations for a missing Home Assistant entry when you click **Save**.
 
 Version 0.1.11 matches group and custom-link icons to Home Assistant's 24 px icons and centers them in the collapsed sidebar.
 

@@ -26,11 +26,27 @@ export function makeBackup(layout, colors, sidebar) {
 }
 
 export function resolveProfile(record, userId) {
-  if (record?.version !== 1 || !Array.isArray(record.profiles)) return undefined;
-  const match = record.profiles.find(profile => profile?.users?.includes(userId))
-    ?? record.profiles.find(profile => profile?.everyone === true);
-  if (!match) return undefined;
-  try { return {...match, backupFile: match.backup, backup: makeBackupFromProfile(match)}; } catch { return undefined; }
+  const {assigned} = profileChoices(record, userId);
+  return assigned[0];
+}
+
+export function profileChoices(record, userId, preference) {
+  const profiles = [];
+  if (record?.version === 1 && Array.isArray(record.profiles)) {
+    for (const profile of record.profiles) {
+      if (!profile?.id || typeof profile.name !== 'string') continue;
+      try { profiles.push({...profile, backup: makeBackupFromProfile(profile)}); } catch {}
+    }
+  }
+  const global = profiles.find(profile => profile.id === record?.globalId);
+  const assigned = profiles.filter(profile => Array.isArray(profile.users) && profile.users.includes(userId))
+    .concat(profiles.filter(profile => profile.everyone === true && !(Array.isArray(profile.users) && profile.users.includes(userId))));
+  // Preserve the previous automatic assignment until the user makes a choice.
+  const id = preference?.profileId;
+  const selected = id === undefined
+    ? (preference?.personal ? undefined : assigned.find(profile => profile.auto !== false))
+    : assigned.find(profile => profile.id === id);
+  return {global, assigned, selected, active: global ?? selected, templates:profiles};
 }
 
 function makeBackupFromProfile(profile) {

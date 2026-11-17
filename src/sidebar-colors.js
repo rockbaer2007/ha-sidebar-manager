@@ -1,6 +1,6 @@
 import { VERSION, STORE_KEY, supportedVersion, normalizeRecord, normalizeColor, rgba, stable, clone, saveColorDraft } from "./core.js";
 import { SidebarColorPicker, strings } from "./color-picker.js";
-import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave,sharedColors} from './manager-runtime.js';
+import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave,sharedColors,profileReadOnly} from './manager-runtime.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {registerWebPanel} from './web-panel.js';
 
@@ -194,6 +194,7 @@ function endDialog(dialog) {
   refresh();
 }
 async function saveDialog(dialog, original, args, originalClose) {
+  if(profileReadOnly(dialog.hass))return;
   const session=sessions.get(dialog);
   if(!session)return original.apply(dialog,args);
   if(session.saving)return;

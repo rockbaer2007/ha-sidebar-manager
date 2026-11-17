@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.13 — 2026-11-17
+
+- Dedicated sidebar profile dialog with a personal view, multiple assigned read-only profiles, and administrator controls for enforcing one global profile.
+- Show the global profile name to all users and keep its management button visible to administrators. Restore each user's previous selection when enforcement ends.
+- Remove saved sidebar settings for missing entries using the trash icon and Save.
+- Verified multiple assignments, read-only mode, the global notice, admin-only button visibility and restored selection on the PC test system.
+
 ## 0.1.12 — 2026-11-17
 
 - Import a sidebar backup directly from a JSON file. Full backups include layout, colors, order and visibility.

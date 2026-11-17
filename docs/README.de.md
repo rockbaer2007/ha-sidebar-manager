@@ -1,10 +1,12 @@
 # Sidebar Manager
 
-**0.1.12 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.13 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
 
 Unter **Gruppen und Links verwalten** kannst du eine vollständige Sicherung herunterladen oder direkt eine JSON-Datei auswählen. Vor dem Speichern erscheint eine Vorschau. Die Sicherung enthält Gruppen, Links, Farben sowie Reihenfolge und Sichtbarkeit der Home-Assistant-Einträge. Ältere Layout-Sicherungen lassen sich weiterhin einlesen.
 
-Unter **Gemeinsame Sidebar-Profile** können Administratoren ein benanntes Profil ausgewählten Benutzern zuweisen oder als Standard für alle festlegen. Benutzer können zur eigenen Sidebar wechseln oder eine persönliche Kopie speichern. Teile nur Links, die für andere Benutzer derselben Home-Assistant-Installation bestimmt sind.
+Unter **Seitenleiste bearbeiten → Sidebar-Profile** kannst du zwischen deiner eigenen Sidebar und den zugewiesenen schreibgeschützten Profilen wechseln. Administratoren können Vorlagen verwalten, einem Benutzer mehrere Profile zuweisen oder ein Profil für alle verbindlich setzen. Bei einer verbindlichen Vorgabe sehen nur Administratoren den Profilbutton. Andere Benutzer sehen den Namen des aktiven Profils. Nach dem Aufheben gilt wieder die vorherige Auswahl. Teile nur Links, die für andere Benutzer derselben Home-Assistant-Installation bestimmt sind.
+
+Unter **Gruppen und Links verwalten** entfernt der Papierkorb gespeicherte Anpassungen für einen fehlenden Home-Assistant-Eintrag. Die Änderung greift mit **Speichern**.
 
 Version 0.1.11 passt Gruppen- und Link-Icons an die 24-Pixel-Größe von Home Assistant an und zentriert sie in der eingeklappten Seitenleiste.
 

@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.12 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.13 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.12";
+  var VERSION = "0.1.13";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -487,6 +487,51 @@
   Object.assign(MANAGER_STRINGS.de, { removeProfile: "Profil löschen", removeProfileConfirm: "Gemeinsames Profil „{name}“ löschen?" });
   Object.assign(MANAGER_STRINGS.en, { removeProfile: "Delete profile", removeProfileConfirm: "Delete shared profile “{name}”?" });
   Object.assign(MANAGER_STRINGS.fr, { removeProfile: "Supprimer le profil", removeProfileConfirm: "Supprimer le profil partagé « {name} » ?" });
+  Object.assign(MANAGER_STRINGS.de, {
+    profiles: "Sidebar-Profile",
+    manageProfiles: "Profile verwalten",
+    activeProfile: "Aktive Sidebar",
+    ownProfile: "Eigene Sidebar",
+    enforceProfile: "Dieses Profil für alle verbindlich anwenden",
+    globalActive: "Globales Profil aktiv: {name}",
+    sharedReadOnly: "Gemeinsames Profil aktiv. Wechsle zum Bearbeiten zu deiner eigenen Sidebar.",
+    editProfile: "Vorlage bearbeiten",
+    replaceProfile: "Vorlage durch meine gespeicherte Sidebar ersetzen",
+    shareProfilesHint: "Neue Profile übernehmen deine gespeicherte Sidebar. Die Profildaten sind für angemeldete HA-Benutzer lesbar. Teile nur dafür bestimmte Links.",
+    removeMissing: "Gespeicherten Eintrag entfernen",
+    closeProfiles: "Schließen",
+    loadingProfiles: "Profile werden geladen …"
+  });
+  Object.assign(MANAGER_STRINGS.en, {
+    profiles: "Sidebar profiles",
+    manageProfiles: "Manage profiles",
+    activeProfile: "Active sidebar",
+    ownProfile: "My own sidebar",
+    enforceProfile: "Enforce this profile for everyone",
+    globalActive: "Global profile active: {name}",
+    sharedReadOnly: "Shared profile active. Switch to your own sidebar to edit your settings.",
+    editProfile: "Edit template",
+    replaceProfile: "Replace template with my saved sidebar",
+    shareProfilesHint: "New profiles start from your saved sidebar. Signed-in HA users can read profile data. Include only links you want to share.",
+    removeMissing: "Remove saved entry",
+    closeProfiles: "Close",
+    loadingProfiles: "Loading profiles …"
+  });
+  Object.assign(MANAGER_STRINGS.fr, {
+    profiles: "Profils de barre latérale",
+    manageProfiles: "Gérer les profils",
+    activeProfile: "Barre latérale active",
+    ownProfile: "Ma barre latérale",
+    enforceProfile: "Imposer ce profil à tous",
+    globalActive: "Profil global actif : {name}",
+    sharedReadOnly: "Profil partagé actif. Revenez à votre barre latérale pour modifier vos réglages.",
+    editProfile: "Modifier le modèle",
+    replaceProfile: "Remplacer le modèle par ma barre latérale enregistrée",
+    shareProfilesHint: "Les nouveaux profils reprennent votre barre latérale enregistrée. Les utilisateurs HA connectés peuvent lire les données des profils. Ajoutez uniquement les liens à partager.",
+    removeMissing: "Supprimer l’entrée enregistrée",
+    closeProfiles: "Fermer",
+    loadingProfiles: "Chargement des profils …"
+  });
 
   // src/sidebar-preferences.js
   var PROFILES_KEY = "ugso_sidebar_profiles_v1";
@@ -512,15 +557,22 @@
       sidebar: normalizeSidebar(sidebar)
     };
   }
-  function resolveProfile(record, userId) {
-    if (record?.version !== 1 || !Array.isArray(record.profiles)) return void 0;
-    const match = record.profiles.find((profile) => profile?.users?.includes(userId)) ?? record.profiles.find((profile) => profile?.everyone === true);
-    if (!match) return void 0;
-    try {
-      return { ...match, backupFile: match.backup, backup: makeBackupFromProfile(match) };
-    } catch {
-      return void 0;
+  function profileChoices(record, userId, preference) {
+    const profiles = [];
+    if (record?.version === 1 && Array.isArray(record.profiles)) {
+      for (const profile of record.profiles) {
+        if (!profile?.id || typeof profile.name !== "string") continue;
+        try {
+          profiles.push({ ...profile, backup: makeBackupFromProfile(profile) });
+        } catch {
+        }
+      }
     }
+    const global = profiles.find((profile) => profile.id === record?.globalId);
+    const assigned = profiles.filter((profile) => Array.isArray(profile.users) && profile.users.includes(userId)).concat(profiles.filter((profile) => profile.everyone === true && !(Array.isArray(profile.users) && profile.users.includes(userId))));
+    const id = preference?.profileId;
+    const selected = id === void 0 ? preference?.personal ? void 0 : assigned.find((profile) => profile.auto !== false) : assigned.find((profile) => profile.id === id);
+    return { global, assigned, selected, active: global ?? selected, templates: profiles };
   }
   function makeBackupFromProfile(profile) {
     if (profile.backup?.version !== 2) throw Error("invalid_backup");
@@ -561,129 +613,8 @@
     }
   }
 
-  // src/sidebar-profiles-dialog.js
-  var el = (tag, text2) => {
-    const n = document.createElement(tag);
-    if (text2) n.textContent = text2;
-    return n;
-  };
-  function renderProfiles(dialog) {
-    const { t, profiles, hass } = dialog;
-    const details = el("details"), body = el("div");
-    details.append(el("summary", t.profiles), body);
-    details.addEventListener("toggle", async () => {
-      if (!details.open) return;
-      body.textContent = t.busy;
-      try {
-        const data = await profiles.load();
-        if (!details.isConnected || !details.open) return;
-        body.replaceChildren();
-        const run = async (task) => {
-          body.inert = true;
-          try {
-            await task();
-            if (details.isConnected) {
-              status.textContent = t.saved;
-              details.open = false;
-            }
-          } catch (error) {
-            status.textContent = error.message === "conflict" ? t.conflict : t.error;
-          } finally {
-            body.inert = false;
-          }
-        };
-        const status = el("p");
-        status.setAttribute("role", "status");
-        if (data.assigned) {
-          body.append(
-            el("p", t.assignedProfile + ": " + data.assigned.name),
-            dialog.button(data.personal ? t.followProfile : t.personalProfile, () => run(() => profiles.prefer(!data.personal))),
-            dialog.button(t.copyProfile, () => run(async () => {
-              await dialog.stageTransfer(data.assigned.backupFile);
-              dialog.usePersonalOnSave = true;
-            }))
-          );
-        } else body.append(el("p", t.noProfile));
-        if (hass.user.is_admin) renderAdmin(dialog, body, data, run);
-        body.append(status);
-      } catch {
-        body.textContent = t.profilesUnavailable;
-      }
-    });
-    return details;
-  }
-  function renderAdmin(dialog, body, { record, users }, run) {
-    const { t, profiles } = dialog;
-    if (record.version !== 1 || !Array.isArray(record.profiles)) throw Error("invalid_profiles");
-    const list2 = el("select");
-    list2.setAttribute("aria-label", t.profiles);
-    list2.add(new Option(t.newProfile, ""));
-    for (const profile of record.profiles) list2.add(new Option(profile.name, profile.id));
-    const name = el("input");
-    name.maxLength = 80;
-    const nameLabel = el("label", t.profileName);
-    nameLabel.append(name);
-    const everyone = el("input");
-    everyone.type = "checkbox";
-    const everyoneLabel = el("label", t.profileEveryone);
-    everyoneLabel.append(everyone);
-    const audience = el("fieldset");
-    audience.append(el("legend", t.profileUsers));
-    const selections = /* @__PURE__ */ new Map();
-    for (const user of users) {
-      const box = el("input"), label = el("label", user.name);
-      box.type = "checkbox";
-      label.append(box);
-      audience.append(label);
-      selections.set(user.id, box);
-    }
-    const selectProfile = () => {
-      const selected = record.profiles.find((profile) => profile.id === list2.value);
-      name.value = selected?.name ?? "";
-      everyone.checked = !!selected?.everyone;
-      for (const [id, box] of selections) box.checked = selected?.users?.includes(id) ?? false;
-      remove.disabled = !selected;
-    };
-    list2.onchange = selectProfile;
-    const publish = async () => {
-      const title = name.value.trim();
-      if (!title) {
-        name.reportValidity();
-        return;
-      }
-      const assigned = [...selections].filter(([, box]) => box.checked).map(([id2]) => id2);
-      const id = list2.value || Array.from(crypto.getRandomValues(new Uint32Array(4)), (n) => n.toString(16).padStart(8, "0")).join("");
-      const backup = await dialog.transferSnapshot();
-      const others = record.profiles.filter((profile) => profile.id !== id).map((profile) => ({
-        ...profile,
-        everyone: !!profile.everyone && !everyone.checked,
-        users: (profile.users ?? []).filter((user) => !assigned.includes(user))
-      }));
-      await profiles.write(record, { version: 1, profiles: [...others, { id, name: title, everyone: everyone.checked, users: assigned, backup }] });
-    };
-    name.required = true;
-    const remove = dialog.button(t.removeProfile, () => {
-      if (list2.value && window.confirm(t.removeProfileConfirm.replace("{name}", list2.selectedOptions[0].textContent))) {
-        void run(() => profiles.write(record, { version: 1, profiles: record.profiles.filter((profile) => profile.id !== list2.value) }));
-      }
-    });
-    remove.disabled = true;
-    body.append(
-      el("hr"),
-      el("p", t.profileShareHint),
-      list2,
-      nameLabel,
-      everyoneLabel,
-      audience,
-      dialog.button(t.publishProfile, () => {
-        if (name.reportValidity()) void run(publish);
-      }),
-      remove
-    );
-  }
-
   // src/manager-dialog.js
-  var el2 = (tag, text2) => {
+  var el = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
     return n;
@@ -693,14 +624,14 @@
       super();
       this.attachShadow({ mode: "open" });
     }
-    show({ hass, record, entries: entries2, save, focusKey, focusGroup, readTransfer, profiles }) {
+    show({ hass, record, entries: entries2, save, focusKey, focusGroup, readTransfer, title }) {
       this.hass = hass;
       this.t = managerStrings(hass);
+      if (title) this.t = { ...this.t, title };
       this.draft = clone(normalizeManager(record));
       this.entries = entries2;
       this.saveRecord = save;
       this.readTransfer = readTransfer;
-      this.profiles = profiles;
       this.busy = false;
       this.render();
       this.modal.showModal();
@@ -730,13 +661,12 @@
       if (!this.isConnected) return;
       this.transfer = transfer;
       this.transferBase = base;
-      this.usePersonalOnSave = false;
       this.draft = clone(transfer.layout);
       this.renderBody();
       this.status.textContent = this.t.backupPreview.replace("{groups}", transfer.layout.groups.length).replace("{links}", Object.values(transfer.layout.items).filter((item) => item.url).length).replace("{colors}", transfer.colors ? Object.keys(transfer.colors.colors).length : "—");
     }
     button(label, fn, icon) {
-      const b = el2("button", icon || label);
+      const b = el("button", icon || label);
       b.type = "button";
       b.title = label;
       b.setAttribute("aria-label", label);
@@ -744,8 +674,8 @@
       return b;
     }
     input(label, value, change, type = "text") {
-      const l = el2("label"), n = el2("input");
-      l.append(el2("span", label), n);
+      const l = el("label"), n = el("input");
+      l.append(el("span", label), n);
       n.type = type;
       if (type === "checkbox") n.checked = !!value;
       else n.value = value || "";
@@ -764,7 +694,7 @@
       }
     }
     separatorControl(group) {
-      const label = el2("label", this.t.separator), slider = el2("input"), value = el2("output");
+      const label = el("label", this.t.separator), slider = el("input"), value = el("output");
       slider.type = "range";
       slider.min = "0";
       slider.max = "4";
@@ -785,7 +715,7 @@
       return label;
     }
     groupColor(group) {
-      const button = this.button(this.t.groupColor + " " + group.name, () => {
+      const button2 = this.button(this.t.groupColor + " " + group.name, () => {
         const picker = document.createElement("ugso-sidebar-color-picker");
         document.body.append(picker);
         picker.show({ label: group.name, color: group.color, hass: this.hass, onChange: (color) => {
@@ -793,42 +723,42 @@
           paint();
         } });
       });
-      button.style.cssText = "width:36px;height:36px;min-width:36px;padding:5px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px";
-      const swatch = el2("span");
+      button2.style.cssText = "width:36px;height:36px;min-width:36px;padding:5px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px";
+      const swatch = el("span");
       swatch.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
-      button.replaceChildren(swatch);
+      button2.replaceChildren(swatch);
       const paint = () => {
         swatch.style.background = rgba(group.color) || "transparent";
-        button.title = this.t.groupColor + ": " + group.name;
+        button2.title = this.t.groupColor + ": " + group.name;
       };
       paint();
-      return button;
+      return button2;
     }
     render() {
-      const style = el2("style");
+      const style = el("style");
       style.textContent = `:host{font:14px var(--ha-font-family,Arial,sans-serif);color:var(--primary-text-color,#222)}*{box-sizing:border-box}dialog{color:inherit;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#888);border-radius:16px;width:min(1050px,94vw);max-height:90dvh;padding:0}dialog::backdrop{background:#0008}header,footer{padding:16px 20px;display:flex;gap:8px;align-items:center;background:var(--secondary-background-color,#eee)}h2{font-size:20px;margin:0;flex:1}h3{margin:14px 0 8px}main{padding:0 20px 16px;overflow:auto;max-height:calc(90dvh - 150px)}p{line-height:1.5}.cards{display:grid;gap:8px}.row{border:1px solid var(--divider-color,#aaa);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>strong{width:100%;overflow-wrap:anywhere}.row small{width:100%;opacity:.7}.row label{display:flex;gap:6px;align-items:center}.row label:has(input[type=text]){flex:1;min-width:160px}input,select,textarea{background:var(--primary-background-color,#fff);color:inherit;border:1px solid var(--divider-color,#888);border-radius:5px;padding:7px;font:inherit;min-width:0}input[type=text]{width:100%}button{font:inherit;border:1px solid var(--divider-color,#aaa);border-radius:7px;padding:8px 12px;min-height:36px;background:var(--secondary-background-color,#eee);color:inherit;cursor:pointer}button:hover{border-color:var(--primary-color,#03a9f4)}footer{justify-content:flex-end;flex-wrap:wrap}footer button{min-width:115px}.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}textarea{width:100%;height:120px}.status{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:wait}input[type=checkbox]{accent-color:var(--primary-color,#03a9f4)}@media(max-width:600px){main{padding:0 10px 10px}.row{gap:8px}.row label:has(input[type=text]){min-width:100%;}.row select{max-width:150px}header,footer{padding:12px}footer button{min-width:100px}}`;
-      this.modal = el2("dialog");
+      this.modal = el("dialog");
       this.modal.setAttribute("aria-label", this.t.title);
-      const head = el2("header");
-      head.append(el2("h2", this.t.title), this.button(this.t.cancel, () => {
+      const head = el("header");
+      head.append(el("h2", this.t.title), this.button(this.t.cancel, () => {
         if (!this.busy) this.remove();
       }, "×"));
-      const accent = el2("style");
+      const accent = el("style");
       accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}.sm-ha-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-ha-shortcuts>.row{min-width:0}.sm-ha-shortcuts small{overflow-wrap:anywhere}.sm-ha-shortcuts select{max-width:100%}@media(max-width:600px){.sm-ha-shortcuts{grid-template-columns:minmax(0,1fr)}}";
-      this.main = el2("main");
-      this.foot = el2("footer");
+      this.main = el("main");
+      this.foot = el("footer");
       this.modal.append(head, this.main, this.foot);
       this.shadowRoot.replaceChildren(style, accent, this.modal);
       this.renderBody();
     }
     renderBody() {
       const t = this.t;
-      this.main.replaceChildren(el2("p", t.intro));
-      this.main.append(el2("h3", t.groups));
-      const groups = el2("div");
+      this.main.replaceChildren(el("p", t.intro));
+      this.main.append(el("h3", t.groups));
+      const groups = el("div");
       groups.className = "cards";
       this.draft.groups.forEach((g, i) => {
-        const row = el2("div");
+        const row = el("div");
         row.className = "row";
         row.append(this.input(t.name, g.name, (v) => {
           g.name = v;
@@ -844,24 +774,24 @@
         this.draft.groups.push({ id: newId("group"), name: t.newGroup, icon: "mdi:folder-outline", collapsed: false, bottom: false });
         this.renderBody();
       }));
-      const shortcutHeading = el2("h3", t.haShortcuts);
+      const shortcutHeading = el("h3", t.haShortcuts);
       shortcutHeading.className = "sm-ha-shortcut-title";
       this.main.append(shortcutHeading);
-      const shortcuts = el2("div");
+      const shortcuts = el("div");
       shortcuts.className = "cards sm-ha-shortcuts";
       this.presetGroups ||= {};
       for (const preset of HA_SHORTCUTS) {
         if (!shortcutAvailable(preset, this.hass?.config?.version)) continue;
-        const existing = findShortcut(this.draft, preset), row = el2("div");
+        const existing = findShortcut(this.draft, preset), row = el("div");
         row.className = "row";
         row.dataset.shortcut = preset.id;
-        const title = el2("strong", t["shortcut_" + preset.id]);
+        const title = el("strong", t["shortcut_" + preset.id]);
         title.className = "sm-ha-shortcut-title";
-        row.append(title, el2("small", preset.url));
-        const label = el2("label", t.group), select = el2("select");
+        row.append(title, el("small", preset.url));
+        const label = el("label", t.group), select = el("select");
         select.setAttribute("aria-label", t.group + " " + t["shortcut_" + preset.id]);
         for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
-          const o = el2("option", g.name);
+          const o = el("option", g.name);
           o.value = g.id;
           select.append(o);
         }
@@ -880,9 +810,9 @@
         row.append(add);
         shortcuts.append(row);
       }
-      this.main.append(shortcuts, el2("p", t.shortcutHint));
-      this.main.append(el2("h3", t.items));
-      const items = el2("div");
+      this.main.append(shortcuts, el("p", t.shortcutHint));
+      this.main.append(el("h3", t.items));
+      const items = el("div");
       items.className = "cards";
       const keys2 = [.../* @__PURE__ */ new Set([...this.draft.order, ...this.entries.map((e) => e.key), ...Object.keys(this.draft.items)])];
       keys2.forEach((key, i) => {
@@ -892,18 +822,18 @@
           this.draft.items[key] ||= item;
           this.draft.items[key][k] = v;
         };
-        const row = el2("div");
+        const row = el("div");
         row.className = "row";
         row.dataset.key = key;
-        const title = el2("strong", original?.label || current?.title || key);
+        const title = el("strong", original?.label || current?.title || key);
         title.className = item.url ? isExternalUrl(item.url) ? "sm-external-title" : "sm-ha-shortcut-title" : "";
         row.append(title);
-        if (!original && !current?.url) row.append(el2("small", t.missing));
+        if (!original && !current?.url) row.append(el("small", t.missing));
         row.append(this.input(t.label, item.title, (v) => edit("title", v)), this.input(t.icon, item.icon, (v) => edit("icon", v)));
-        const label = el2("label", t.group), select = el2("select");
+        const label = el("label", t.group), select = el("select");
         select.setAttribute("aria-label", t.group);
         for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
-          const o = el2("option", g.name);
+          const o = el("option", g.name);
           o.value = g.id;
           select.append(o);
         }
@@ -919,14 +849,26 @@
           this.draft.order = keys2;
           this.move(this.draft.order, i, 1);
         }, "↓"));
+        if (!original && !current?.url) {
+          const remove = this.button(t.removeMissing, () => {
+            delete this.draft.items[key];
+            this.draft.order = this.draft.order.filter((id) => id !== key);
+            this.draft.menuOrder = this.draft.menuOrder.filter((id) => id !== "p:" + key);
+            this.renderBody();
+          });
+          const icon = el("ha-icon");
+          icon.icon = "mdi:trash-can-outline";
+          remove.replaceChildren(icon);
+          row.append(remove);
+        }
         if (item.url != null) {
-          const modeLabel = el2("label", t.openMode), mode = el2("select");
+          const modeLabel = el("label", t.openMode), mode = el("select");
           mode.setAttribute("aria-label", t.openMode + " " + (item.title || key));
           const syncMode = () => {
             const external = isExternalUrl(item.url), currentMode = item.openMode || "same";
             mode.replaceChildren();
             for (const [value, text2] of [["tab", t.newTab], ["iframe", t.iframe], ...currentMode === "same" ? [["same", t.sameWindow]] : []]) {
-              const option = el2("option", text2);
+              const option = el("option", text2);
               option.value = value;
               mode.append(option);
             }
@@ -942,7 +884,7 @@
             edit("url", v);
             if (isExternalUrl(v) && !previous) edit("openMode", "tab");
             syncMode();
-          }), modeLabel, el2("small", t.frameHint), this.button(t.remove, () => {
+          }), modeLabel, el("small", t.frameHint), this.button(t.remove, () => {
             delete this.draft.items[key];
             this.draft.order = this.draft.order.filter((k) => k !== key);
             this.renderBody();
@@ -955,12 +897,12 @@
         this.draft.items[key] = { title: t.newLink, icon: "mdi:link", url: "/home", openMode: "tab", group: "", bottom: false, hidden: false };
         this.renderBody();
       }));
-      const details = el2("details");
-      details.append(el2("summary", t.import));
-      const area = el2("textarea");
+      const details = el("details");
+      details.append(el("summary", t.import));
+      const area = el("textarea");
       area.placeholder = t.importHint;
       area.setAttribute("aria-label", t.importHint);
-      const fileLabel = el2("label", t.backupFile), file = el2("input");
+      const fileLabel = el("label", t.backupFile), file = el("input");
       file.type = "file";
       file.accept = ".json,application/json";
       fileLabel.append(file);
@@ -980,9 +922,8 @@
       };
       details.append(fileLabel, area, this.button(t.restore, () => stage(() => area.value)));
       this.main.append(details);
-      if (this.profiles) this.main.append(renderProfiles(this));
-      this.main.append(el2("p", t.source));
-      this.status = el2("p");
+      this.main.append(el("p", t.source));
+      this.status = el("p");
       this.status.className = "status";
       this.status.setAttribute("role", "status");
       this.main.append(this.status);
@@ -990,7 +931,7 @@
         try {
           const payload = await this.transferSnapshot();
           const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-          const url = URL.createObjectURL(blob), a = el2("a");
+          const url = URL.createObjectURL(blob), a = el("a");
           a.href = url;
           a.download = "sidebar-manager-backup.json";
           a.click();
@@ -1010,7 +951,6 @@
           for (const b of this.shadowRoot.querySelectorAll("button,input,select,textarea")) b.disabled = true;
           this.status.textContent = t.busy;
           await this.saveRecord(normalizeManager(this.draft), this.transfer, this.transferBase);
-          if (this.usePersonalOnSave) await this.profiles.prefer(true);
           this.remove();
         } catch (e) {
           this.status.textContent = e.message === "conflict" ? t.conflict : e.message?.startsWith("invalid") ? t.invalid : t.error;
@@ -1023,6 +963,172 @@
       this.foot.append(save);
     }
   };
+
+  // src/sidebar-profiles-dialog.js
+  var el2 = (tag, text2) => {
+    const node = document.createElement(tag);
+    if (text2) node.textContent = text2;
+    return node;
+  };
+  var button = (label, action) => {
+    const node = el2("button", label);
+    node.type = "button";
+    node.onclick = action;
+    return node;
+  };
+  function openProfiles({ hass, t, profiles, snapshot, edit }) {
+    if (document.querySelector("[data-sm-profiles-popup]")) return;
+    const host = el2("div");
+    host.dataset.smProfilesPopup = "";
+    const root = host.attachShadow({ mode: "open" }), modal = el2("dialog"), heading = el2("h2", t.profiles), body = el2("main"), status = el2("p");
+    modal.setAttribute("aria-label", t.profiles);
+    status.setAttribute("role", "status");
+    const style = el2("style");
+    style.textContent = `
+  dialog{box-sizing:border-box;width:min(520px,94vw);max-height:88dvh;overflow:auto;padding:18px;
+   border:1px solid var(--divider-color,#888);border-radius:12px;background:var(--card-background-color,#fff);
+   color:var(--primary-text-color,#222);font:14px var(--ha-font-family,Arial,sans-serif)}
+  dialog::backdrop{background:#0008}h2{margin:0 0 12px}fieldset,details{margin:10px 0;border:1px solid var(--divider-color,#888);border-radius:7px;padding:10px}
+  summary{cursor:pointer}label{display:flex;gap:8px;align-items:center;margin:7px 0}input,select,button{font:inherit;color:inherit;accent-color:var(--primary-color,#03a9f4)}
+  button,select,input[type=text]{background:var(--secondary-background-color,#eee);border:1px solid var(--divider-color,#888);border-radius:7px;padding:7px}
+  button{cursor:pointer}footer,.actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}p, label{overflow-wrap:anywhere}input[type=text]{min-width:0;flex:1}`;
+    const footer = el2("footer");
+    footer.append(button(t.closeProfiles, () => modal.close()));
+    modal.append(heading, body, status, footer);
+    root.append(style, modal);
+    document.body.append(host);
+    modal.addEventListener("close", () => host.remove(), { once: true });
+    const load = async () => {
+      body.textContent = t.loadingProfiles;
+      try {
+        const data = await profiles.load();
+        if (!host.isConnected) return;
+        if (data.global && !hass.user.is_admin) {
+          modal.close();
+          return;
+        }
+        body.replaceChildren();
+        if (data.global) body.append(el2("p", t.globalActive.replace("{name}", data.global.name)));
+        else {
+          const choices = el2("fieldset");
+          choices.append(el2("legend", t.activeProfile));
+          for (const entry of [{ id: null, name: t.ownProfile }, ...data.assigned]) {
+            const radio = el2("input");
+            radio.type = "radio";
+            radio.name = "sidebar-profile";
+            radio.checked = (data.selected?.id ?? null) === entry.id;
+            const label = el2("label");
+            label.append(radio, el2("span", entry.name));
+            choices.append(label);
+            radio.onchange = () => void run(() => profiles.prefer(entry.id));
+          }
+          body.append(choices);
+        }
+        if (hass.user.is_admin) renderAdmin(body, t, profiles, snapshot, data, run, (profile) => {
+          modal.close();
+          edit(data.record, profile);
+        });
+      } catch {
+        body.textContent = t.profilesUnavailable;
+      }
+    };
+    const run = async (task) => {
+      body.inert = true;
+      try {
+        await task();
+        await load();
+        status.textContent = t.saved;
+      } catch (error) {
+        status.textContent = error.message === "conflict" ? t.conflict : t.error;
+      } finally {
+        body.inert = false;
+      }
+    };
+    modal.showModal();
+    void load();
+  }
+  function renderAdmin(body, t, profiles, snapshot, { record, users, templates }, run, edit) {
+    if (record.version !== 1 || !Array.isArray(record.profiles)) throw Error("invalid_profiles");
+    const details = el2("details");
+    details.dataset.smAdmin = "";
+    details.append(el2("summary", t.manageProfiles), el2("p", t.shareProfilesHint));
+    const list2 = el2("select");
+    list2.setAttribute("aria-label", t.profiles);
+    list2.add(new Option(t.newProfile, ""));
+    for (const profile of record.profiles) list2.add(new Option(profile.name, profile.id));
+    const name = el2("input");
+    name.type = "text";
+    name.maxLength = 80;
+    name.required = true;
+    name.setAttribute("aria-label", t.profileName);
+    const nameLabel = el2("label", t.profileName);
+    nameLabel.append(name);
+    const checkbox = (label) => {
+      const input = el2("input");
+      input.type = "checkbox";
+      const wrapper = el2("label");
+      wrapper.append(input, el2("span", label));
+      return { input, wrapper };
+    };
+    const global = checkbox(t.enforceProfile), replace = checkbox(t.replaceProfile);
+    const audience = el2("fieldset");
+    audience.append(el2("legend", t.profileUsers));
+    const selections = new Map(users.map((user) => {
+      const choice = checkbox(user.name);
+      audience.append(choice.wrapper);
+      return [user.id, choice.input];
+    }));
+    const actions2 = el2("div"), confirmation = el2("div");
+    actions2.className = "actions";
+    const selected = () => record.profiles.find((profile) => profile.id === list2.value);
+    const sync = () => {
+      const profile = selected();
+      name.value = profile?.name ?? "";
+      global.input.checked = !!profile && record.globalId === profile.id;
+      replace.input.checked = false;
+      replace.wrapper.hidden = !profile;
+      replace.wrapper.style.display = profile ? "" : "none";
+      for (const [id, box] of selections) box.checked = profile?.users?.includes(id) ?? false;
+      remove.disabled = !profile;
+      editButton.disabled = !templates.some((template) => template.id === profile?.id);
+      confirmation.replaceChildren();
+    };
+    const save = button(t.save, () => {
+      if (!name.value.trim()) {
+        name.value = "";
+        name.reportValidity();
+        return;
+      }
+      void run(async () => {
+        const profile = selected();
+        const id = profile?.id ?? Array.from(crypto.getRandomValues(new Uint32Array(4)), (n) => n.toString(16).padStart(8, "0")).join("");
+        const backup = !profile || replace.input.checked ? await snapshot() : profile.backup;
+        const assigned = [...selections].filter(([, box]) => box.checked).map(([user]) => user);
+        const next = { id, name: name.value.trim(), users: assigned, everyone: !!profile?.everyone, auto: profile ? profile.auto !== false : false, backup };
+        const globalId = global.input.checked ? id : record.globalId === id ? null : record.globalId ?? null;
+        await profiles.write(record, { ...record, globalId, profiles: profile ? record.profiles.map((item) => item.id === id ? next : item) : [...record.profiles, next] });
+      });
+    });
+    const remove = button(t.removeProfile, () => {
+      const profile = selected();
+      if (!profile) return;
+      confirmation.replaceChildren(
+        el2("p", t.removeProfileConfirm.replace("{name}", profile.name)),
+        button(t.cancel, () => confirmation.replaceChildren()),
+        button(t.removeProfile, () => void run(() => profiles.write(record, {
+          ...record,
+          globalId: record.globalId === profile.id ? null : record.globalId ?? null,
+          profiles: record.profiles.filter((item) => item.id !== profile.id)
+        })))
+      );
+    });
+    const editButton = button(t.editProfile, () => edit(templates.find((template) => template.id === list2.value)));
+    list2.onchange = sync;
+    actions2.append(save, editButton, remove);
+    details.append(list2, nameLabel, audience, global.wrapper, replace.wrapper, actions2, confirmation);
+    body.append(details);
+    sync();
+  }
 
   // src/native-groups.js
   var sessions = /* @__PURE__ */ new WeakMap();
@@ -1082,24 +1188,24 @@
         if (!group) return s.native.actionsRenderer?.(item);
         const label = el3("span", t.submenus);
         label.style.cssText = "font:12px var(--ha-font-family,Arial);color:var(--secondary-text-color);margin-inline:8px";
-        const button = el3("button");
-        button.type = "button";
-        button.title = t.groupColor;
-        button.setAttribute("aria-label", t.groupColor + " " + group.name);
-        button.dataset.smGroup = group.id;
-        button.style.cssText = "width:32px;min-width:32px;height:32px;padding:4px;border:1px solid var(--divider-color);border-radius:7px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:8px 8px;cursor:pointer";
+        const button2 = el3("button");
+        button2.type = "button";
+        button2.title = t.groupColor;
+        button2.setAttribute("aria-label", t.groupColor + " " + group.name);
+        button2.dataset.smGroup = group.id;
+        button2.style.cssText = "width:32px;min-width:32px;height:32px;padding:4px;border:1px solid var(--divider-color);border-radius:7px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:8px 8px;cursor:pointer";
         const fill = el3("span");
         fill.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
         fill.style.background = rgba(group.color) || "transparent";
-        button.append(fill);
-        button.disabled = s.dirty || s.saving;
-        button.onpointerdown = (e) => e.stopPropagation();
-        button.onkeydown = (e) => e.stopPropagation();
-        button.onclick = (e) => {
+        button2.append(fill);
+        button2.disabled = s.dirty || s.saving;
+        button2.onpointerdown = (e) => e.stopPropagation();
+        button2.onkeydown = (e) => e.stopPropagation();
+        button2.onclick = (e) => {
           e.stopPropagation();
           if (!s.dirty && !s.saving) s.options.editGroup(group.id);
         };
-        return [label, button];
+        return [label, button2];
       };
       s.editor.actionsRenderer = s.renderer;
     }
@@ -1263,9 +1369,14 @@
   function sharedLayout(hass) {
     return hass?.user?.id === identity?.id ? appliedProfile?.backup.layout : void 0;
   }
+  function profileReadOnly(hass) {
+    return !!hass?.user?.id && !!sharedLayout(hass);
+  }
   function refreshProfile() {
-    appliedProfile = profilePreference === void 0 || personalNative === void 0 || profilePreference?.personal ? void 0 : resolveProfile(profileRecord, identity?.id);
-    collapsed.clear();
+    const next = profileChoices(profileRecord, identity?.id, profilePreference);
+    const active = next.global ?? (profilePreference === void 0 ? void 0 : next.selected);
+    if (stable(appliedProfile) !== stable(active)) collapsed.clear();
+    appliedProfile = active;
     refreshManager();
     window.dispatchEvent(new Event("ugso-sidebar-profile-changed"));
   }
@@ -1275,7 +1386,7 @@
         profileRecord = value;
       }],
       ["user", PREFERENCE_KEY, (value) => {
-        profilePreference = value;
+        profilePreference = value ?? null;
       }],
       ["user", "sidebar", (value) => {
         personalNative = normalizeSidebar({ ...legacySidebar(), ...value });
@@ -1350,18 +1461,13 @@
       console.warn("[Sidebar Manager] Layout unavailable; stored data left untouched.");
     }
   }
-  function openManager(sidebar, focusKey, focusGroup) {
-    if ([...editDialogs].some((dialog2) => dialog2.isConnected && (nativeGroupsDirty(dialog2) || nativeGroupsBusy(dialog2)))) return;
-    const hass = sidebar.hass;
-    if (!loaded || hass.user.id !== identity?.id) return;
-    if (document.querySelector("ugso-sidebar-manager-dialog")) return;
-    const base = clone(config), owner = identity, currentEpoch = epoch, dialog = el4("ugso-sidebar-manager-dialog");
-    document.body.append(dialog);
+  function actions(hass) {
+    const owner = identity, currentEpoch = epoch;
     const verifyOwner = () => {
       if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
     };
-    const backup = (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), ...before }));
-    const profiles = {
+    const readTransfer = () => readPreferences((key) => readKey(hass, key), legacySidebar());
+    return { verifyOwner, readTransfer, profiles: {
       load: async () => {
         const [record, preference, users] = await Promise.all([
           request(hass, "frontend/get_system_data", PROFILES_KEY).then((result) => result.value),
@@ -1370,39 +1476,53 @@
         ]);
         return {
           record: record ?? { version: 1, profiles: [] },
-          personal: !!preference?.personal,
-          assigned: resolveProfile(record, hass.user.id),
+          ...profileChoices(record, hass.user.id, preference),
           users: users.filter((user) => user.is_active && !user.system_generated)
         };
       },
-      write: async (base2, next) => {
+      write: async (base, next) => {
         verifyOwner();
+        if (!hass.user.is_admin) throw Error("conflict");
         const actual = (await request(hass, "frontend/get_system_data", PROFILES_KEY)).value ?? { version: 1, profiles: [] };
-        if (stable(base2) !== stable(actual)) throw Error("conflict");
+        if (stable(base) !== stable(actual)) throw Error("conflict");
         verifyOwner();
         await request(hass, "frontend/set_system_data", PROFILES_KEY, next);
         verifyOwner();
         profileRecord = next;
         refreshProfile();
       },
-      prefer: async (personal) => {
+      prefer: async (profileId) => {
         verifyOwner();
-        await writeKey(hass, PREFERENCE_KEY, { personal });
+        const record = (await request(hass, "frontend/get_system_data", PROFILES_KEY)).value;
+        const { assigned, global } = profileChoices(record, hass.user.id);
+        if (global || profileId !== null && !assigned.some((profile) => profile.id === profileId)) throw Error("conflict");
         verifyOwner();
-        profilePreference = { personal };
+        await writeKey(hass, PREFERENCE_KEY, { profileId });
+        verifyOwner();
+        profilePreference = { profileId };
         refreshProfile();
       }
-    };
+    } };
+  }
+  function openManager(sidebar, focusKey, focusGroup) {
+    if ([...editDialogs].some((dialog2) => dialog2.isConnected && (nativeGroupsDirty(dialog2) || nativeGroupsBusy(dialog2)))) return;
+    const hass = sidebar.hass;
+    if (!loaded || hass.user.id !== identity?.id || profileReadOnly(hass)) return;
+    if (document.querySelector("ugso-sidebar-manager-dialog")) return;
+    const base = clone(config), dialog = el4("ugso-sidebar-manager-dialog");
+    document.body.append(dialog);
+    const { verifyOwner, readTransfer } = actions(hass);
+    const backup = (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), ...before }));
     dialog.show({
       hass,
       record: base,
       entries: entries(sidebar),
       focusKey,
       focusGroup,
-      profiles,
-      readTransfer: () => readPreferences((key) => readKey(hass, key), legacySidebar()),
+      readTransfer,
       save: async (draft, transfer, transferBase) => {
-        if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
+        verifyOwner();
+        if (profileReadOnly(hass)) throw Error("conflict");
         if (transfer?.colors) {
           await savePreferences({
             base: transferBase,
@@ -1450,26 +1570,77 @@
     if (!nativeDialog._open) return;
     const content = nativeDialog.shadowRoot?.querySelector(".content");
     if (!content) return;
-    let button = content.querySelector("[data-sm-open]");
-    if (!button) {
-      button = el4("button");
-      button.dataset.smOpen = "";
-      button.type = "button";
-      button.style.cssText = "margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer";
-      button.onclick = () => {
+    let button2 = content.querySelector("[data-sm-open]");
+    if (!button2) {
+      button2 = el4("button");
+      button2.dataset.smOpen = "";
+      button2.type = "button";
+      button2.style.cssText = "margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer";
+      button2.onclick = () => {
         const sidebar = [...instances].find((s) => s.isConnected);
         if (sidebar) openManager(sidebar);
       };
-      content.prepend(button);
+      content.prepend(button2);
     }
-    if (loaded) attachNativeGroups(nativeDialog, { record: config, identity, getIdentity: () => identity, read: () => read(nativeDialog.hass), write: (value) => request(nativeDialog.hass, "frontend/set_user_data", MANAGER_KEY, value), backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + nativeDialog.hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })), editGroup: (id) => {
+    const hass = nativeDialog.hass, t = managerStrings(hass), locked = profileReadOnly(hass), global = profileChoices(profileRecord, hass.user.id).global;
+    let profileRow = content.querySelector("[data-sm-profile-row]");
+    if (!profileRow) {
+      profileRow = el4("div");
+      profileRow.dataset.smProfileRow = "";
+      const profilesButton2 = el4("button");
+      profilesButton2.type = "button";
+      profilesButton2.style.cssText = button2.style.cssText;
+      const hint2 = el4("p");
+      hint2.style.cssText = "margin:4px 0;color:var(--secondary-text-color)";
+      profileRow.append(profilesButton2, hint2);
+      button2.after(profileRow);
+      profilesButton2.onclick = () => {
+        const currentHass2 = nativeDialog.hass;
+        const { profiles, readTransfer, verifyOwner } = actions(currentHass2);
+        openProfiles({ hass: currentHass2, t: managerStrings(currentHass2), profiles, edit: (record, profile) => {
+          const sidebar = [...instances].find((s) => s.isConnected && s.hass?.user?.id === currentHass2.user.id);
+          if (!sidebar || !currentHass2.user.is_admin) return;
+          const draft = el4("ugso-sidebar-manager-dialog"), data = profile.backup;
+          document.body.append(draft);
+          draft.show({
+            hass: currentHass2,
+            title: profile.name,
+            record: data.layout,
+            entries: entries(sidebar),
+            readTransfer: async () => ({ layout: data.layout, colors: data.colors, sidebar: data.sidebar, native: data.sidebar }),
+            save: (layout, transfer) => profiles.write(record, { ...record, profiles: record.profiles.map((item) => item.id === profile.id ? { ...item, backup: makeBackup(layout, transfer?.colors ?? data.colors, transfer?.sidebar ?? data.sidebar) } : item) })
+          });
+        }, snapshot: async () => {
+          const data = await readTransfer();
+          verifyOwner();
+          return makeBackup(data.layout, data.colors, data.native);
+        } });
+      };
+    }
+    const [profilesButton, hint] = profileRow.children;
+    if (profilesButton.textContent !== t.profiles) profilesButton.textContent = t.profiles;
+    profilesButton.hidden = !!global && !hass.user.is_admin;
+    profilesButton.disabled = !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
+    const note = global ? t.globalActive.replace("{name}", global.name) : locked ? t.sharedReadOnly : "";
+    if (hint.textContent !== note) hint.textContent = note;
+    hint.hidden = !note;
+    if (loaded && !locked) attachNativeGroups(nativeDialog, { record: config, identity, getIdentity: () => identity, read: () => read(hass), write: (value) => request(hass, "frontend/set_user_data", MANAGER_KEY, value), backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })), editGroup: (id) => {
       const sidebar = [...instances].find((s) => s.isConnected);
       if (sidebar) openManager(sidebar, void 0, id);
     } });
-    const title = managerStrings(nativeDialog.hass).open;
-    if (button.textContent !== title) button.textContent = title;
-    button.disabled = !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
+    if (button2.textContent !== t.open) button2.textContent = t.open;
+    button2.disabled = locked || !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
+    const root = nativeDialog.shadowRoot;
+    let lockStyle = root.querySelector("[data-sm-profile-style]");
+    if (!lockStyle) {
+      lockStyle = el4("style");
+      lockStyle.dataset.smProfileStyle = "";
+      lockStyle.textContent = ":host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction],:host([data-sm-profile-readonly]) ha-icon-overflow-menu{pointer-events:none;opacity:.5}";
+      root.append(lockStyle);
+    }
+    nativeDialog.toggleAttribute("data-sm-profile-readonly", locked);
     const editors = [...nativeDialog.shadowRoot.querySelectorAll("ha-items-display-editor")];
+    for (const editor of editors) editor.inert = locked;
     for (const badge of editors.flatMap((e) => [...e.shadowRoot?.querySelectorAll("[data-sm-move]") || []])) {
       updateMoveBadge(badge, nativeDialog.hass);
       if (nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog)) badge.disabled = true;
@@ -1479,28 +1650,28 @@
     editDialogs.delete(dialog);
     endNativeGroups(dialog);
   }
-  function updateMoveBadge(button, hass) {
-    const key = button.dataset.smMove, item = config.items[key], group = config.groups.find((g) => g.id === item?.group), t = managerStrings(hass), name = item?.url ? isExternalUrl(item.url) ? t.externalLink : t.internalLink : group?.name || t.none;
-    if (button.textContent !== name) button.textContent = name;
-    button.title = (item?.url ? t.editLink : t.move) + ": " + (group?.name || t.none);
-    button.setAttribute("aria-label", (item?.url ? t.editLink : t.move) + " " + button.dataset.smLabel + ": " + name + "; " + (group?.name || t.none));
-    button.disabled = !loaded || [...editDialogs].some((dialog) => dialog.isConnected && (nativeGroupsDirty(dialog) || nativeGroupsBusy(dialog)));
+  function updateMoveBadge(button2, hass) {
+    const key = button2.dataset.smMove, item = config.items[key], group = config.groups.find((g) => g.id === item?.group), t = managerStrings(hass), name = item?.url ? isExternalUrl(item.url) ? t.externalLink : t.internalLink : group?.name || t.none;
+    if (button2.textContent !== name) button2.textContent = name;
+    button2.title = (item?.url ? t.editLink : t.move) + ": " + (group?.name || t.none);
+    button2.setAttribute("aria-label", (item?.url ? t.editLink : t.move) + " " + button2.dataset.smLabel + ": " + name + "; " + (group?.name || t.none));
+    button2.disabled = !loaded || [...editDialogs].some((dialog) => dialog.isConnected && (nativeGroupsDirty(dialog) || nativeGroupsBusy(dialog)));
   }
   function moveEntryButton(hass, key, label) {
-    const button = el4("button");
-    button.type = "button";
-    button.dataset.smMove = key;
-    button.dataset.smLabel = label || key;
-    button.style.cssText = "box-sizing:border-box;width:105px;min-width:105px;max-width:105px;height:32px;padding:4px 7px;margin-inline:3px;border:1px solid var(--divider-color);border-radius:7px;background:var(--card-background-color);color:var(--secondary-text-color);font:12px var(--ha-font-family,Arial,sans-serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer";
-    updateMoveBadge(button, hass);
-    button.onpointerdown = (e) => e.stopPropagation();
-    button.onkeydown = (e) => e.stopPropagation();
-    button.onclick = (e) => {
+    const button2 = el4("button");
+    button2.type = "button";
+    button2.dataset.smMove = key;
+    button2.dataset.smLabel = label || key;
+    button2.style.cssText = "box-sizing:border-box;width:105px;min-width:105px;max-width:105px;height:32px;padding:4px 7px;margin-inline:3px;border:1px solid var(--divider-color);border-radius:7px;background:var(--card-background-color);color:var(--secondary-text-color);font:12px var(--ha-font-family,Arial,sans-serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer";
+    updateMoveBadge(button2, hass);
+    button2.onpointerdown = (e) => e.stopPropagation();
+    button2.onkeydown = (e) => e.stopPropagation();
+    button2.onclick = (e) => {
       e.stopPropagation();
       const sidebar = [...instances].find((s) => s.isConnected);
       if (sidebar) openManager(sidebar, key);
     };
-    return button;
+    return button2;
   }
   function override(row, item) {
     const label = row.querySelector(".item-text:not([data-sm-label])"), originalIcon = row.querySelector("[slot=start]:not([data-sm-icon])");
@@ -1543,7 +1714,7 @@
         if (stable(sidebar._panelOrder) !== stable(native.panelOrder)) sidebar._panelOrder = native.panelOrder;
         if (stable(sidebar._hiddenPanels) !== stable(native.hiddenPanels)) sidebar._hiddenPanels = native.hiddenPanels;
       }
-      s.profileNative = !!active;
+      if (active || native) s.profileNative = !!active;
     }
     const config2 = active?.layout ?? personalLayout();
     const slot = root.querySelector("slot[name=main-navigation]");
@@ -1964,22 +2135,22 @@
   function makeButton(session, item) {
     const key = item.value;
     const cacheKey = (item.smMixed ? "mixed:" : "") + key;
-    let button = session.buttons.get(cacheKey);
-    if (!button) {
-      button = document.createElement("button");
-      button.type = "button";
-      button.className = "ugso-sidebar-color";
-      button.dataset.panel = key;
-      button.style.cssText = "box-sizing:border-box;width:32px;height:32px;min-width:32px;padding:4px;border:1px solid var(--divider-color,#777);border-radius:7px;background:var(--card-background-color,#222);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-inline:2px 4px;vertical-align:middle";
+    let button2 = session.buttons.get(cacheKey);
+    if (!button2) {
+      button2 = document.createElement("button");
+      button2.type = "button";
+      button2.className = "ugso-sidebar-color";
+      button2.dataset.panel = key;
+      button2.style.cssText = "box-sizing:border-box;width:32px;height:32px;min-width:32px;padding:4px;border:1px solid var(--divider-color,#777);border-radius:7px;background:var(--card-background-color,#222);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-inline:2px 4px;vertical-align:middle";
       const swatch = document.createElement("span");
       swatch.style.cssText = "display:block;width:20px;height:20px;border-radius:4px;overflow:hidden;background-color:#fff;background-image:conic-gradient(#999 25%,transparent 0 50%,#999 0 75%,transparent 0);background-size:8px 8px;pointer-events:none";
       const fill = document.createElement("span");
       fill.style.cssText = "display:block;width:100%;height:100%";
       swatch.append(fill);
-      button.append(swatch);
-      button.addEventListener("pointerdown", (e) => e.stopPropagation());
-      button.addEventListener("keydown", (e) => e.stopPropagation());
-      button.addEventListener("click", (e) => {
+      button2.append(swatch);
+      button2.addEventListener("pointerdown", (e) => e.stopPropagation());
+      button2.addEventListener("keydown", (e) => e.stopPropagation());
+      button2.addEventListener("click", (e) => {
         e.stopPropagation();
         if (session.saving || !session.loaded) return;
         session.picker?.finish();
@@ -1994,15 +2165,15 @@
           markDirty(session);
         } });
       });
-      session.buttons.set(cacheKey, button);
+      session.buttons.set(cacheKey, button2);
     }
-    button.setAttribute("aria-label", `${strings(session.dialog.hass).edit} ${item.label}`);
-    button.title = button.getAttribute("aria-label");
-    button.disabled = !!session.saving;
+    button2.setAttribute("aria-label", `${strings(session.dialog.hass).edit} ${item.label}`);
+    button2.title = button2.getAttribute("aria-label");
+    button2.disabled = !!session.saving;
     const c = session.draft.colors[key];
-    button.firstElementChild.firstElementChild.style.background = rgba(c) || "transparent";
-    button.dataset.theme = c ? "false" : "true";
-    return button;
+    button2.firstElementChild.firstElementChild.style.background = rgba(c) || "transparent";
+    button2.dataset.theme = c ? "false" : "true";
+    return button2;
   }
   function syncRows(session) {
     attachManagerButton(session.dialog);
@@ -2080,6 +2251,7 @@
     refresh();
   }
   async function saveDialog(dialog, original, args, originalClose) {
+    if (profileReadOnly(dialog.hass)) return;
     const session = sessions2.get(dialog);
     if (!session) return original.apply(dialog, args);
     if (session.saving) return;

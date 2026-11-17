@@ -2,12 +2,11 @@ import {normalizeManager,newId,HA_SHORTCUTS,shortcutAvailable,findShortcut,addSh
 import {clone,rgba} from './core.js';
 import {managerStrings} from './manager-i18n.js';
 import {makeBackup,parseBackup} from './sidebar-preferences.js';
-import {renderProfiles} from './sidebar-profiles-dialog.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
 export class ManagerDialog extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});}
- show({hass,record,entries,save,focusKey,focusGroup,readTransfer,profiles}){
-  this.hass=hass;this.t=managerStrings(hass);this.draft=clone(normalizeManager(record));this.entries=entries;this.saveRecord=save;this.readTransfer=readTransfer;this.profiles=profiles;this.busy=false;this.render();
+ show({hass,record,entries,save,focusKey,focusGroup,readTransfer,title}){
+  this.hass=hass;this.t=managerStrings(hass);if(title)this.t={...this.t,title};this.draft=clone(normalizeManager(record));this.entries=entries;this.saveRecord=save;this.readTransfer=readTransfer;this.busy=false;this.render();
   this.modal.showModal();this.modal.addEventListener('cancel',e=>{e.preventDefault();if(!this.busy)this.remove();});
   const target=[...this.shadowRoot.querySelectorAll('.row[data-key]')].find(row=>row.dataset.key===focusKey);
   if(target){target.style.outline='2px solid var(--primary-color,#03a9f4)';target.scrollIntoView({block:'center'});target.querySelector('select')?.focus();}
@@ -22,7 +21,7 @@ export class ManagerDialog extends HTMLElement{
   const transfer=parseBackup(backup);
   const base=transfer.colors?await this.readTransfer():undefined;
   if(!this.isConnected)return;
-  this.transfer=transfer;this.transferBase=base;this.usePersonalOnSave=false;
+  this.transfer=transfer;this.transferBase=base;
   this.draft=clone(transfer.layout);
   this.renderBody();
   this.status.textContent=this.t.backupPreview.replace('{groups}',transfer.layout.groups.length)
@@ -90,6 +89,10 @@ export class ManagerDialog extends HTMLElement{
    for(const g of [{id:'',name:t.none},...this.draft.groups]){const o=el('option',g.name);o.value=g.id;select.append(o);}select.value=item.group||'';select.onchange=()=>edit('group',select.value);label.append(select);row.append(label);
    row.append(this.input(t.bottom,item.bottom,v=>edit('bottom',v),'checkbox'),this.input(t.hidden,item.hidden,v=>edit('hidden',v),'checkbox'));
    row.append(this.button(t.up,()=>{this.draft.order=keys;this.move(this.draft.order,i,-1);},'↑'),this.button(t.down,()=>{this.draft.order=keys;this.move(this.draft.order,i,1);},'↓'));
+   if(!original&&!current?.url){
+    const remove=this.button(t.removeMissing,()=>{delete this.draft.items[key];this.draft.order=this.draft.order.filter(id=>id!==key);this.draft.menuOrder=this.draft.menuOrder.filter(id=>id!=='p:'+key);this.renderBody();});
+    const icon=el('ha-icon');icon.icon='mdi:trash-can-outline';remove.replaceChildren(icon);row.append(remove);
+   }
    if(item.url!=null){
     const modeLabel=el('label',t.openMode),mode=el('select');mode.setAttribute('aria-label',t.openMode+' '+(item.title||key));
     const syncMode=()=>{const external=isExternalUrl(item.url),currentMode=item.openMode||'same';mode.replaceChildren();for(const [value,text]of [['tab',t.newTab],['iframe',t.iframe],...(currentMode==='same'?[['same',t.sameWindow]]:[])]){const option=el('option',text);option.value=value;mode.append(option);}mode.value=currentMode;mode.disabled=!external;title.className=external?'sm-external-title':'sm-ha-shortcut-title';};
@@ -107,10 +110,9 @@ export class ManagerDialog extends HTMLElement{
   file.onchange=()=>{const selected=file.files?.[0];if(selected)void stage(()=>{if(selected.size>2_000_000)throw Error('invalid_backup');return selected.text();});};
   details.append(fileLabel,area,this.button(t.restore,()=>stage(()=>area.value)));
   this.main.append(details);
-  if(this.profiles)this.main.append(renderProfiles(this));
   this.main.append(el('p',t.source));
   this.status=el('p');this.status.className='status';this.status.setAttribute('role','status');this.main.append(this.status);
   this.foot.replaceChildren(this.button(t.export,async()=>{try{const payload=await this.transferSnapshot();const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='sidebar-manager-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{this.status.textContent=t.error;}}),this.button(t.reset,()=>{this.draft=normalizeManager(null);this.transfer=this.transferBase=undefined;this.renderBody();this.status.textContent=t.resetHint;}),this.button(t.cancel,()=>this.remove()));
-  const save=this.button(t.save,async()=>{try{this.busy=true;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=true;this.status.textContent=t.busy;await this.saveRecord(normalizeManager(this.draft),this.transfer,this.transferBase);if(this.usePersonalOnSave)await this.profiles.prefer(true);this.remove();}catch(e){this.status.textContent=e.message==='conflict'?t.conflict:e.message?.startsWith('invalid')?t.invalid:t.error;}finally{this.busy=false;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=false;}});save.className='primary';this.foot.append(save);
+  const save=this.button(t.save,async()=>{try{this.busy=true;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=true;this.status.textContent=t.busy;await this.saveRecord(normalizeManager(this.draft),this.transfer,this.transferBase);this.remove();}catch(e){this.status.textContent=e.message==='conflict'?t.conflict:e.message?.startsWith('invalid')?t.invalid:t.error;}finally{this.busy=false;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=false;}});save.className='primary';this.foot.append(save);
  }
 }
