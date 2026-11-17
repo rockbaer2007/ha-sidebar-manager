@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.14 — 2026-11-17
+
+- Administrators can open the sidebar editor with a global profile active. The editor shows its groups and saves changes in the global template.
+- When a global profile is active, users can reload it from the sidebar editor. The editor displays a notice when the active template changes.
+
 ## 0.1.13 — 2026-11-17
 
 - Dedicated sidebar profile dialog with a personal view, multiple assigned read-only profiles, and administrator controls for enforcing one global profile.

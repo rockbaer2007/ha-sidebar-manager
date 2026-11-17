@@ -49,6 +49,13 @@ export function profileChoices(record, userId, preference) {
   return {global, assigned, selected, active: global ?? selected, templates:profiles};
 }
 
+export function trackGlobalProfile(previous, global, acknowledge = false) {
+  if (!global) return undefined;
+  const signature = stable({id: global.id, name: global.name, backup: global.backup});
+  const seen = acknowledge || !previous ? signature : previous.seen;
+  return {seen, pending: signature !== seen};
+}
+
 function makeBackupFromProfile(profile) {
   if (profile.backup?.version !== 2) throw Error('invalid_backup');
   return parseBackup(profile.backup);

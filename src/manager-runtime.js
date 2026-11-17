@@ -3,11 +3,12 @@ import {MANAGER_KEY,WEB_PANEL,normalizeManager,layoutEntries,saveManager,isExter
 import {ManagerDialog} from './manager-dialog.js';
 import {managerStrings} from './manager-i18n.js';
 import {openProfiles} from './sidebar-profiles-dialog.js';
-import {PROFILES_KEY,PREFERENCE_KEY,normalizeSidebar,makeBackup,readPreferences,profileChoices,savePreferences} from './sidebar-preferences.js';
+import {PROFILES_KEY,PREFERENCE_KEY,normalizeSidebar,makeBackup,readPreferences,profileChoices,savePreferences,trackGlobalProfile} from './sidebar-preferences.js';
 import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,nativeGroupsBusy} from './native-groups.js';
-export {withNativeGroupsSave} from './native-groups.js';
+export {withNativeGroupsSave,nativeProfileDraft} from './native-groups.js';
 let config=normalizeManager(null),hassRef,identity,off,epoch=0,loaded=false;
 let profileRecord,profilePreference,appliedProfile,personalNative;
+let globalNotice,profileRevision=0;
 let profileSubscriptions=[];
 const instances=new Set(),state=new WeakMap();
 const editDialogs=new Set();
@@ -23,18 +24,28 @@ const legacySidebar=()=>normalizeSidebar({
 function readLegacyList(key){try{return JSON.parse(localStorage.getItem(key));}catch{return [];}}
 export function sharedColors(){return appliedProfile?.backup.colors;}
 export function sharedLayout(hass){return hass?.user?.id===identity?.id?appliedProfile?.backup.layout:undefined;}
-export function profileReadOnly(hass){return !!hass?.user?.id&&!!sharedLayout(hass);}
-function refreshProfile(){
+export function editorProfile(hass){
+ return sharedLayout(hass)?{record:profileRecord,profile:appliedProfile,
+  editable:!!hass.user.is_admin&&profileRecord.globalId===appliedProfile.id}:undefined;
+}
+export function profileReadOnly(hass){const target=editorProfile(hass);return !!target&&!target.editable;}
+export function saveProfileEditor(hass,{record,profile},{layout,colors,sidebar}){
+ return actions(hass).profiles.write(record,{...record,profiles:record.profiles.map(item=>item.id===profile.id
+  ?{...item,backup:makeBackup(layout,colors,sidebar)}:item)});
+}
+function refreshProfile(acknowledge=false){
  const next=profileChoices(profileRecord,identity?.id,profilePreference);
+ globalNotice=trackGlobalProfile(globalNotice,next.global,acknowledge);
  const active=next.global??(profilePreference===undefined?undefined:next.selected);
  if(stable(appliedProfile)!==stable(active))collapsed.clear();
  appliedProfile=active;
  refreshManager();
  window.dispatchEvent(new Event('ugso-sidebar-profile-changed'));
 }
+function receiveProfiles(value){profileRecord=value;profileRevision++;}
 async function connectProfiles(hass,generation){
  const bindings=[
-  ['system',PROFILES_KEY,value=>{profileRecord=value;}],
+  ['system',PROFILES_KEY,receiveProfiles],
   ['user',PREFERENCE_KEY,value=>{profilePreference=value??null;}],
   ['user','sidebar',value=>{personalNative=normalizeSidebar({...legacySidebar(),...value});}],
  ];
@@ -57,13 +68,14 @@ async function connect(hass){
  identity={id,connection:hass.connection};const current=++epoch;off?.();loaded=false;config=normalizeManager(null);
  for(const unsubscribe of profileSubscriptions)unsubscribe();
  profileSubscriptions=[];profileRecord=profilePreference=appliedProfile=personalNative=undefined;
+ globalNotice=undefined;
  collapsed.clear();refreshManager();
  void connectProfiles(hass,current);
  try{const value=normalizeManager(await read(hass));if(current!==epoch)return;config=value;loaded=true;refreshManager();const un=await hass.connection.subscribeMessage(e=>{if(current!==epoch)return;try{config=normalizeManager(e.value);loaded=true;collapsed.clear();refreshManager();}catch{console.warn('[Sidebar Manager] Unsupported stored layout; no automatic write.');}},{type:'frontend/subscribe_user_data',key:MANAGER_KEY});if(current===epoch)off=un;else un();}catch{console.warn('[Sidebar Manager] Layout unavailable; stored data left untouched.');}
 }
 function actions(hass){
  const owner=identity,currentEpoch=epoch;
- const verifyOwner=()=>{if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');};
+ const verifyOwner=()=>{if(identity!==owner||epoch!==currentEpoch||owner?.id!==hass.user.id||owner.connection!==hass.connection)throw Error('conflict');};
  const readTransfer=()=>readPreferences(key=>readKey(hass,key),legacySidebar());
  return {verifyOwner,readTransfer,profiles:{
   load:async()=>{
@@ -83,7 +95,7 @@ function actions(hass){
    verifyOwner();
    await request(hass,'frontend/set_system_data',PROFILES_KEY,next);
    verifyOwner();
-   profileRecord=next;refreshProfile();
+   receiveProfiles(next);refreshProfile();
   },
   prefer:async profileId=>{
    verifyOwner();
@@ -99,12 +111,14 @@ export function openManager(sidebar,focusKey,focusGroup){
  if([...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog))))return;
  const hass=sidebar.hass;if(!loaded||hass.user.id!==identity?.id||profileReadOnly(hass))return;
  if(document.querySelector('ugso-sidebar-manager-dialog'))return;
+ const target=editorProfile(hass);
+ if(target?.editable){openTemplate(sidebar,target.record,target.profile,focusKey,focusGroup);return;}
  const base=clone(config),dialog=el('ugso-sidebar-manager-dialog');document.body.append(dialog);
  const {verifyOwner,readTransfer}=actions(hass);
  const backup=before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),...before}));
  dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,readTransfer,
   save:async (draft,transfer,transferBase)=>{
-  verifyOwner();if(profileReadOnly(hass))throw Error('conflict');
+  verifyOwner();if(editorProfile(hass))throw Error('conflict');
   if(transfer?.colors){
    await savePreferences({base:transferBase,draft:{...transfer,layout:draft},read:key=>readKey(hass,key),
     write:(key,value)=>{verifyOwner();return writeKey(hass,key,value);},backup});
@@ -113,6 +127,16 @@ export function openManager(sidebar,focusKey,focusGroup){
   }
   config=clone(draft);collapsed.clear();refreshManager();
  }});
+}
+function openTemplate(sidebar,record,profile,focusKey,focusGroup){
+ const hass=sidebar.hass;
+ if(!hass.user.is_admin||document.querySelector('ugso-sidebar-manager-dialog'))return;
+ const draft=el('ugso-sidebar-manager-dialog'),data=profile.backup;
+ document.body.append(draft);
+ draft.show({hass,title:profile.name,record:data.layout,entries:entries(sidebar),focusKey,focusGroup,
+  readTransfer:async()=>({layout:data.layout,colors:data.colors,sidebar:data.sidebar,native:data.sidebar}),
+  save:(layout,transfer)=>saveProfileEditor(hass,{record,profile},{layout,
+   colors:transfer?.colors??data.colors,sidebar:transfer?.sidebar??data.sidebar})});
 }
 export function attachManager(sidebar,onLayout){
  instances.add(sidebar);connect(sidebar.hass);
@@ -125,41 +149,63 @@ export function attachManagerButton(nativeDialog){
  if(!nativeDialog._open)return;
  const content=nativeDialog.shadowRoot?.querySelector('.content');if(!content)return;
  let button=content.querySelector('[data-sm-open]');if(!button){button=el('button');button.dataset.smOpen='';button.type='button';button.style.cssText='margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer';button.onclick=()=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar);};content.prepend(button);}
- const hass=nativeDialog.hass,t=managerStrings(hass),locked=profileReadOnly(hass),global=profileChoices(profileRecord,hass.user.id).global;
+ const hass=nativeDialog.hass,t=managerStrings(hass),target=editorProfile(hass),locked=profileReadOnly(hass),global=profileChoices(profileRecord,hass.user.id).global;
  let profileRow=content.querySelector('[data-sm-profile-row]');
  if(!profileRow){
   profileRow=el('div');profileRow.dataset.smProfileRow='';
   const profilesButton=el('button');profilesButton.type='button';profilesButton.style.cssText=button.style.cssText;
   const hint=el('p');hint.style.cssText='margin:4px 0;color:var(--secondary-text-color)';
-  profileRow.append(profilesButton,hint);button.after(profileRow);
+  const update=el('button');update.type='button';update.style.cssText=button.style.cssText;
+  const updateHint=el('p');updateHint.style.cssText=hint.style.cssText;updateHint.setAttribute('role','status');
+  update.onclick=async()=>{
+   const currentHass=nativeDialog.hass,owner=identity,revision=profileRevision,strings=managerStrings(currentHass);
+   update.disabled=true;updateHint.textContent='';
+   try{
+    const result=await request(currentHass,'frontend/get_system_data',PROFILES_KEY);
+    if(owner!==identity)return;
+    if(revision===profileRevision)receiveProfiles(result.value);
+    refreshProfile(true);
+    updateHint.textContent=strings.globalRefreshed;
+   }catch{updateHint.textContent=strings.globalRefreshFailed;}
+   finally{update.disabled=false;if(owner===identity)attachManagerButton(nativeDialog);}
+  };
+  profileRow.append(profilesButton,hint,update,updateHint);button.after(profileRow);
   profilesButton.onclick=()=>{
    const currentHass=nativeDialog.hass;
    const {profiles,readTransfer,verifyOwner}=actions(currentHass);
    openProfiles({hass:currentHass,t:managerStrings(currentHass),profiles,edit:(record,profile)=>{
     const sidebar=[...instances].find(s=>s.isConnected&&s.hass?.user?.id===currentHass.user.id);
-    if(!sidebar||!currentHass.user.is_admin)return;
-    const draft=el('ugso-sidebar-manager-dialog'),data=profile.backup;
-    document.body.append(draft);
-    draft.show({hass:currentHass,title:profile.name,record:data.layout,entries:entries(sidebar),
-     readTransfer:async()=>({layout:data.layout,colors:data.colors,sidebar:data.sidebar,native:data.sidebar}),
-     save:(layout,transfer)=>profiles.write(record,{...record,profiles:record.profiles.map(item=>item.id===profile.id
-      ?{...item,backup:makeBackup(layout,transfer?.colors??data.colors,transfer?.sidebar??data.sidebar)}:item)})});
+    if(sidebar)openTemplate(sidebar,record,profile);
    },snapshot:async()=>{
     const data=await readTransfer();verifyOwner();return makeBackup(data.layout,data.colors,data.native);
    }});
   };
  }
- const [profilesButton,hint]=profileRow.children;
+ const [profilesButton,hint,update,updateHint]=profileRow.children;
  if(profilesButton.textContent!==t.profiles)profilesButton.textContent=t.profiles;
  profilesButton.hidden=!!global&&!hass.user.is_admin;
  profilesButton.disabled=!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
  const note=global?t.globalActive.replace('{name}',global.name):(locked?t.sharedReadOnly:'');
  if(hint.textContent!==note)hint.textContent=note;hint.hidden=!note;
- if(loaded&&!locked)attachNativeGroups(nativeDialog,{record:config,identity,getIdentity:()=>identity,read:()=>read(hass),write:value=>request(hass,'frontend/set_user_data',MANAGER_KEY,value),backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}});
+ if(update.textContent!==t.refreshGlobal)update.textContent=t.refreshGlobal;
+ update.hidden=!global;
+ updateHint.hidden=!global;
+ if(!global)updateHint.textContent='';
+ else if(globalNotice?.pending&&!updateHint.textContent)updateHint.textContent=t.globalChanged;
+ if(globalNotice?.pending&&updateHint.textContent===t.globalRefreshed)updateHint.textContent=t.globalChanged;
+ if(loaded)attachNativeGroups(nativeDialog,{
+  record:target?.profile.backup.layout??config,profile:target?.profile.id,
+  sidebar:target?.profile.backup.sidebar,readOnly:locked,
+  identity,getIdentity:()=>identity,read:()=>read(hass),
+  write:value=>request(hass,'frontend/set_user_data',MANAGER_KEY,value),
+  backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before})),
+  editGroup:id=>{const sidebar=[...instances].find(s=>s.isConnected);if(sidebar)openManager(sidebar,undefined,id);}
+ });
  if(button.textContent!==t.open)button.textContent=t.open;button.disabled=locked||!loaded||nativeGroupsDirty(nativeDialog)||nativeGroupsBusy(nativeDialog);
  const root=nativeDialog.shadowRoot;
  let lockStyle=root.querySelector('[data-sm-profile-style]');
- if(!lockStyle){lockStyle=el('style');lockStyle.dataset.smProfileStyle='';lockStyle.textContent=':host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction],:host([data-sm-profile-readonly]) ha-icon-overflow-menu{pointer-events:none;opacity:.5}';root.append(lockStyle);}
+ if(!lockStyle){lockStyle=el('style');lockStyle.dataset.smProfileStyle='';lockStyle.textContent=':host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction]{pointer-events:none;opacity:.5} :host([data-sm-profile-active]) ha-icon-overflow-menu{display:none}';root.append(lockStyle);}
+ nativeDialog.toggleAttribute('data-sm-profile-active',!!target);
  nativeDialog.toggleAttribute('data-sm-profile-readonly',locked);
  const editors=[...nativeDialog.shadowRoot.querySelectorAll('ha-items-display-editor')];
  for(const editor of editors)editor.inert=locked;
@@ -167,7 +213,8 @@ export function attachManagerButton(nativeDialog){
 }
 export function endManagerDialog(dialog){editDialogs.delete(dialog);endNativeGroups(dialog);}
 function updateMoveBadge(button,hass){
- const key=button.dataset.smMove,item=config.items[key],group=config.groups.find(g=>g.id===item?.group),t=managerStrings(hass),name=item?.url?(isExternalUrl(item.url)?t.externalLink:t.internalLink):(group?.name||t.none);
+ const layout=sharedLayout(hass)??config;
+ const key=button.dataset.smMove,item=layout.items[key],group=layout.groups.find(g=>g.id===item?.group),t=managerStrings(hass),name=item?.url?(isExternalUrl(item.url)?t.externalLink:t.internalLink):(group?.name||t.none);
  if(button.textContent!==name)button.textContent=name;
  button.title=(item?.url?t.editLink:t.move)+': '+(group?.name||t.none);button.setAttribute('aria-label',(item?.url?t.editLink:t.move)+' '+button.dataset.smLabel+': '+name+'; '+(group?.name||t.none));button.disabled=!loaded||[...editDialogs].some(dialog=>dialog.isConnected&&(nativeGroupsDirty(dialog)||nativeGroupsBusy(dialog)));
 }

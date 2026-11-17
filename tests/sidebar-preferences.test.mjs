@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeBackup,parseBackup,readPreferences,resolveProfile,profileChoices,savePreferences} from '../src/sidebar-preferences.js';
+import {makeBackup,parseBackup,readPreferences,resolveProfile,profileChoices,trackGlobalProfile,savePreferences} from '../src/sidebar-preferences.js';
 import {STORE_KEY} from '../src/core.js';
 import {MANAGER_KEY} from '../src/manager-model.js';
 
@@ -65,4 +65,18 @@ test('a failed full import rolls an earlier write back without altering unrelate
  assert.deepEqual(records.get(MANAGER_KEY),original);
  assert.equal(records.get('sidebar'),null);
  assert.deepEqual(snapshot.layout,original);
+});
+
+test('global refresh notices stay pending until acknowledged and ignore assignment changes',()=>{
+ const global={id:'global',name:'Global',backup:file};
+ const initial=trackGlobalProfile(undefined,global);
+ assert.equal(initial.pending,false);
+ assert.equal(trackGlobalProfile(initial,{...global,users:['tester']}).pending,false);
+ const updated={...global,backup:{...file,sidebar:{...sidebar,hiddenPanels:[]}}};
+ const pending=trackGlobalProfile(initial,updated);
+ assert.equal(pending.pending,true);
+ assert.equal(trackGlobalProfile(pending,updated).pending,true);
+ assert.equal(trackGlobalProfile(pending,updated,true).pending,false);
+ assert.equal(trackGlobalProfile(pending,{...global,id:'different'}).pending,true);
+ assert.equal(trackGlobalProfile(pending,undefined),undefined);
 });

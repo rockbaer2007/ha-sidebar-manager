@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Window} from 'happy-dom';
 import {normalizeManager,layoutEntries} from '../src/manager-model.js';
-import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,withNativeGroupsSave,mixedMenuOrder,releaseMovedBottomGroups} from '../src/native-groups.js';
+import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,withNativeGroupsSave,mixedMenuOrder,releaseMovedBottomGroups,nativeProfileDraft} from '../src/native-groups.js';
 const setup=(emptyOrder=false,links={})=>{
  const win=new Window({url:'https://ha.example.invalid/'});globalThis.document=win.document;globalThis.MutationObserver=win.MutationObserver;globalThis.CustomEvent=win.CustomEvent;
  const dialog=document.createElement('div');dialog.attachShadow({mode:'open'});dialog.shadowRoot.innerHTML='<div class="content"><ha-items-display-editor></ha-items-display-editor></div>';document.body.append(dialog);dialog._open=true;dialog.hass={language:'de',user:{id:'test'}};dialog._order=['home','map'];dialog._hidden=[];
@@ -16,6 +16,23 @@ const setup=(emptyOrder=false,links={})=>{
  const change=(order,hidden=[])=>dialog.shadowRoot.querySelector('.sm-native-groups ha-items-display-editor').dispatchEvent(new win.CustomEvent('value-changed',{detail:{value:{order,hidden}},bubbles:true,composed:true}));
  return {dialog,options,dirty,change,get stored(){return stored;},get writes(){return writes;}};
 };
+test('the global editor shows profile groups and stages changes away from personal HA preferences',()=>{
+ const s=setup();
+ const options={...s.options,profile:'global',sidebar:{panelOrder:['map','home'],hiddenPanels:['missing']}};
+ attachNativeGroups(s.dialog,options);
+ const editor=s.dialog.shadowRoot.querySelector('.sm-native-groups ha-items-display-editor');
+ assert.ok(editor.items.some(item=>item.value==='sm-group:one'));
+ s.change(['sm-group:one','map','home','sm-group:two'],['map']);
+ const draft=nativeProfileDraft(s.dialog,'global');
+ assert.deepEqual(draft.sidebar,{panelOrder:['map','home'],hiddenPanels:['map','missing']});
+ assert.equal(draft.layout.menuOrder[0],'g:one');
+ assert.deepEqual(s.dialog._order,['home','map']);
+ assert.deepEqual(s.dialog._hidden,[]);
+ assert.equal(s.writes,0);
+ attachNativeGroups(s.dialog,{...options,readOnly:true});
+ assert.equal(editor.inert,true);
+ assert.throws(()=>nativeProfileDraft(s.dialog,'global'),/conflict/);
+});
 test('mixed editor places a submenu between native entries without leaking IDs to HA',async()=>{
  const s=setup();s.change(['home','sm-group:one','map','sm-group:two']);assert.equal(nativeGroupsDirty(s.dialog),true);
  assert.deepEqual(s.dialog._order,['home','map']);let next=0;await withNativeGroupsSave(s.dialog,async()=>next++);

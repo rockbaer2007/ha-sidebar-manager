@@ -1,4 +1,10 @@
-# Sidebar Manager 0.1.13
+# Sidebar Manager 0.1.14
+
+- **EN:** Administrators can edit a global profile in the sidebar editor, including its groups. When a global profile is active, the editor provides a refresh button and a notice when the template changes.
+- **DE:** Administratoren können das aktive globale Profil samt Gruppen direkt im Sidebar-Editor bearbeiten. Bei aktivem globalem Profil zeigt der Editor einen Änderungshinweis und den Button **Globales Profil aktualisieren**.
+- **FR:** Les administrateurs peuvent modifier le profil global actif et ses groupes dans l’éditeur. Un bouton permet d’actualiser le profil global et un message signale les modifications du modèle.
+
+## Sidebar Manager 0.1.13
 
 - **EN:** A dedicated dialog lets users choose their own sidebar or an assigned read-only profile. Administrators can enforce one profile for everyone. The trash icon removes saved settings for missing sidebar entries.
 - **DE:** Im neuen Popup wählen Benutzer ihre eigene Sidebar oder ein zugewiesenes, schreibgeschütztes Profil. Administratoren können ein globales Profil verbindlich setzen. Der Papierkorb entfernt gespeicherte Einstellungen für fehlende Einträge.

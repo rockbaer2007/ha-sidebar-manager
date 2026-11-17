@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.13 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.14 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.13";
+  var VERSION = "0.1.14";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -494,6 +494,10 @@
     ownProfile: "Eigene Sidebar",
     enforceProfile: "Dieses Profil für alle verbindlich anwenden",
     globalActive: "Globales Profil aktiv: {name}",
+    refreshGlobal: "Globales Profil aktualisieren",
+    globalChanged: "Das globale Profil wurde geändert. Du kannst es hier erneut laden.",
+    globalRefreshed: "Globales Profil ist aktuell.",
+    globalRefreshFailed: "Das globale Profil konnte nicht geladen werden. Versuche es erneut.",
     sharedReadOnly: "Gemeinsames Profil aktiv. Wechsle zum Bearbeiten zu deiner eigenen Sidebar.",
     editProfile: "Vorlage bearbeiten",
     replaceProfile: "Vorlage durch meine gespeicherte Sidebar ersetzen",
@@ -509,6 +513,10 @@
     ownProfile: "My own sidebar",
     enforceProfile: "Enforce this profile for everyone",
     globalActive: "Global profile active: {name}",
+    refreshGlobal: "Refresh global profile",
+    globalChanged: "The global profile changed. You can reload it here.",
+    globalRefreshed: "The global profile is up to date.",
+    globalRefreshFailed: "Could not load the global profile. Try again.",
     sharedReadOnly: "Shared profile active. Switch to your own sidebar to edit your settings.",
     editProfile: "Edit template",
     replaceProfile: "Replace template with my saved sidebar",
@@ -524,6 +532,10 @@
     ownProfile: "Ma barre latérale",
     enforceProfile: "Imposer ce profil à tous",
     globalActive: "Profil global actif : {name}",
+    refreshGlobal: "Actualiser le profil global",
+    globalChanged: "Le profil global a changé. Vous pouvez le recharger ici.",
+    globalRefreshed: "Le profil global est à jour.",
+    globalRefreshFailed: "Impossible de charger le profil global. Réessayez.",
     sharedReadOnly: "Profil partagé actif. Revenez à votre barre latérale pour modifier vos réglages.",
     editProfile: "Modifier le modèle",
     replaceProfile: "Remplacer le modèle par ma barre latérale enregistrée",
@@ -573,6 +585,12 @@
     const id = preference?.profileId;
     const selected = id === void 0 ? preference?.personal ? void 0 : assigned.find((profile) => profile.auto !== false) : assigned.find((profile) => profile.id === id);
     return { global, assigned, selected, active: global ?? selected, templates: profiles };
+  }
+  function trackGlobalProfile(previous, global, acknowledge = false) {
+    if (!global) return void 0;
+    const signature = stable({ id: global.id, name: global.name, backup: global.backup });
+    const seen = acknowledge || !previous ? signature : previous.seen;
+    return { seen, pending: signature !== seen };
   }
   function makeBackupFromProfile(profile) {
     if (profile.backup?.version !== 2) throw Error("invalid_backup");
@@ -1147,7 +1165,10 @@
     if (text2) n.textContent = text2;
     return n;
   };
-  var nativeGroupsDirty = (dialog) => !!sessions.get(dialog)?.dirty;
+  var nativeGroupsDirty = (dialog) => {
+    const s = sessions.get(dialog);
+    return !!s && (s.dirty || stable(s.sidebar) !== stable(s.options.sidebar));
+  };
   var nativeGroupsBusy = (dialog) => !!sessions.get(dialog)?.saving;
   function endNativeGroups(dialog) {
     const s = sessions.get(dialog);
@@ -1220,7 +1241,7 @@
       s.editor.value = { order: s.order, hidden: [...s.hidden] };
     }
     s.editor.hass = dialog.hass;
-    s.editor.inert = !!s.saving;
+    s.editor.inert = !!s.saving || !!s.options.readOnly;
     for (const row of s.editor.shadowRoot?.querySelectorAll("ha-md-list-item,ha-list-item-button") || []) {
       const g = s.draft.groups.find((g2) => g2.id === row.querySelector("[data-sm-group]")?.dataset.smGroup);
       if (!g) continue;
@@ -1229,7 +1250,7 @@
   }
   function changed(dialog, s, event) {
     event.stopPropagation();
-    if (s.saving) return;
+    if (s.saving || s.options.readOnly) return;
     const value = event.detail?.value;
     if (!value || !Array.isArray(value.order) || !Array.isArray(value.hidden)) return;
     const linkKeys = new Set(customLinks(s.draft).map(([key]) => key)), nativeKeys = new Set((s.native.items || []).map((i) => i.value).filter((key) => !linkKeys.has(key))), groupIds = new Map(s.draft.groups.map((g) => [groupKey(g.id), g.id]));
@@ -1249,7 +1270,16 @@
     dialog._dirtyStateContext.setState(s.dirty, DIRTY_KEY);
     const nativeValue = { order: order.filter((v) => nativeKeys.has(v)), hidden: value.hidden.filter((v) => nativeKeys.has(v)) };
     s.hidden = [...nativeValue.hidden, ...[...linkKeys].filter((key) => s.draft.items[key].hidden)];
-    if (stable(nativeValue) !== stable({ order: priorNativeOrder, hidden: priorHidden })) {
+    if (s.options.sidebar) {
+      if (stable(nativeValue) !== stable({ order: priorNativeOrder, hidden: priorHidden })) {
+        const mergeMissing = (next, previous) => [...next, ...previous.filter((key) => !nativeKeys.has(key))];
+        s.sidebar = {
+          panelOrder: stable(nativeValue.order) === stable(priorNativeOrder) ? s.sidebar.panelOrder : mergeMissing(nativeValue.order, s.sidebar.panelOrder),
+          hiddenPanels: stable(nativeValue.hidden) === stable(priorHidden) ? s.sidebar.hiddenPanels : mergeMissing(nativeValue.hidden, s.sidebar.hiddenPanels)
+        };
+      }
+      dialog._dirtyStateContext.setState(s.dirty || stable(s.sidebar) !== stable(s.options.sidebar), DIRTY_KEY);
+    } else if (stable(nativeValue) !== stable({ order: priorNativeOrder, hidden: priorHidden })) {
       s.native.dispatchEvent(new CustomEvent("value-changed", { detail: { value: nativeValue }, bubbles: true, composed: true }));
     }
     s.signature = null;
@@ -1261,6 +1291,10 @@
     if (!content || !native || !dialog._open) return;
     let s = sessions.get(dialog);
     const record = normalizeManager(options.record);
+    if (s && s.options.profile !== options.profile) {
+      endNativeGroups(dialog);
+      s = void 0;
+    }
     if (!s) {
       const section = el3("section");
       section.className = "sm-native-groups";
@@ -1279,15 +1313,21 @@
       s.observer = new MutationObserver(() => render(dialog, s));
       if (editor.shadowRoot) s.observer.observe(editor.shadowRoot, { childList: true, subtree: true });
     }
-    if (!s.dirty && !s.saving) {
+    if (!s.dirty && !s.saving && (!s.sidebar || stable(s.sidebar) === stable(s.options.sidebar))) {
       s.base = clone(record);
       s.draft = clone(record);
       s.identity = options.identity;
-      s.order = mixedMenuOrder(record, dialog._order || [], native.items || []);
-      s.hidden = [...native.value?.hidden || dialog._hidden || [], ...customLinks(record).filter(([, item]) => item.hidden).map(([key]) => key)];
+      s.sidebar = clone(options.sidebar);
+      s.order = mixedMenuOrder(record, options.sidebar?.panelOrder ?? dialog._order ?? [], native.items || []);
+      s.hidden = [...options.sidebar?.hiddenPanels ?? native.value?.hidden ?? dialog._hidden ?? [], ...customLinks(record).filter(([, item]) => item.hidden).map(([key]) => key)];
     }
     s.options = options;
     render(dialog, s);
+  }
+  function nativeProfileDraft(dialog, profile) {
+    const s = sessions.get(dialog);
+    if (!s || s.options.profile !== profile || s.options.readOnly) throw Error("conflict");
+    return { layout: clone(s.draft), sidebar: clone(s.sidebar) };
   }
   async function withNativeGroupsSave(dialog, followup) {
     const s = sessions.get(dialog);
@@ -1331,6 +1371,8 @@
   var profilePreference;
   var appliedProfile;
   var personalNative;
+  var globalNotice;
+  var profileRevision = 0;
   var profileSubscriptions = [];
   var instances = /* @__PURE__ */ new Set();
   var state = /* @__PURE__ */ new WeakMap();
@@ -1369,22 +1411,36 @@
   function sharedLayout(hass) {
     return hass?.user?.id === identity?.id ? appliedProfile?.backup.layout : void 0;
   }
-  function profileReadOnly(hass) {
-    return !!hass?.user?.id && !!sharedLayout(hass);
+  function editorProfile(hass) {
+    return sharedLayout(hass) ? {
+      record: profileRecord,
+      profile: appliedProfile,
+      editable: !!hass.user.is_admin && profileRecord.globalId === appliedProfile.id
+    } : void 0;
   }
-  function refreshProfile() {
+  function profileReadOnly(hass) {
+    const target = editorProfile(hass);
+    return !!target && !target.editable;
+  }
+  function saveProfileEditor(hass, { record, profile }, { layout, colors, sidebar }) {
+    return actions(hass).profiles.write(record, { ...record, profiles: record.profiles.map((item) => item.id === profile.id ? { ...item, backup: makeBackup(layout, colors, sidebar) } : item) });
+  }
+  function refreshProfile(acknowledge = false) {
     const next = profileChoices(profileRecord, identity?.id, profilePreference);
+    globalNotice = trackGlobalProfile(globalNotice, next.global, acknowledge);
     const active = next.global ?? (profilePreference === void 0 ? void 0 : next.selected);
     if (stable(appliedProfile) !== stable(active)) collapsed.clear();
     appliedProfile = active;
     refreshManager();
     window.dispatchEvent(new Event("ugso-sidebar-profile-changed"));
   }
+  function receiveProfiles(value) {
+    profileRecord = value;
+    profileRevision++;
+  }
   async function connectProfiles(hass, generation) {
     const bindings = [
-      ["system", PROFILES_KEY, (value) => {
-        profileRecord = value;
-      }],
+      ["system", PROFILES_KEY, receiveProfiles],
       ["user", PREFERENCE_KEY, (value) => {
         profilePreference = value ?? null;
       }],
@@ -1435,6 +1491,7 @@
     for (const unsubscribe2 of profileSubscriptions) unsubscribe2();
     profileSubscriptions = [];
     profileRecord = profilePreference = appliedProfile = personalNative = void 0;
+    globalNotice = void 0;
     collapsed.clear();
     refreshManager();
     void connectProfiles(hass, current);
@@ -1464,7 +1521,7 @@
   function actions(hass) {
     const owner = identity, currentEpoch = epoch;
     const verifyOwner = () => {
-      if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
+      if (identity !== owner || epoch !== currentEpoch || owner?.id !== hass.user.id || owner.connection !== hass.connection) throw Error("conflict");
     };
     const readTransfer = () => readPreferences((key) => readKey(hass, key), legacySidebar());
     return { verifyOwner, readTransfer, profiles: {
@@ -1488,7 +1545,7 @@
         verifyOwner();
         await request(hass, "frontend/set_system_data", PROFILES_KEY, next);
         verifyOwner();
-        profileRecord = next;
+        receiveProfiles(next);
         refreshProfile();
       },
       prefer: async (profileId) => {
@@ -1509,6 +1566,11 @@
     const hass = sidebar.hass;
     if (!loaded || hass.user.id !== identity?.id || profileReadOnly(hass)) return;
     if (document.querySelector("ugso-sidebar-manager-dialog")) return;
+    const target = editorProfile(hass);
+    if (target?.editable) {
+      openTemplate(sidebar, target.record, target.profile, focusKey, focusGroup);
+      return;
+    }
     const base = clone(config), dialog = el4("ugso-sidebar-manager-dialog");
     document.body.append(dialog);
     const { verifyOwner, readTransfer } = actions(hass);
@@ -1522,7 +1584,7 @@
       readTransfer,
       save: async (draft, transfer, transferBase) => {
         verifyOwner();
-        if (profileReadOnly(hass)) throw Error("conflict");
+        if (editorProfile(hass)) throw Error("conflict");
         if (transfer?.colors) {
           await savePreferences({
             base: transferBase,
@@ -1544,6 +1606,26 @@
         collapsed.clear();
         refreshManager();
       }
+    });
+  }
+  function openTemplate(sidebar, record, profile, focusKey, focusGroup) {
+    const hass = sidebar.hass;
+    if (!hass.user.is_admin || document.querySelector("ugso-sidebar-manager-dialog")) return;
+    const draft = el4("ugso-sidebar-manager-dialog"), data = profile.backup;
+    document.body.append(draft);
+    draft.show({
+      hass,
+      title: profile.name,
+      record: data.layout,
+      entries: entries(sidebar),
+      focusKey,
+      focusGroup,
+      readTransfer: async () => ({ layout: data.layout, colors: data.colors, sidebar: data.sidebar, native: data.sidebar }),
+      save: (layout, transfer) => saveProfileEditor(hass, { record, profile }, {
+        layout,
+        colors: transfer?.colors ?? data.colors,
+        sidebar: transfer?.sidebar ?? data.sidebar
+      })
     });
   }
   function attachManager(sidebar, onLayout) {
@@ -1582,7 +1664,7 @@
       };
       content.prepend(button2);
     }
-    const hass = nativeDialog.hass, t = managerStrings(hass), locked = profileReadOnly(hass), global = profileChoices(profileRecord, hass.user.id).global;
+    const hass = nativeDialog.hass, t = managerStrings(hass), target = editorProfile(hass), locked = profileReadOnly(hass), global = profileChoices(profileRecord, hass.user.id).global;
     let profileRow = content.querySelector("[data-sm-profile-row]");
     if (!profileRow) {
       profileRow = el4("div");
@@ -1592,24 +1674,37 @@
       profilesButton2.style.cssText = button2.style.cssText;
       const hint2 = el4("p");
       hint2.style.cssText = "margin:4px 0;color:var(--secondary-text-color)";
-      profileRow.append(profilesButton2, hint2);
+      const update2 = el4("button");
+      update2.type = "button";
+      update2.style.cssText = button2.style.cssText;
+      const updateHint2 = el4("p");
+      updateHint2.style.cssText = hint2.style.cssText;
+      updateHint2.setAttribute("role", "status");
+      update2.onclick = async () => {
+        const currentHass2 = nativeDialog.hass, owner = identity, revision = profileRevision, strings2 = managerStrings(currentHass2);
+        update2.disabled = true;
+        updateHint2.textContent = "";
+        try {
+          const result = await request(currentHass2, "frontend/get_system_data", PROFILES_KEY);
+          if (owner !== identity) return;
+          if (revision === profileRevision) receiveProfiles(result.value);
+          refreshProfile(true);
+          updateHint2.textContent = strings2.globalRefreshed;
+        } catch {
+          updateHint2.textContent = strings2.globalRefreshFailed;
+        } finally {
+          update2.disabled = false;
+          if (owner === identity) attachManagerButton(nativeDialog);
+        }
+      };
+      profileRow.append(profilesButton2, hint2, update2, updateHint2);
       button2.after(profileRow);
       profilesButton2.onclick = () => {
         const currentHass2 = nativeDialog.hass;
         const { profiles, readTransfer, verifyOwner } = actions(currentHass2);
         openProfiles({ hass: currentHass2, t: managerStrings(currentHass2), profiles, edit: (record, profile) => {
           const sidebar = [...instances].find((s) => s.isConnected && s.hass?.user?.id === currentHass2.user.id);
-          if (!sidebar || !currentHass2.user.is_admin) return;
-          const draft = el4("ugso-sidebar-manager-dialog"), data = profile.backup;
-          document.body.append(draft);
-          draft.show({
-            hass: currentHass2,
-            title: profile.name,
-            record: data.layout,
-            entries: entries(sidebar),
-            readTransfer: async () => ({ layout: data.layout, colors: data.colors, sidebar: data.sidebar, native: data.sidebar }),
-            save: (layout, transfer) => profiles.write(record, { ...record, profiles: record.profiles.map((item) => item.id === profile.id ? { ...item, backup: makeBackup(layout, transfer?.colors ?? data.colors, transfer?.sidebar ?? data.sidebar) } : item) })
-          });
+          if (sidebar) openTemplate(sidebar, record, profile);
         }, snapshot: async () => {
           const data = await readTransfer();
           verifyOwner();
@@ -1617,17 +1712,34 @@
         } });
       };
     }
-    const [profilesButton, hint] = profileRow.children;
+    const [profilesButton, hint, update, updateHint] = profileRow.children;
     if (profilesButton.textContent !== t.profiles) profilesButton.textContent = t.profiles;
     profilesButton.hidden = !!global && !hass.user.is_admin;
     profilesButton.disabled = !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
     const note = global ? t.globalActive.replace("{name}", global.name) : locked ? t.sharedReadOnly : "";
     if (hint.textContent !== note) hint.textContent = note;
     hint.hidden = !note;
-    if (loaded && !locked) attachNativeGroups(nativeDialog, { record: config, identity, getIdentity: () => identity, read: () => read(hass), write: (value) => request(hass, "frontend/set_user_data", MANAGER_KEY, value), backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })), editGroup: (id) => {
-      const sidebar = [...instances].find((s) => s.isConnected);
-      if (sidebar) openManager(sidebar, void 0, id);
-    } });
+    if (update.textContent !== t.refreshGlobal) update.textContent = t.refreshGlobal;
+    update.hidden = !global;
+    updateHint.hidden = !global;
+    if (!global) updateHint.textContent = "";
+    else if (globalNotice?.pending && !updateHint.textContent) updateHint.textContent = t.globalChanged;
+    if (globalNotice?.pending && updateHint.textContent === t.globalRefreshed) updateHint.textContent = t.globalChanged;
+    if (loaded) attachNativeGroups(nativeDialog, {
+      record: target?.profile.backup.layout ?? config,
+      profile: target?.profile.id,
+      sidebar: target?.profile.backup.sidebar,
+      readOnly: locked,
+      identity,
+      getIdentity: () => identity,
+      read: () => read(hass),
+      write: (value) => request(hass, "frontend/set_user_data", MANAGER_KEY, value),
+      backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })),
+      editGroup: (id) => {
+        const sidebar = [...instances].find((s) => s.isConnected);
+        if (sidebar) openManager(sidebar, void 0, id);
+      }
+    });
     if (button2.textContent !== t.open) button2.textContent = t.open;
     button2.disabled = locked || !loaded || nativeGroupsDirty(nativeDialog) || nativeGroupsBusy(nativeDialog);
     const root = nativeDialog.shadowRoot;
@@ -1635,9 +1747,10 @@
     if (!lockStyle) {
       lockStyle = el4("style");
       lockStyle.dataset.smProfileStyle = "";
-      lockStyle.textContent = ":host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction],:host([data-sm-profile-readonly]) ha-icon-overflow-menu{pointer-events:none;opacity:.5}";
+      lockStyle.textContent = ":host([data-sm-profile-readonly]) ha-items-display-editor{pointer-events:none;opacity:.65} :host([data-sm-profile-readonly]) [slot=primaryAction]{pointer-events:none;opacity:.5} :host([data-sm-profile-active]) ha-icon-overflow-menu{display:none}";
       root.append(lockStyle);
     }
+    nativeDialog.toggleAttribute("data-sm-profile-active", !!target);
     nativeDialog.toggleAttribute("data-sm-profile-readonly", locked);
     const editors = [...nativeDialog.shadowRoot.querySelectorAll("ha-items-display-editor")];
     for (const editor of editors) editor.inert = locked;
@@ -1651,7 +1764,8 @@
     endNativeGroups(dialog);
   }
   function updateMoveBadge(button2, hass) {
-    const key = button2.dataset.smMove, item = config.items[key], group = config.groups.find((g) => g.id === item?.group), t = managerStrings(hass), name = item?.url ? isExternalUrl(item.url) ? t.externalLink : t.internalLink : group?.name || t.none;
+    const layout = sharedLayout(hass) ?? config;
+    const key = button2.dataset.smMove, item = layout.items[key], group = layout.groups.find((g) => g.id === item?.group), t = managerStrings(hass), name = item?.url ? isExternalUrl(item.url) ? t.externalLink : t.internalLink : group?.name || t.none;
     if (button2.textContent !== name) button2.textContent = name;
     button2.title = (item?.url ? t.editLink : t.move) + ": " + (group?.name || t.none);
     button2.setAttribute("aria-label", (item?.url ? t.editLink : t.move) + " " + button2.dataset.smLabel + ": " + name + "; " + (group?.name || t.none));
@@ -2177,6 +2291,14 @@
   }
   function syncRows(session) {
     attachManagerButton(session.dialog);
+    const profile = editorProfile(session.dialog.hass);
+    if (session.loaded && !session.saving && (profile?.profile.id !== session.profile?.profile.id || profile?.record !== session.profile?.record && !session.dialog.isDirtyState)) {
+      session.picker?.finish();
+      session.profile = profile;
+      session.base = profile?.profile.backup.colors ?? normalizeRecord(session.rawBase);
+      session.draft = clone(session.base);
+      session.dialog._dirtyStateContext.setState(clone(session.base.colors), STORE_KEY);
+    }
     const editor = session.dialog.shadowRoot?.querySelector("ha-items-display-editor");
     if (!editor || !session.loaded) return;
     if (editor !== session.editor) {
@@ -2226,10 +2348,11 @@
       if (sessions2.get(dialog) !== session || !dialog._open) return;
       session.rawBase = clone(raw);
       session.nativeStored = clone(native);
-      session.base = normalizeRecord(raw);
+      session.profile = editorProfile(hass);
+      saved = normalizeRecord(raw);
+      session.base = session.profile?.profile.backup.colors ?? saved;
       session.draft = clone(session.base);
       session.loaded = true;
-      saved = clone(session.base);
       dialog._dirtyStateContext.setState(clone(session.base.colors), STORE_KEY);
       message(session, strings(hass).saved);
       request2(dialog);
@@ -2270,6 +2393,18 @@
     if (session.editor) session.editor.inert = true;
     message(session, strings(dialog.hass).busy);
     try {
+      if (session.profile) {
+        const current = editorProfile(hass);
+        if (!current?.editable || current.profile.id !== session.profile.profile.id) throw Error("conflict");
+        const draft = nativeProfileDraft(dialog, current.profile.id);
+        await saveProfileEditor(hass, session.profile, { ...draft, colors: session.draft });
+        dialog._markDirtyStateClean();
+        session.saving = false;
+        endDialog(dialog);
+        originalClose.call(dialog);
+        return;
+      }
+      if (editorProfile(hass)) throw Error("conflict");
       const nativeChanged = !!dialog._migrateToUserData || stable(session.nativeBase) !== stable({ order: dialog._order, hidden: dialog._hidden });
       if (nativeChanged && stable(await readRecord(hass, "sidebar")) !== stable(session.nativeStored)) throw new Error("conflict");
       await withNativeGroupsSave(dialog, () => saveColorDraft({

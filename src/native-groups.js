@@ -13,7 +13,10 @@ const editorItems=(record,nativeItems)=>[
  ...customLinks(record).map(([key,item])=>({value:key,label:item.title||item.url,icon:item.icon||'mdi:link',smMixed:true,smLink:true}))
 ];
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
-export const nativeGroupsDirty=dialog=>!!sessions.get(dialog)?.dirty;
+export const nativeGroupsDirty=dialog=>{
+ const s=sessions.get(dialog);
+ return !!s&&(s.dirty||stable(s.sidebar)!==stable(s.options.sidebar));
+};
 export const nativeGroupsBusy=dialog=>!!sessions.get(dialog)?.saving;
 export function endNativeGroups(dialog){const s=sessions.get(dialog);if(s){s.observer?.disconnect();s.native.style.display=s.display;s.section.remove();}sessions.delete(dialog);}
 export function mixedMenuOrder(record,nativeOrder,items){
@@ -53,14 +56,14 @@ function render(dialog,s){
   s.editor.items=[...editorItems(s.draft,nativeItems),...s.draft.groups.map(g=>({value:groupKey(g.id),label:g.name,icon:g.icon,disableHiding:true}))];
   s.editor.value={order:s.order,hidden:[...s.hidden]};
  }
- s.editor.hass=dialog.hass;s.editor.inert=!!s.saving;
+ s.editor.hass=dialog.hass;s.editor.inert=!!s.saving||!!s.options.readOnly;
  for(const row of s.editor.shadowRoot?.querySelectorAll('ha-md-list-item,ha-list-item-button')||[]){
   const g=s.draft.groups.find(g=>g.id===row.querySelector('[data-sm-group]')?.dataset.smGroup);if(!g)continue;
   for(const n of row.querySelectorAll('[slot=headline],.icon'))n.style.color=rgba(g.color)||'';
  }
 }
 function changed(dialog,s,event){
- event.stopPropagation();if(s.saving)return;
+ event.stopPropagation();if(s.saving||s.options.readOnly)return;
  const value=event.detail?.value;if(!value||!Array.isArray(value.order)||!Array.isArray(value.hidden))return;
  const linkKeys=new Set(customLinks(s.draft).map(([key])=>key)),nativeKeys=new Set((s.native.items||[]).map(i=>i.value).filter(key=>!linkKeys.has(key))),groupIds=new Map(s.draft.groups.map(g=>[groupKey(g.id),g.id]));
  const priorNativeOrder=s.order.filter(v=>nativeKeys.has(v)),priorPanelOrder=s.order.filter(v=>nativeKeys.has(v)||linkKeys.has(v)),priorHidden=s.hidden.filter(v=>nativeKeys.has(v));
@@ -83,7 +86,16 @@ function changed(dialog,s,event){
  s.hidden=[...nativeValue.hidden,...[...linkKeys].filter(key=>s.draft.items[key].hidden)];
  // HA may store an empty order to mean its computed default. A folder-only
  // move must not replace that with an explicit native order or alter defaults.
- if(stable(nativeValue)!==stable({order:priorNativeOrder,hidden:priorHidden})){
+ if(s.options.sidebar){
+  if(stable(nativeValue)!==stable({order:priorNativeOrder,hidden:priorHidden})){
+   const mergeMissing=(next,previous)=>[...next,...previous.filter(key=>!nativeKeys.has(key))];
+   s.sidebar={
+    panelOrder:stable(nativeValue.order)===stable(priorNativeOrder)?s.sidebar.panelOrder:mergeMissing(nativeValue.order,s.sidebar.panelOrder),
+    hiddenPanels:stable(nativeValue.hidden)===stable(priorHidden)?s.sidebar.hiddenPanels:mergeMissing(nativeValue.hidden,s.sidebar.hiddenPanels)
+   };
+  }
+  dialog._dirtyStateContext.setState(s.dirty||stable(s.sidebar)!==stable(s.options.sidebar),DIRTY_KEY);
+ }else if(stable(nativeValue)!==stable({order:priorNativeOrder,hidden:priorHidden})){
   s.native.dispatchEvent(new CustomEvent('value-changed',{detail:{value:nativeValue},bubbles:true,composed:true}));
  }
  s.signature=null;render(dialog,s);dialog.requestUpdate?.();
@@ -92,6 +104,7 @@ export function attachNativeGroups(dialog,options){
  const content=dialog.shadowRoot?.querySelector('.content'),native=content?.querySelector('ha-items-display-editor');
  if(!content||!native||!dialog._open)return;
  let s=sessions.get(dialog);const record=normalizeManager(options.record);
+ if(s&&s.options.profile!==options.profile){endNativeGroups(dialog);s=undefined;}
  if(!s){
   const section=el('section');section.className='sm-native-groups';const hint=el('p');hint.style.cssText='font-size:12px;color:var(--secondary-text-color);line-height:1.4;margin:6px 0';
   const editor=el('ha-items-display-editor');section.append(hint,editor);native.after(section);
@@ -100,8 +113,17 @@ export function attachNativeGroups(dialog,options){
   dialog._dirtyStateContext.setState(false,DIRTY_KEY);editor.addEventListener('value-changed',e=>changed(dialog,s,e));
   s.observer=new MutationObserver(()=>render(dialog,s));if(editor.shadowRoot)s.observer.observe(editor.shadowRoot,{childList:true,subtree:true});
  }
- if(!s.dirty&&!s.saving){s.base=clone(record);s.draft=clone(record);s.identity=options.identity;s.order=mixedMenuOrder(record,dialog._order||[],native.items||[]);s.hidden=[...(native.value?.hidden||dialog._hidden||[]),...customLinks(record).filter(([,item])=>item.hidden).map(([key])=>key)];}
+ if(!s.dirty&&!s.saving&&(!s.sidebar||stable(s.sidebar)===stable(s.options.sidebar))){
+  s.base=clone(record);s.draft=clone(record);s.identity=options.identity;s.sidebar=clone(options.sidebar);
+  s.order=mixedMenuOrder(record,options.sidebar?.panelOrder??dialog._order??[],native.items||[]);
+  s.hidden=[...(options.sidebar?.hiddenPanels??native.value?.hidden??dialog._hidden??[]),...customLinks(record).filter(([,item])=>item.hidden).map(([key])=>key)];
+ }
  s.options=options;render(dialog,s);
+}
+export function nativeProfileDraft(dialog,profile){
+ const s=sessions.get(dialog);
+ if(!s||s.options.profile!==profile||s.options.readOnly)throw Error('conflict');
+ return {layout:clone(s.draft),sidebar:clone(s.sidebar)};
 }
 export async function withNativeGroupsSave(dialog,followup){
  const s=sessions.get(dialog);if(!s)return followup();

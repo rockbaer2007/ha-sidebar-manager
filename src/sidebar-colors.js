@@ -1,6 +1,6 @@
 import { VERSION, STORE_KEY, supportedVersion, normalizeRecord, normalizeColor, rgba, stable, clone, saveColorDraft } from "./core.js";
 import { SidebarColorPicker, strings } from "./color-picker.js";
-import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave,sharedColors,profileReadOnly} from './manager-runtime.js';
+import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave,sharedColors,profileReadOnly,editorProfile,saveProfileEditor,nativeProfileDraft} from './manager-runtime.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {registerWebPanel} from './web-panel.js';
 
@@ -139,6 +139,15 @@ function makeButton(session,item) {
 }
 function syncRows(session) {
   attachManagerButton(session.dialog);
+  const profile=editorProfile(session.dialog.hass);
+  if(session.loaded&&!session.saving&&(profile?.profile.id!==session.profile?.profile.id||
+    (profile?.record!==session.profile?.record&&!session.dialog.isDirtyState))){
+    session.picker?.finish();
+    session.profile=profile;
+    session.base=profile?.profile.backup.colors??normalizeRecord(session.rawBase);
+    session.draft=clone(session.base);
+    session.dialog._dirtyStateContext.setState(clone(session.base.colors),STORE_KEY);
+  }
   const editor=session.dialog.shadowRoot?.querySelector("ha-items-display-editor");
   if(!editor || !session.loaded)return;
   if(editor!==session.editor) {
@@ -176,8 +185,9 @@ async function beginDialog(dialog) {
     const [raw,native]=await Promise.all([readRecord(hass),readRecord(hass,"sidebar")]);
     if(sessions.get(dialog)!==session || !dialog._open)return;
     session.rawBase=clone(raw);session.nativeStored=clone(native);
-    session.base=normalizeRecord(raw);session.draft=clone(session.base);session.loaded=true;
-    saved=clone(session.base);
+    session.profile=editorProfile(hass);
+    saved=normalizeRecord(raw);
+    session.base=session.profile?.profile.backup.colors??saved;session.draft=clone(session.base);session.loaded=true;
     dialog._dirtyStateContext.setState(clone(session.base.colors),STORE_KEY);
     message(session,strings(hass).saved);
     request(dialog);syncRows(session);refresh();
@@ -209,6 +219,15 @@ async function saveDialog(dialog, original, args, originalClose) {
   if(session.editor)session.editor.inert=true;
   message(session,strings(dialog.hass).busy);
   try {
+    if(session.profile){
+      const current=editorProfile(hass);
+      if(!current?.editable||current.profile.id!==session.profile.profile.id)throw Error("conflict");
+      const draft=nativeProfileDraft(dialog,current.profile.id);
+      await saveProfileEditor(hass,session.profile,{...draft,colors:session.draft});
+      dialog._markDirtyStateClean();session.saving=false;endDialog(dialog);originalClose.call(dialog);
+      return;
+    }
+    if(editorProfile(hass))throw Error("conflict");
     const nativeChanged=!!dialog._migrateToUserData || stable(session.nativeBase)!==stable({order:dialog._order,hidden:dialog._hidden});
     if(nativeChanged && stable(await readRecord(hass,"sidebar"))!==stable(session.nativeStored))throw new Error("conflict");
     await withNativeGroupsSave(dialog,()=>saveColorDraft({base:session.base,draft:session.draft,

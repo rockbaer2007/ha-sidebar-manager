@@ -34,6 +34,8 @@ Object.assign(MANAGER_STRINGS.fr,{removeProfile:'Supprimer le profil',removeProf
 Object.assign(MANAGER_STRINGS.de,{
  profiles:'Sidebar-Profile',manageProfiles:'Profile verwalten',activeProfile:'Aktive Sidebar',ownProfile:'Eigene Sidebar',
  enforceProfile:'Dieses Profil für alle verbindlich anwenden',globalActive:'Globales Profil aktiv: {name}',
+ refreshGlobal:'Globales Profil aktualisieren',globalChanged:'Das globale Profil wurde geändert. Du kannst es hier erneut laden.',
+ globalRefreshed:'Globales Profil ist aktuell.',globalRefreshFailed:'Das globale Profil konnte nicht geladen werden. Versuche es erneut.',
  sharedReadOnly:'Gemeinsames Profil aktiv. Wechsle zum Bearbeiten zu deiner eigenen Sidebar.',
  editProfile:'Vorlage bearbeiten',replaceProfile:'Vorlage durch meine gespeicherte Sidebar ersetzen',
  shareProfilesHint:'Neue Profile übernehmen deine gespeicherte Sidebar. Die Profildaten sind für angemeldete HA-Benutzer lesbar. Teile nur dafür bestimmte Links.',
@@ -42,6 +44,8 @@ Object.assign(MANAGER_STRINGS.de,{
 Object.assign(MANAGER_STRINGS.en,{
  profiles:'Sidebar profiles',manageProfiles:'Manage profiles',activeProfile:'Active sidebar',ownProfile:'My own sidebar',
  enforceProfile:'Enforce this profile for everyone',globalActive:'Global profile active: {name}',
+ refreshGlobal:'Refresh global profile',globalChanged:'The global profile changed. You can reload it here.',
+ globalRefreshed:'The global profile is up to date.',globalRefreshFailed:'Could not load the global profile. Try again.',
  sharedReadOnly:'Shared profile active. Switch to your own sidebar to edit your settings.',
  editProfile:'Edit template',replaceProfile:'Replace template with my saved sidebar',
  shareProfilesHint:'New profiles start from your saved sidebar. Signed-in HA users can read profile data. Include only links you want to share.',
@@ -50,6 +54,8 @@ Object.assign(MANAGER_STRINGS.en,{
 Object.assign(MANAGER_STRINGS.fr,{
  profiles:'Profils de barre latérale',manageProfiles:'Gérer les profils',activeProfile:'Barre latérale active',ownProfile:'Ma barre latérale',
  enforceProfile:'Imposer ce profil à tous',globalActive:'Profil global actif : {name}',
+ refreshGlobal:'Actualiser le profil global',globalChanged:'Le profil global a changé. Vous pouvez le recharger ici.',
+ globalRefreshed:'Le profil global est à jour.',globalRefreshFailed:'Impossible de charger le profil global. Réessayez.',
  sharedReadOnly:'Profil partagé actif. Revenez à votre barre latérale pour modifier vos réglages.',
  editProfile:'Modifier le modèle',replaceProfile:'Remplacer le modèle par ma barre latérale enregistrée',
  shareProfilesHint:'Les nouveaux profils reprennent votre barre latérale enregistrée. Les utilisateurs HA connectés peuvent lire les données des profils. Ajoutez uniquement les liens à partager.',
