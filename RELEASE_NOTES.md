@@ -1,4 +1,10 @@
-# Sidebar Manager 0.1.11
+# Sidebar Manager 0.1.12
+
+- **EN:** Select a JSON backup file directly. Full backups include groups, links, colors, sidebar order, and visibility. Administrators can assign named profiles to selected users or set a default for everyone. Users can keep their own sidebar or save a personal copy.
+- **DE:** JSON-Sicherungen lassen sich direkt auswählen. Sie enthalten Gruppen, Links, Farben, Reihenfolge und Sichtbarkeit. Administratoren können Profile ausgewählten Benutzern zuweisen oder als Standard für alle festlegen. Benutzer können ihre eigene Sidebar behalten oder eine persönliche Kopie übernehmen.
+- **FR:** Sélectionnez directement un fichier de sauvegarde JSON. Les sauvegardes contiennent les groupes, les liens, les couleurs, l’ordre et la visibilité. Les administrateurs peuvent attribuer un profil à certains utilisateurs ou le définir par défaut pour tous. Chaque utilisateur peut garder sa barre latérale ou enregistrer une copie personnelle.
+
+## Sidebar Manager 0.1.11
 
 Group and custom-link icons now match the native Home Assistant icons at 24 × 24 px and sit on the same horizontal centerline in the collapsed sidebar. Verified in both sidebar layouts on Home Assistant 2026.11.0. Existing settings require no migration.
 
