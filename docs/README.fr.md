@@ -1,6 +1,10 @@
 # Sidebar Manager
 
-**0.1.11 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+**0.1.12 · Home Assistant ≥ 2026.10.3 · DE / EN / FR · MIT**
+
+Dans **Gérer les groupes et les liens**, téléchargez une sauvegarde complète ou sélectionnez directement un fichier JSON. Un aperçu s’affiche avant l’enregistrement. La sauvegarde inclut les groupes, les liens, les couleurs, ainsi que l’ordre et la visibilité des entrées Home Assistant. Les anciennes sauvegardes de disposition restent compatibles.
+
+Dans **Profils de barre latérale partagés**, les administrateurs peuvent attribuer un profil nommé à certains utilisateurs ou le définir par défaut pour tous. Chaque utilisateur peut revenir à sa barre latérale personnelle ou enregistrer une copie du profil. Partagez uniquement des liens destinés aux autres utilisateurs de cette installation Home Assistant.
 
 La version 0.1.11 aligne la taille des icônes des groupes et des liens sur celle de Home Assistant (24 px) et les centre dans la barre latérale réduite.
 

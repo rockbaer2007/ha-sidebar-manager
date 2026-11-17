@@ -1,5 +1,6 @@
 import {MANAGER_KEY,WEB_PANEL,normalizeManager,isExternalUrl} from './manager-model.js';
 import {managerStrings} from './manager-i18n.js';
+import {sharedLayout} from './manager-runtime.js';
 export function frameItem(record,path){
  let key;try{key=decodeURIComponent((path||'').replace(/^\//,'').split('/')[0]);}catch{return null;}
  if(!key?.startsWith('sm-link-'))return null;
@@ -7,13 +8,13 @@ export function frameItem(record,path){
  return item?.openMode==='iframe'&&isExternalUrl(item.url)?item:null;
 }
 export class SidebarWebPanel extends HTMLElement{
- constructor(){super();this.attachShadow({mode:'open'});this._generation=0;this._record=null;}
+ constructor(){super();this.attachShadow({mode:'open'});this._generation=0;this._record=null;this._profileChanged=()=>this._render();}
  set hass(value){const changed=this._hass?.user?.id!==value?.user?.id||this._hass?.connection!==value?.connection;this._hass=value;if(changed){this._generation++;this._unsubscribe?.();this._unsubscribe=null;this._record=null;this._connect();}this._render();}
  get hass(){return this._hass;}
  set route(value){this._route=value;this._render();}
  get route(){return this._route;}
- connectedCallback(){this._render();if(this._hass)this._connect();}
- disconnectedCallback(){this._generation++;this._unsubscribe?.();this._unsubscribe=null;this._record=null;this.shadowRoot.querySelector('iframe')?.remove();}
+ connectedCallback(){this.ownerDocument.defaultView.addEventListener('ugso-sidebar-profile-changed',this._profileChanged);this._render();if(this._hass)this._connect();}
+ disconnectedCallback(){this.ownerDocument.defaultView.removeEventListener('ugso-sidebar-profile-changed',this._profileChanged);this._generation++;this._unsubscribe?.();this._unsubscribe=null;this._record=null;this.shadowRoot.querySelector('iframe')?.remove();}
  async _connect(){
   if(!this.isConnected||!this._hass?.connection||!this._hass.user?.id)return;
   const generation=++this._generation,hass=this._hass;this._unsubscribe?.();this._unsubscribe=null;this._record=null;this._render();let timer;
@@ -30,7 +31,7 @@ export class SidebarWebPanel extends HTMLElement{
    const style=document.createElement('style');style.textContent=':host{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--primary-background-color);color:var(--primary-text-color);font:14px var(--ha-font-family,Arial)}header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--divider-color);min-height:40px}header strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}a{color:var(--primary-color);white-space:nowrap}button{border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer}p{font-size:12px;line-height:1.4;margin:8px 16px;color:var(--secondary-text-color)}iframe{flex:1;width:100%;min-height:0;border:0;background:var(--card-background-color)}';
    const head=document.createElement('header'),menu=document.createElement('button'),name=document.createElement('strong'),link=document.createElement('a'),hint=document.createElement('p');menu.textContent='☰';menu.setAttribute('aria-label',t.menu);menu.onclick=()=>this.dispatchEvent(new CustomEvent('hass-toggle-menu',{bubbles:true,composed:true}));name.dataset.title='';link.target='_blank';link.rel='noopener noreferrer';link.dataset.open='';hint.dataset.hint='';head.append(menu,name,link);root.append(style,head,hint);
   }
-  let item=null;try{if(this._record)item=frameItem(this._record,this._route?.path);}catch{}
+  let item=null;try{const record=sharedLayout(this._hass)??this._record;if(record)item=frameItem(record,this._route?.path);}catch{}
   const title=root.querySelector('[data-title]'),link=root.querySelector('[data-open]'),hint=root.querySelector('[data-hint]');title.textContent=item?.title||t.webPage;link.textContent=t.newTab;link.hidden=!item;link.removeAttribute('href');if(item)link.href=item.url;
   const mixed=item&&location.protocol==='https:'&&new URL(item.url).protocol==='http:';
   hint.textContent=!item?t.frameUnavailable:mixed?t.mixedContent:t.frameHint;

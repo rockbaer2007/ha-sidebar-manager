@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.12 — 2026-11-17
+
+- Import a sidebar backup directly from a JSON file. Full backups include layout, colors, order and visibility.
+- Assign shared sidebar profiles to selected users or set a default for everyone. Users can keep their personal sidebar or save a copy of the profile.
+- Verified JSON import preview, shared profile restoration after reload, and switching back to the personal sidebar on the PC test system.
+
 ## 0.1.11 — 2026-11-11
 
 - Match group and custom-link icons to Home Assistant's 24 px icons and center them in the collapsed sidebar. Verified on .177 with Home Assistant 2026.11.0.

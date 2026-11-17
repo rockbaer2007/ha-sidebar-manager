@@ -1,6 +1,6 @@
 import { VERSION, STORE_KEY, supportedVersion, normalizeRecord, normalizeColor, rgba, stable, clone, saveColorDraft } from "./core.js";
 import { SidebarColorPicker, strings } from "./color-picker.js";
-import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave} from './manager-runtime.js';
+import {attachManager,attachManagerButton,moveEntryButton,endManagerDialog,withNativeGroupsSave,sharedColors} from './manager-runtime.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {registerWebPanel} from './web-panel.js';
 
@@ -61,6 +61,7 @@ function cssColor(node, value) {
 }
 function applyRecord(sidebar, record) {
   if(!sidebar.shadowRoot)return;
+  record=sharedColors()??record;
   for(const row of sidebar.shadowRoot.querySelectorAll("[id^=sidebar-panel-]")) {
     const key=row.id.slice("sidebar-panel-".length);
     const value=rgba(record.colors[key]);

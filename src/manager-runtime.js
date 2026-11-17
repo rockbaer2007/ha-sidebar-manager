@@ -2,22 +2,59 @@ import {clone,stable,rgba} from './core.js';
 import {MANAGER_KEY,WEB_PANEL,normalizeManager,layoutEntries,saveManager,isExternalUrl} from './manager-model.js';
 import {ManagerDialog} from './manager-dialog.js';
 import {managerStrings} from './manager-i18n.js';
+import {PROFILES_KEY,PREFERENCE_KEY,normalizeSidebar,makeBackup,readPreferences,resolveProfile,savePreferences} from './sidebar-preferences.js';
 import {attachNativeGroups,endNativeGroups,nativeGroupsDirty,nativeGroupsBusy} from './native-groups.js';
 export {withNativeGroupsSave} from './native-groups.js';
 let config=normalizeManager(null),hassRef,identity,off,epoch=0,loaded=false;
+let profileRecord,profilePreference,appliedProfile,personalNative;
+let profileSubscriptions=[];
 const instances=new Set(),state=new WeakMap();
 const editDialogs=new Set();
 const collapsed=new Map();
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
-async function request(hass,type,key,value){let timer;try{return await Promise.race([hass.connection.sendMessagePromise({type,key,...(type==='frontend/set_user_data'?{value}:{})}),new Promise((_,reject)=>timer=setTimeout(()=>reject(Error('timeout')),12000))]);}finally{clearTimeout(timer);}}
+async function request(hass,type,key,value){let timer;try{return await Promise.race([hass.connection.sendMessagePromise({type,key,...(type.startsWith('frontend/set_')?{value}:{})}),new Promise((_,reject)=>timer=setTimeout(()=>reject(Error('timeout')),12000))]);}finally{clearTimeout(timer);}}
 const read=hass=>request(hass,'frontend/get_user_data',MANAGER_KEY).then(r=>r.value);
+const readKey=(hass,key)=>request(hass,'frontend/get_user_data',key).then(r=>r.value);
+const writeKey=(hass,key,value)=>request(hass,'frontend/set_user_data',key,value);
+const legacySidebar=()=>normalizeSidebar({
+ panelOrder:readLegacyList('sidebarPanelOrder'),hiddenPanels:readLegacyList('sidebarHiddenPanels')
+});
+function readLegacyList(key){try{return JSON.parse(localStorage.getItem(key));}catch{return [];}}
+export function sharedColors(){return appliedProfile?.backup.colors;}
+export function sharedLayout(hass){return hass?.user?.id===identity?.id?appliedProfile?.backup.layout:undefined;}
+function refreshProfile(){
+ appliedProfile=profilePreference===undefined||personalNative===undefined||profilePreference?.personal?undefined:resolveProfile(profileRecord,identity?.id);
+ collapsed.clear();
+ refreshManager();
+ window.dispatchEvent(new Event('ugso-sidebar-profile-changed'));
+}
+async function connectProfiles(hass,generation){
+ const bindings=[
+  ['system',PROFILES_KEY,value=>{profileRecord=value;}],
+  ['user',PREFERENCE_KEY,value=>{profilePreference=value;}],
+  ['user','sidebar',value=>{personalNative=normalizeSidebar({...legacySidebar(),...value});}],
+ ];
+ await Promise.allSettled(bindings.map(async ([scope,key,receive])=>{
+  const apply=value=>{if(generation===epoch){receive(value);refreshProfile();}};
+  let changed=false;
+  const subscription=await hass.connection.subscribeMessage(event=>{changed=true;apply(event.value);},{type:'frontend/subscribe_'+scope+'_data',key});
+  if(generation!==epoch){subscription();return;}
+  profileSubscriptions.push(subscription);
+  const result=await request(hass,'frontend/get_'+scope+'_data',key);
+  if(!changed)apply(result.value);
+ }));
+}
 function entries(sidebar){return [...sidebar.shadowRoot.querySelectorAll('[id^="sidebar-panel-"]:not([data-sm-link])')].map(row=>({key:row.id.slice(14),label:row.querySelector('.item-text')?.textContent||row.id}));}
 export function refreshManager(){for(const sidebar of instances)if(sidebar.isConnected)applyLayout(sidebar);else instances.delete(sidebar);for(const dialog of editDialogs)if(dialog.isConnected)attachManagerButton(dialog);else editDialogs.delete(dialog);}
 async function connect(hass){
  if(!hass?.user?.id||!hass?.connection)return;
  hassRef=hass;const id=hass.user.id;
  if(identity?.id===id&&identity.connection===hass.connection)return;
- identity={id,connection:hass.connection};const current=++epoch;off?.();loaded=false;config=normalizeManager(null);collapsed.clear();refreshManager();
+ identity={id,connection:hass.connection};const current=++epoch;off?.();loaded=false;config=normalizeManager(null);
+ for(const unsubscribe of profileSubscriptions)unsubscribe();
+ profileSubscriptions=[];profileRecord=profilePreference=appliedProfile=personalNative=undefined;
+ collapsed.clear();refreshManager();
+ void connectProfiles(hass,current);
  try{const value=normalizeManager(await read(hass));if(current!==epoch)return;config=value;loaded=true;refreshManager();const un=await hass.connection.subscribeMessage(e=>{if(current!==epoch)return;try{config=normalizeManager(e.value);loaded=true;collapsed.clear();refreshManager();}catch{console.warn('[Sidebar Manager] Unsupported stored layout; no automatic write.');}},{type:'frontend/subscribe_user_data',key:MANAGER_KEY});if(current===epoch)off=un;else un();}catch{console.warn('[Sidebar Manager] Layout unavailable; stored data left untouched.');}
 }
 export function openManager(sidebar,focusKey,focusGroup){
@@ -25,9 +62,42 @@ export function openManager(sidebar,focusKey,focusGroup){
  const hass=sidebar.hass;if(!loaded||hass.user.id!==identity?.id)return;
  if(document.querySelector('ugso-sidebar-manager-dialog'))return;
  const base=clone(config),owner=identity,currentEpoch=epoch,dialog=el('ugso-sidebar-manager-dialog');document.body.append(dialog);
- dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,save:async draft=>{
+ const verifyOwner=()=>{if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');};
+ const backup=before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),...before}));
+ const profiles={
+  load:async()=>{
+   const [record,preference,users]=await Promise.all([
+    request(hass,'frontend/get_system_data',PROFILES_KEY).then(result=>result.value),
+    readKey(hass,PREFERENCE_KEY),
+    hass.user.is_admin?hass.connection.sendMessagePromise({type:'config/auth/list'}):[],
+   ]);
+   return {record:record??{version:1,profiles:[]},personal:!!preference?.personal,
+    assigned:resolveProfile(record,hass.user.id),users:users.filter(user=>user.is_active&&!user.system_generated)};
+  },
+  write:async(base,next)=>{
+   verifyOwner();
+   const actual=(await request(hass,'frontend/get_system_data',PROFILES_KEY)).value??{version:1,profiles:[]};
+   if(stable(base)!==stable(actual))throw Error('conflict');
+   verifyOwner();
+   await request(hass,'frontend/set_system_data',PROFILES_KEY,next);
+   verifyOwner();
+   profileRecord=next;refreshProfile();
+  },
+  prefer:async personal=>{
+   verifyOwner();await writeKey(hass,PREFERENCE_KEY,{personal});verifyOwner();
+   profilePreference={personal};refreshProfile();
+  },
+ };
+ dialog.show({hass,record:base,entries:entries(sidebar),focusKey,focusGroup,profiles,
+  readTransfer:()=>readPreferences(key=>readKey(hass,key),legacySidebar()),
+  save:async (draft,transfer,transferBase)=>{
   if(identity!==owner||epoch!==currentEpoch)throw Error('conflict');
-  await saveManager({base,draft,read:()=>read(hass),write:value=>{if(identity!==owner)throw Error('conflict');return request(hass,'frontend/set_user_data',MANAGER_KEY,value);},backup:async before=>localStorage.setItem('ugso-sidebar-manager-backup:'+hass.user.id,JSON.stringify({at:new Date().toISOString(),layout:before}))});
+  if(transfer?.colors){
+   await savePreferences({base:transferBase,draft:{...transfer,layout:draft},read:key=>readKey(hass,key),
+    write:(key,value)=>{verifyOwner();return writeKey(hass,key,value);},backup});
+  }else{
+   await saveManager({base,draft,read:()=>read(hass),write:value=>{verifyOwner();return writeKey(hass,MANAGER_KEY,value);},backup:before=>backup({layout:before})});
+  }
   config=clone(draft);collapsed.clear();refreshManager();
  }});
 }
@@ -67,6 +137,16 @@ function override(row,item){
 }
 function applyLayout(sidebar){
  const root=sidebar.shadowRoot,s=state.get(sidebar);if(!root||!s)return;
+ const active=appliedProfile?.backup;
+ if(active||s.profileNative){
+  const native=active?.sidebar??personalNative;
+  if('_panelOrder' in sidebar&&'_hiddenPanels' in sidebar&&native){
+   if(stable(sidebar._panelOrder)!==stable(native.panelOrder))sidebar._panelOrder=native.panelOrder;
+   if(stable(sidebar._hiddenPanels)!==stable(native.hiddenPanels))sidebar._hiddenPanels=native.hiddenPanels;
+  }
+  s.profileNative=!!active;
+ }
+ const config=active?.layout??personalLayout();
  const slot=root.querySelector('slot[name=main-navigation]');if(!slot)return;
  if(!s.style){s.style=el('style');s.style.textContent=`slot[name=main-navigation]{display:flex;flex-direction:column;min-height:100%}[data-sm-group]{width:calc(100% - 8px);margin:7px 4px 2px;border:0;border-top:1px solid var(--divider-color);padding:10px 12px;text-align:start;font:inherit;font-weight:600;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer;border-radius:6px}[data-sm-bottom]{margin-top:auto!important}[data-sm-hidden]{display:none!important}[data-sm-label][hidden],[slot=start][hidden],.item-text[hidden]{display:none!important}.sm-entry{min-height:40px;padding:0 12px;display:flex;align-items:center;gap:20px;color:var(--sidebar-text-color);text-decoration:none}.sm-entry:hover{background:var(--secondary-background-color)}.sm-entry ha-icon{color:var(--sidebar-icon-color)}:host(:not([expanded])) [data-sm-group]{font-size:0;padding:8px} :host(:not([expanded])) [data-sm-group]::after{content:'⋯';font-size:18px}:host(:not([expanded])) .sm-entry .item-text{display:none}`;root.append(s.style);}
  if(!s.iconStyle){
@@ -114,3 +194,4 @@ function applyLayout(sidebar){
  for(const [id,line]of s.separators)if(!keep.has(id)||!config.groups.find(g=>g.id===id)?.separator){line.remove();s.separators.delete(id);}
  s.onLayout?.();
 }
+function personalLayout(){return config;}

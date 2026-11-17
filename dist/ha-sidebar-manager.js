@@ -1,7 +1,7 @@
-/* Sidebar Manager 0.1.11 | MIT | UGSo Software */
+/* Sidebar Manager 0.1.12 | MIT | UGSo Software */
 (() => {
   // src/core.js
-  var VERSION = "0.1.11";
+  var VERSION = "0.1.12";
   var STORE_KEY = "ugso_sidebar_colors_v1";
   function supportedVersion(version) {
     const match = /^(\d+)\.(\d+)\.(\d+)(?:\D.*)?$/.exec(version || "");
@@ -433,9 +433,257 @@
   Object.assign(MANAGER_STRINGS.de, { submenus: "Untermenü", moveGroup: "Untermenü verschieben", groupOrderHint: "Haupteinträge und Untermenüs am Ziehgriff gemeinsam sortieren. Erst Speichern übernimmt die Reihenfolge.", saveOrderFirst: "Reihenfolge geändert. Bitte zuerst hier Speichern oder Abbrechen, bevor Sie Gruppen bearbeiten." });
   Object.assign(MANAGER_STRINGS.en, { submenus: "Submenu", moveGroup: "Move submenu", groupOrderHint: "Sort main entries and submenus together using their drag handles. Save applies the order.", saveOrderFirst: "Order changed. Save or Cancel here before editing groups." });
   Object.assign(MANAGER_STRINGS.fr, { submenus: "Sous-menu", moveGroup: "Déplacer le sous-menu", groupOrderHint: "Triez les entrées principales et les sous-menus ensemble avec leur poignée. Enregistrer applique cet ordre.", saveOrderFirst: "Ordre modifié. Enregistrez ou annulez ici avant de modifier les groupes." });
+  Object.assign(MANAGER_STRINGS.de, {
+    backupFile: "JSON-Sicherungsdatei auswählen",
+    backupPreview: "Vorschau: {groups} Gruppen, {links} Links, {colors} Eintragsfarben. Speichern übernimmt die Sicherung.",
+    profiles: "Gemeinsame Sidebar-Profile",
+    assignedProfile: "Zugewiesenes Profil",
+    noProfile: "Kein Profil zugewiesen.",
+    followProfile: "Gemeinsames Profil verwenden",
+    personalProfile: "Eigene Sidebar verwenden",
+    copyProfile: "Als eigene Kopie übernehmen",
+    newProfile: "Neues Profil",
+    profileName: "Profilname",
+    profileEveryone: "Standard für alle Benutzer",
+    profileUsers: "Ausgewählte Benutzer",
+    publishProfile: "Entwurf als Profil speichern",
+    profilesUnavailable: "Gemeinsame Profile sind auf diesem Home Assistant nicht verfügbar.",
+    profileShareHint: "Speichert den aktuellen Entwurf samt Farben und HA-Reihenfolge als Profil. Die Profildaten sind für angemeldete HA-Benutzer lesbar. Verwende nur Links, die du teilen möchtest."
+  });
+  Object.assign(MANAGER_STRINGS.en, {
+    backupFile: "Select JSON backup file",
+    backupPreview: "Preview: {groups} groups, {links} links, {colors} entry colors. Save applies the backup.",
+    profiles: "Shared sidebar profiles",
+    assignedProfile: "Assigned profile",
+    noProfile: "No profile assigned.",
+    followProfile: "Use shared profile",
+    personalProfile: "Use my own sidebar",
+    copyProfile: "Apply as a personal copy",
+    newProfile: "New profile",
+    profileName: "Profile name",
+    profileEveryone: "Default for all users",
+    profileUsers: "Selected users",
+    publishProfile: "Save draft as a profile",
+    profilesUnavailable: "Shared profiles are unavailable on this Home Assistant instance.",
+    profileShareHint: "Saves the current draft, colors and HA order as a profile. Signed-in HA users can read profile data. Include only links you want to share."
+  });
+  Object.assign(MANAGER_STRINGS.fr, {
+    backupFile: "Choisir un fichier de sauvegarde JSON",
+    backupPreview: "Aperçu : {groups} groupes, {links} liens, {colors} couleurs. Enregistrer applique la sauvegarde.",
+    profiles: "Profils de barre latérale partagés",
+    assignedProfile: "Profil attribué",
+    noProfile: "Aucun profil attribué.",
+    followProfile: "Utiliser le profil partagé",
+    personalProfile: "Utiliser ma barre latérale",
+    copyProfile: "Appliquer comme copie personnelle",
+    newProfile: "Nouveau profil",
+    profileName: "Nom du profil",
+    profileEveryone: "Profil par défaut pour tous",
+    profileUsers: "Utilisateurs sélectionnés",
+    publishProfile: "Enregistrer le brouillon comme profil",
+    profilesUnavailable: "Les profils partagés sont indisponibles sur cette instance Home Assistant.",
+    profileShareHint: "Enregistre le brouillon, les couleurs et l’ordre HA comme profil. Les utilisateurs HA connectés peuvent lire les données des profils. Ajoutez uniquement les liens que vous souhaitez partager."
+  });
+  Object.assign(MANAGER_STRINGS.de, { removeProfile: "Profil löschen", removeProfileConfirm: "Gemeinsames Profil „{name}“ löschen?" });
+  Object.assign(MANAGER_STRINGS.en, { removeProfile: "Delete profile", removeProfileConfirm: "Delete shared profile “{name}”?" });
+  Object.assign(MANAGER_STRINGS.fr, { removeProfile: "Supprimer le profil", removeProfileConfirm: "Supprimer le profil partagé « {name} » ?" });
+
+  // src/sidebar-preferences.js
+  var PROFILES_KEY = "ugso_sidebar_profiles_v1";
+  var PREFERENCE_KEY = "ugso_sidebar_profile_preference_v1";
+  var keys = { layout: MANAGER_KEY, colors: STORE_KEY, sidebar: "sidebar" };
+  var list = (value) => Array.isArray(value) ? [...new Set(value.filter((item) => typeof item === "string" && item.length && item.length <= 256))] : [];
+  function normalizeSidebar(value) {
+    return { panelOrder: list(value?.panelOrder), hiddenPanels: list(value?.hiddenPanels) };
+  }
+  function parseBackup(value) {
+    if (value?.format !== "sidebar-manager" || !value.layout || ![1, 2].includes(value.version)) throw Error("invalid_backup");
+    const layout = normalizeManager(value.layout);
+    if (value.version === 1) return { layout };
+    if (!value.colors || !Array.isArray(value.sidebar?.panelOrder) || !Array.isArray(value.sidebar?.hiddenPanels)) throw Error("invalid_backup");
+    return { layout, colors: normalizeRecord(value.colors), sidebar: normalizeSidebar(value.sidebar) };
+  }
+  function makeBackup(layout, colors, sidebar) {
+    return {
+      format: "sidebar-manager",
+      version: 2,
+      layout: normalizeManager(layout),
+      colors: normalizeRecord(colors),
+      sidebar: normalizeSidebar(sidebar)
+    };
+  }
+  function resolveProfile(record, userId) {
+    if (record?.version !== 1 || !Array.isArray(record.profiles)) return void 0;
+    const match = record.profiles.find((profile) => profile?.users?.includes(userId)) ?? record.profiles.find((profile) => profile?.everyone === true);
+    if (!match) return void 0;
+    try {
+      return { ...match, backupFile: match.backup, backup: makeBackupFromProfile(match) };
+    } catch {
+      return void 0;
+    }
+  }
+  function makeBackupFromProfile(profile) {
+    if (profile.backup?.version !== 2) throw Error("invalid_backup");
+    return parseBackup(profile.backup);
+  }
+  async function readPreferences(read2, nativeFallback) {
+    const [layout, colors, sidebar] = await Promise.all(Object.values(keys).map(read2));
+    return { layout, colors, sidebar, native: normalizeSidebar({ ...nativeFallback, ...sidebar }) };
+  }
+  async function savePreferences({ base, draft, read: read2, write, backup }) {
+    const changes = [];
+    for (const [part, key] of Object.entries(keys)) {
+      if (!Object.hasOwn(draft, part)) continue;
+      const normalize = { layout: normalizeManager, colors: normalizeRecord, sidebar: normalizeSidebar }[part];
+      const previous = base[part];
+      if (stable(draft[part]) === stable(part === "sidebar" ? base.native : normalize(previous))) continue;
+      if (stable(await read2(key)) !== stable(previous)) throw Error("conflict");
+      changes.push({ key, previous, next: { ...previous, ...draft[part] } });
+    }
+    if (!changes.length) return;
+    await backup(clone({ layout: base.layout, colors: base.colors, sidebar: base.sidebar }));
+    const attempted = [];
+    try {
+      for (const change of changes) {
+        if (stable(await read2(change.key)) !== stable(change.previous)) throw Error("conflict");
+        attempted.push(change);
+        await write(change.key, change.next);
+        if (stable(await read2(change.key)) !== stable(change.next)) throw Error("save_uncertain");
+      }
+    } catch (error) {
+      for (const { key, previous, next } of attempted.reverse()) {
+        const actual = await read2(key);
+        if (stable(actual) === stable(previous)) continue;
+        if (stable(actual) !== stable(next)) throw Error("rollback_conflict");
+        await write(key, previous);
+      }
+      throw error;
+    }
+  }
+
+  // src/sidebar-profiles-dialog.js
+  var el = (tag, text2) => {
+    const n = document.createElement(tag);
+    if (text2) n.textContent = text2;
+    return n;
+  };
+  function renderProfiles(dialog) {
+    const { t, profiles, hass } = dialog;
+    const details = el("details"), body = el("div");
+    details.append(el("summary", t.profiles), body);
+    details.addEventListener("toggle", async () => {
+      if (!details.open) return;
+      body.textContent = t.busy;
+      try {
+        const data = await profiles.load();
+        if (!details.isConnected || !details.open) return;
+        body.replaceChildren();
+        const run = async (task) => {
+          body.inert = true;
+          try {
+            await task();
+            if (details.isConnected) {
+              status.textContent = t.saved;
+              details.open = false;
+            }
+          } catch (error) {
+            status.textContent = error.message === "conflict" ? t.conflict : t.error;
+          } finally {
+            body.inert = false;
+          }
+        };
+        const status = el("p");
+        status.setAttribute("role", "status");
+        if (data.assigned) {
+          body.append(
+            el("p", t.assignedProfile + ": " + data.assigned.name),
+            dialog.button(data.personal ? t.followProfile : t.personalProfile, () => run(() => profiles.prefer(!data.personal))),
+            dialog.button(t.copyProfile, () => run(async () => {
+              await dialog.stageTransfer(data.assigned.backupFile);
+              dialog.usePersonalOnSave = true;
+            }))
+          );
+        } else body.append(el("p", t.noProfile));
+        if (hass.user.is_admin) renderAdmin(dialog, body, data, run);
+        body.append(status);
+      } catch {
+        body.textContent = t.profilesUnavailable;
+      }
+    });
+    return details;
+  }
+  function renderAdmin(dialog, body, { record, users }, run) {
+    const { t, profiles } = dialog;
+    if (record.version !== 1 || !Array.isArray(record.profiles)) throw Error("invalid_profiles");
+    const list2 = el("select");
+    list2.setAttribute("aria-label", t.profiles);
+    list2.add(new Option(t.newProfile, ""));
+    for (const profile of record.profiles) list2.add(new Option(profile.name, profile.id));
+    const name = el("input");
+    name.maxLength = 80;
+    const nameLabel = el("label", t.profileName);
+    nameLabel.append(name);
+    const everyone = el("input");
+    everyone.type = "checkbox";
+    const everyoneLabel = el("label", t.profileEveryone);
+    everyoneLabel.append(everyone);
+    const audience = el("fieldset");
+    audience.append(el("legend", t.profileUsers));
+    const selections = /* @__PURE__ */ new Map();
+    for (const user of users) {
+      const box = el("input"), label = el("label", user.name);
+      box.type = "checkbox";
+      label.append(box);
+      audience.append(label);
+      selections.set(user.id, box);
+    }
+    const selectProfile = () => {
+      const selected = record.profiles.find((profile) => profile.id === list2.value);
+      name.value = selected?.name ?? "";
+      everyone.checked = !!selected?.everyone;
+      for (const [id, box] of selections) box.checked = selected?.users?.includes(id) ?? false;
+      remove.disabled = !selected;
+    };
+    list2.onchange = selectProfile;
+    const publish = async () => {
+      const title = name.value.trim();
+      if (!title) {
+        name.reportValidity();
+        return;
+      }
+      const assigned = [...selections].filter(([, box]) => box.checked).map(([id2]) => id2);
+      const id = list2.value || Array.from(crypto.getRandomValues(new Uint32Array(4)), (n) => n.toString(16).padStart(8, "0")).join("");
+      const backup = await dialog.transferSnapshot();
+      const others = record.profiles.filter((profile) => profile.id !== id).map((profile) => ({
+        ...profile,
+        everyone: !!profile.everyone && !everyone.checked,
+        users: (profile.users ?? []).filter((user) => !assigned.includes(user))
+      }));
+      await profiles.write(record, { version: 1, profiles: [...others, { id, name: title, everyone: everyone.checked, users: assigned, backup }] });
+    };
+    name.required = true;
+    const remove = dialog.button(t.removeProfile, () => {
+      if (list2.value && window.confirm(t.removeProfileConfirm.replace("{name}", list2.selectedOptions[0].textContent))) {
+        void run(() => profiles.write(record, { version: 1, profiles: record.profiles.filter((profile) => profile.id !== list2.value) }));
+      }
+    });
+    remove.disabled = true;
+    body.append(
+      el("hr"),
+      el("p", t.profileShareHint),
+      list2,
+      nameLabel,
+      everyoneLabel,
+      audience,
+      dialog.button(t.publishProfile, () => {
+        if (name.reportValidity()) void run(publish);
+      }),
+      remove
+    );
+  }
 
   // src/manager-dialog.js
-  var el = (tag, text2) => {
+  var el2 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
     return n;
@@ -445,12 +693,14 @@
       super();
       this.attachShadow({ mode: "open" });
     }
-    show({ hass, record, entries: entries2, save, focusKey, focusGroup }) {
+    show({ hass, record, entries: entries2, save, focusKey, focusGroup, readTransfer, profiles }) {
       this.hass = hass;
       this.t = managerStrings(hass);
       this.draft = clone(normalizeManager(record));
       this.entries = entries2;
       this.saveRecord = save;
+      this.readTransfer = readTransfer;
+      this.profiles = profiles;
       this.busy = false;
       this.render();
       this.modal.showModal();
@@ -470,8 +720,23 @@
         groupRow.querySelector("input")?.focus();
       }
     }
+    async transferSnapshot() {
+      const base = await this.readTransfer();
+      return makeBackup(this.draft, this.transfer?.colors ?? base.colors, this.transfer?.sidebar ?? base.native);
+    }
+    async stageTransfer(backup) {
+      const transfer = parseBackup(backup);
+      const base = transfer.colors ? await this.readTransfer() : void 0;
+      if (!this.isConnected) return;
+      this.transfer = transfer;
+      this.transferBase = base;
+      this.usePersonalOnSave = false;
+      this.draft = clone(transfer.layout);
+      this.renderBody();
+      this.status.textContent = this.t.backupPreview.replace("{groups}", transfer.layout.groups.length).replace("{links}", Object.values(transfer.layout.items).filter((item) => item.url).length).replace("{colors}", transfer.colors ? Object.keys(transfer.colors.colors).length : "—");
+    }
     button(label, fn, icon) {
-      const b = el("button", icon || label);
+      const b = el2("button", icon || label);
       b.type = "button";
       b.title = label;
       b.setAttribute("aria-label", label);
@@ -479,8 +744,8 @@
       return b;
     }
     input(label, value, change, type = "text") {
-      const l = el("label"), n = el("input");
-      l.append(el("span", label), n);
+      const l = el2("label"), n = el2("input");
+      l.append(el2("span", label), n);
       n.type = type;
       if (type === "checkbox") n.checked = !!value;
       else n.value = value || "";
@@ -499,7 +764,7 @@
       }
     }
     separatorControl(group) {
-      const label = el("label", this.t.separator), slider = el("input"), value = el("output");
+      const label = el2("label", this.t.separator), slider = el2("input"), value = el2("output");
       slider.type = "range";
       slider.min = "0";
       slider.max = "4";
@@ -529,7 +794,7 @@
         } });
       });
       button.style.cssText = "width:36px;height:36px;min-width:36px;padding:5px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:10px 10px";
-      const swatch = el("span");
+      const swatch = el2("span");
       swatch.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
       button.replaceChildren(swatch);
       const paint = () => {
@@ -540,30 +805,30 @@
       return button;
     }
     render() {
-      const style = el("style");
+      const style = el2("style");
       style.textContent = `:host{font:14px var(--ha-font-family,Arial,sans-serif);color:var(--primary-text-color,#222)}*{box-sizing:border-box}dialog{color:inherit;background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#888);border-radius:16px;width:min(1050px,94vw);max-height:90dvh;padding:0}dialog::backdrop{background:#0008}header,footer{padding:16px 20px;display:flex;gap:8px;align-items:center;background:var(--secondary-background-color,#eee)}h2{font-size:20px;margin:0;flex:1}h3{margin:14px 0 8px}main{padding:0 20px 16px;overflow:auto;max-height:calc(90dvh - 150px)}p{line-height:1.5}.cards{display:grid;gap:8px}.row{border:1px solid var(--divider-color,#aaa);border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>strong{width:100%;overflow-wrap:anywhere}.row small{width:100%;opacity:.7}.row label{display:flex;gap:6px;align-items:center}.row label:has(input[type=text]){flex:1;min-width:160px}input,select,textarea{background:var(--primary-background-color,#fff);color:inherit;border:1px solid var(--divider-color,#888);border-radius:5px;padding:7px;font:inherit;min-width:0}input[type=text]{width:100%}button{font:inherit;border:1px solid var(--divider-color,#aaa);border-radius:7px;padding:8px 12px;min-height:36px;background:var(--secondary-background-color,#eee);color:inherit;cursor:pointer}button:hover{border-color:var(--primary-color,#03a9f4)}footer{justify-content:flex-end;flex-wrap:wrap}footer button{min-width:115px}.primary{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}textarea{width:100%;height:120px}.status{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5;cursor:wait}input[type=checkbox]{accent-color:var(--primary-color,#03a9f4)}@media(max-width:600px){main{padding:0 10px 10px}.row{gap:8px}.row label:has(input[type=text]){min-width:100%;}.row select{max-width:150px}header,footer{padding:12px}footer button{min-width:100px}}`;
-      this.modal = el("dialog");
+      this.modal = el2("dialog");
       this.modal.setAttribute("aria-label", this.t.title);
-      const head = el("header");
-      head.append(el("h2", this.t.title), this.button(this.t.cancel, () => {
+      const head = el2("header");
+      head.append(el2("h2", this.t.title), this.button(this.t.cancel, () => {
         if (!this.busy) this.remove();
       }, "×"));
-      const accent = el("style");
+      const accent = el2("style");
       accent.textContent = ".sm-ha-shortcut-title{color:var(--sidebar-manager-shortcut-color,#fff2a6)}.sm-external-title{color:var(--sidebar-manager-external-color,#a8dcff)}.sm-ha-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-ha-shortcuts>.row{min-width:0}.sm-ha-shortcuts small{overflow-wrap:anywhere}.sm-ha-shortcuts select{max-width:100%}@media(max-width:600px){.sm-ha-shortcuts{grid-template-columns:minmax(0,1fr)}}";
-      this.main = el("main");
-      this.foot = el("footer");
+      this.main = el2("main");
+      this.foot = el2("footer");
       this.modal.append(head, this.main, this.foot);
       this.shadowRoot.replaceChildren(style, accent, this.modal);
       this.renderBody();
     }
     renderBody() {
       const t = this.t;
-      this.main.replaceChildren(el("p", t.intro));
-      this.main.append(el("h3", t.groups));
-      const groups = el("div");
+      this.main.replaceChildren(el2("p", t.intro));
+      this.main.append(el2("h3", t.groups));
+      const groups = el2("div");
       groups.className = "cards";
       this.draft.groups.forEach((g, i) => {
-        const row = el("div");
+        const row = el2("div");
         row.className = "row";
         row.append(this.input(t.name, g.name, (v) => {
           g.name = v;
@@ -579,24 +844,24 @@
         this.draft.groups.push({ id: newId("group"), name: t.newGroup, icon: "mdi:folder-outline", collapsed: false, bottom: false });
         this.renderBody();
       }));
-      const shortcutHeading = el("h3", t.haShortcuts);
+      const shortcutHeading = el2("h3", t.haShortcuts);
       shortcutHeading.className = "sm-ha-shortcut-title";
       this.main.append(shortcutHeading);
-      const shortcuts = el("div");
+      const shortcuts = el2("div");
       shortcuts.className = "cards sm-ha-shortcuts";
       this.presetGroups ||= {};
       for (const preset of HA_SHORTCUTS) {
         if (!shortcutAvailable(preset, this.hass?.config?.version)) continue;
-        const existing = findShortcut(this.draft, preset), row = el("div");
+        const existing = findShortcut(this.draft, preset), row = el2("div");
         row.className = "row";
         row.dataset.shortcut = preset.id;
-        const title = el("strong", t["shortcut_" + preset.id]);
+        const title = el2("strong", t["shortcut_" + preset.id]);
         title.className = "sm-ha-shortcut-title";
-        row.append(title, el("small", preset.url));
-        const label = el("label", t.group), select = el("select");
+        row.append(title, el2("small", preset.url));
+        const label = el2("label", t.group), select = el2("select");
         select.setAttribute("aria-label", t.group + " " + t["shortcut_" + preset.id]);
         for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
-          const o = el("option", g.name);
+          const o = el2("option", g.name);
           o.value = g.id;
           select.append(o);
         }
@@ -615,30 +880,30 @@
         row.append(add);
         shortcuts.append(row);
       }
-      this.main.append(shortcuts, el("p", t.shortcutHint));
-      this.main.append(el("h3", t.items));
-      const items = el("div");
+      this.main.append(shortcuts, el2("p", t.shortcutHint));
+      this.main.append(el2("h3", t.items));
+      const items = el2("div");
       items.className = "cards";
-      const keys = [.../* @__PURE__ */ new Set([...this.draft.order, ...this.entries.map((e) => e.key), ...Object.keys(this.draft.items)])];
-      keys.forEach((key, i) => {
+      const keys2 = [.../* @__PURE__ */ new Set([...this.draft.order, ...this.entries.map((e) => e.key), ...Object.keys(this.draft.items)])];
+      keys2.forEach((key, i) => {
         const original = this.entries.find((e) => e.key === key), current = this.draft.items[key];
         const item = current || { title: "", icon: "", group: "", bottom: false, hidden: false };
         const edit = (k, v) => {
           this.draft.items[key] ||= item;
           this.draft.items[key][k] = v;
         };
-        const row = el("div");
+        const row = el2("div");
         row.className = "row";
         row.dataset.key = key;
-        const title = el("strong", original?.label || current?.title || key);
+        const title = el2("strong", original?.label || current?.title || key);
         title.className = item.url ? isExternalUrl(item.url) ? "sm-external-title" : "sm-ha-shortcut-title" : "";
         row.append(title);
-        if (!original && !current?.url) row.append(el("small", t.missing));
+        if (!original && !current?.url) row.append(el2("small", t.missing));
         row.append(this.input(t.label, item.title, (v) => edit("title", v)), this.input(t.icon, item.icon, (v) => edit("icon", v)));
-        const label = el("label", t.group), select = el("select");
+        const label = el2("label", t.group), select = el2("select");
         select.setAttribute("aria-label", t.group);
         for (const g of [{ id: "", name: t.none }, ...this.draft.groups]) {
-          const o = el("option", g.name);
+          const o = el2("option", g.name);
           o.value = g.id;
           select.append(o);
         }
@@ -648,20 +913,20 @@
         row.append(label);
         row.append(this.input(t.bottom, item.bottom, (v) => edit("bottom", v), "checkbox"), this.input(t.hidden, item.hidden, (v) => edit("hidden", v), "checkbox"));
         row.append(this.button(t.up, () => {
-          this.draft.order = keys;
+          this.draft.order = keys2;
           this.move(this.draft.order, i, -1);
         }, "↑"), this.button(t.down, () => {
-          this.draft.order = keys;
+          this.draft.order = keys2;
           this.move(this.draft.order, i, 1);
         }, "↓"));
         if (item.url != null) {
-          const modeLabel = el("label", t.openMode), mode = el("select");
+          const modeLabel = el2("label", t.openMode), mode = el2("select");
           mode.setAttribute("aria-label", t.openMode + " " + (item.title || key));
           const syncMode = () => {
             const external = isExternalUrl(item.url), currentMode = item.openMode || "same";
             mode.replaceChildren();
             for (const [value, text2] of [["tab", t.newTab], ["iframe", t.iframe], ...currentMode === "same" ? [["same", t.sameWindow]] : []]) {
-              const option = el("option", text2);
+              const option = el2("option", text2);
               option.value = value;
               mode.append(option);
             }
@@ -677,7 +942,7 @@
             edit("url", v);
             if (isExternalUrl(v) && !previous) edit("openMode", "tab");
             syncMode();
-          }), modeLabel, el("small", t.frameHint), this.button(t.remove, () => {
+          }), modeLabel, el2("small", t.frameHint), this.button(t.remove, () => {
             delete this.draft.items[key];
             this.draft.order = this.draft.order.filter((k) => k !== key);
             this.renderBody();
@@ -690,35 +955,52 @@
         this.draft.items[key] = { title: t.newLink, icon: "mdi:link", url: "/home", openMode: "tab", group: "", bottom: false, hidden: false };
         this.renderBody();
       }));
-      const details = el("details");
-      details.append(el("summary", t.import));
-      const area = el("textarea");
+      const details = el2("details");
+      details.append(el2("summary", t.import));
+      const area = el2("textarea");
       area.placeholder = t.importHint;
       area.setAttribute("aria-label", t.importHint);
-      details.append(area, this.button(t.restore, () => {
+      const fileLabel = el2("label", t.backupFile), file = el2("input");
+      file.type = "file";
+      file.accept = ".json,application/json";
+      fileLabel.append(file);
+      const stage = async (read2) => {
         try {
-          const parsed = JSON.parse(area.value);
-          if (parsed.format !== "sidebar-manager" || parsed.version !== 1) throw Error();
-          this.draft = normalizeManager(parsed.layout);
-          this.renderBody();
+          await this.stageTransfer(JSON.parse(await read2()));
         } catch {
           this.status.textContent = t.invalid;
         }
-      }));
-      this.main.append(details, el("p", t.source));
-      this.status = el("p");
+      };
+      file.onchange = () => {
+        const selected = file.files?.[0];
+        if (selected) void stage(() => {
+          if (selected.size > 2e6) throw Error("invalid_backup");
+          return selected.text();
+        });
+      };
+      details.append(fileLabel, area, this.button(t.restore, () => stage(() => area.value)));
+      this.main.append(details);
+      if (this.profiles) this.main.append(renderProfiles(this));
+      this.main.append(el2("p", t.source));
+      this.status = el2("p");
       this.status.className = "status";
       this.status.setAttribute("role", "status");
       this.main.append(this.status);
-      this.foot.replaceChildren(this.button(t.export, () => {
-        const blob = new Blob([JSON.stringify({ format: "sidebar-manager", version: 1, layout: normalizeManager(this.draft) }, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob), a = el("a");
-        a.href = url;
-        a.download = "sidebar-manager-backup.json";
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1e3);
+      this.foot.replaceChildren(this.button(t.export, async () => {
+        try {
+          const payload = await this.transferSnapshot();
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob), a = el2("a");
+          a.href = url;
+          a.download = "sidebar-manager-backup.json";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1e3);
+        } catch {
+          this.status.textContent = t.error;
+        }
       }), this.button(t.reset, () => {
         this.draft = normalizeManager(null);
+        this.transfer = this.transferBase = void 0;
         this.renderBody();
         this.status.textContent = t.resetHint;
       }), this.button(t.cancel, () => this.remove()));
@@ -727,7 +1009,8 @@
           this.busy = true;
           for (const b of this.shadowRoot.querySelectorAll("button,input,select,textarea")) b.disabled = true;
           this.status.textContent = t.busy;
-          await this.saveRecord(normalizeManager(this.draft));
+          await this.saveRecord(normalizeManager(this.draft), this.transfer, this.transferBase);
+          if (this.usePersonalOnSave) await this.profiles.prefer(true);
           this.remove();
         } catch (e) {
           this.status.textContent = e.message === "conflict" ? t.conflict : e.message?.startsWith("invalid") ? t.invalid : t.error;
@@ -753,7 +1036,7 @@
     ...nativeItems.filter((i) => !record.items[i.value]?.url).map((i) => ({ ...i, smMixed: true })),
     ...customLinks(record).map(([key, item]) => ({ value: key, label: item.title || item.url, icon: item.icon || "mdi:link", smMixed: true, smLink: true }))
   ];
-  var el2 = (tag, text2) => {
+  var el3 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
     return n;
@@ -797,15 +1080,15 @@
       s.renderer = (item) => {
         const group = s.draft.groups.find((g) => groupKey(g.id) === item.value);
         if (!group) return s.native.actionsRenderer?.(item);
-        const label = el2("span", t.submenus);
+        const label = el3("span", t.submenus);
         label.style.cssText = "font:12px var(--ha-font-family,Arial);color:var(--secondary-text-color);margin-inline:8px";
-        const button = el2("button");
+        const button = el3("button");
         button.type = "button";
         button.title = t.groupColor;
         button.setAttribute("aria-label", t.groupColor + " " + group.name);
         button.dataset.smGroup = group.id;
         button.style.cssText = "width:32px;min-width:32px;height:32px;padding:4px;border:1px solid var(--divider-color);border-radius:7px;background-image:conic-gradient(#999 25%,#fff 0 50%,#999 0 75%,#fff 0);background-size:8px 8px;cursor:pointer";
-        const fill = el2("span");
+        const fill = el3("span");
         fill.style.cssText = "display:block;width:100%;height:100%;border-radius:3px";
         fill.style.background = rgba(group.color) || "transparent";
         button.append(fill);
@@ -873,11 +1156,11 @@
     let s = sessions.get(dialog);
     const record = normalizeManager(options.record);
     if (!s) {
-      const section = el2("section");
+      const section = el3("section");
       section.className = "sm-native-groups";
-      const hint = el2("p");
+      const hint = el3("p");
       hint.style.cssText = "font-size:12px;color:var(--secondary-text-color);line-height:1.4;margin:6px 0";
-      const editor = el2("ha-items-display-editor");
+      const editor = el3("ha-items-display-editor");
       section.append(hint, editor);
       native.after(section);
       s = { section, hint, editor, native, display: native.style.display, base: clone(record), draft: clone(record), dirty: false, saving: false, identity: options.identity, options };
@@ -938,11 +1221,16 @@
   var off;
   var epoch = 0;
   var loaded = false;
+  var profileRecord;
+  var profilePreference;
+  var appliedProfile;
+  var personalNative;
+  var profileSubscriptions = [];
   var instances = /* @__PURE__ */ new Set();
   var state = /* @__PURE__ */ new WeakMap();
   var editDialogs = /* @__PURE__ */ new Set();
   var collapsed = /* @__PURE__ */ new Map();
-  var el3 = (tag, text2) => {
+  var el4 = (tag, text2) => {
     const n = document.createElement(tag);
     if (text2) n.textContent = text2;
     return n;
@@ -950,12 +1238,70 @@
   async function request(hass, type, key, value) {
     let timer;
     try {
-      return await Promise.race([hass.connection.sendMessagePromise({ type, key, ...type === "frontend/set_user_data" ? { value } : {} }), new Promise((_, reject) => timer = setTimeout(() => reject(Error("timeout")), 12e3))]);
+      return await Promise.race([hass.connection.sendMessagePromise({ type, key, ...type.startsWith("frontend/set_") ? { value } : {} }), new Promise((_, reject) => timer = setTimeout(() => reject(Error("timeout")), 12e3))]);
     } finally {
       clearTimeout(timer);
     }
   }
   var read = (hass) => request(hass, "frontend/get_user_data", MANAGER_KEY).then((r) => r.value);
+  var readKey = (hass, key) => request(hass, "frontend/get_user_data", key).then((r) => r.value);
+  var writeKey = (hass, key, value) => request(hass, "frontend/set_user_data", key, value);
+  var legacySidebar = () => normalizeSidebar({
+    panelOrder: readLegacyList("sidebarPanelOrder"),
+    hiddenPanels: readLegacyList("sidebarHiddenPanels")
+  });
+  function readLegacyList(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key));
+    } catch {
+      return [];
+    }
+  }
+  function sharedColors() {
+    return appliedProfile?.backup.colors;
+  }
+  function sharedLayout(hass) {
+    return hass?.user?.id === identity?.id ? appliedProfile?.backup.layout : void 0;
+  }
+  function refreshProfile() {
+    appliedProfile = profilePreference === void 0 || personalNative === void 0 || profilePreference?.personal ? void 0 : resolveProfile(profileRecord, identity?.id);
+    collapsed.clear();
+    refreshManager();
+    window.dispatchEvent(new Event("ugso-sidebar-profile-changed"));
+  }
+  async function connectProfiles(hass, generation) {
+    const bindings = [
+      ["system", PROFILES_KEY, (value) => {
+        profileRecord = value;
+      }],
+      ["user", PREFERENCE_KEY, (value) => {
+        profilePreference = value;
+      }],
+      ["user", "sidebar", (value) => {
+        personalNative = normalizeSidebar({ ...legacySidebar(), ...value });
+      }]
+    ];
+    await Promise.allSettled(bindings.map(async ([scope, key, receive]) => {
+      const apply = (value) => {
+        if (generation === epoch) {
+          receive(value);
+          refreshProfile();
+        }
+      };
+      let changed2 = false;
+      const subscription = await hass.connection.subscribeMessage((event) => {
+        changed2 = true;
+        apply(event.value);
+      }, { type: "frontend/subscribe_" + scope + "_data", key });
+      if (generation !== epoch) {
+        subscription();
+        return;
+      }
+      profileSubscriptions.push(subscription);
+      const result = await request(hass, "frontend/get_" + scope + "_data", key);
+      if (!changed2) apply(result.value);
+    }));
+  }
   function entries(sidebar) {
     return [...sidebar.shadowRoot.querySelectorAll('[id^="sidebar-panel-"]:not([data-sm-link])')].map((row) => ({ key: row.id.slice(14), label: row.querySelector(".item-text")?.textContent || row.id }));
   }
@@ -975,8 +1321,12 @@
     off?.();
     loaded = false;
     config = normalizeManager(null);
+    for (const unsubscribe2 of profileSubscriptions) unsubscribe2();
+    profileSubscriptions = [];
+    profileRecord = profilePreference = appliedProfile = personalNative = void 0;
     collapsed.clear();
     refreshManager();
+    void connectProfiles(hass, current);
     try {
       const value = normalizeManager(await read(hass));
       if (current !== epoch) return;
@@ -1005,18 +1355,76 @@
     const hass = sidebar.hass;
     if (!loaded || hass.user.id !== identity?.id) return;
     if (document.querySelector("ugso-sidebar-manager-dialog")) return;
-    const base = clone(config), owner = identity, currentEpoch = epoch, dialog = el3("ugso-sidebar-manager-dialog");
+    const base = clone(config), owner = identity, currentEpoch = epoch, dialog = el4("ugso-sidebar-manager-dialog");
     document.body.append(dialog);
-    dialog.show({ hass, record: base, entries: entries(sidebar), focusKey, focusGroup, save: async (draft) => {
+    const verifyOwner = () => {
       if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
-      await saveManager({ base, draft, read: () => read(hass), write: (value) => {
-        if (identity !== owner) throw Error("conflict");
-        return request(hass, "frontend/set_user_data", MANAGER_KEY, value);
-      }, backup: async (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), layout: before })) });
-      config = clone(draft);
-      collapsed.clear();
-      refreshManager();
-    } });
+    };
+    const backup = (before) => localStorage.setItem("ugso-sidebar-manager-backup:" + hass.user.id, JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), ...before }));
+    const profiles = {
+      load: async () => {
+        const [record, preference, users] = await Promise.all([
+          request(hass, "frontend/get_system_data", PROFILES_KEY).then((result) => result.value),
+          readKey(hass, PREFERENCE_KEY),
+          hass.user.is_admin ? hass.connection.sendMessagePromise({ type: "config/auth/list" }) : []
+        ]);
+        return {
+          record: record ?? { version: 1, profiles: [] },
+          personal: !!preference?.personal,
+          assigned: resolveProfile(record, hass.user.id),
+          users: users.filter((user) => user.is_active && !user.system_generated)
+        };
+      },
+      write: async (base2, next) => {
+        verifyOwner();
+        const actual = (await request(hass, "frontend/get_system_data", PROFILES_KEY)).value ?? { version: 1, profiles: [] };
+        if (stable(base2) !== stable(actual)) throw Error("conflict");
+        verifyOwner();
+        await request(hass, "frontend/set_system_data", PROFILES_KEY, next);
+        verifyOwner();
+        profileRecord = next;
+        refreshProfile();
+      },
+      prefer: async (personal) => {
+        verifyOwner();
+        await writeKey(hass, PREFERENCE_KEY, { personal });
+        verifyOwner();
+        profilePreference = { personal };
+        refreshProfile();
+      }
+    };
+    dialog.show({
+      hass,
+      record: base,
+      entries: entries(sidebar),
+      focusKey,
+      focusGroup,
+      profiles,
+      readTransfer: () => readPreferences((key) => readKey(hass, key), legacySidebar()),
+      save: async (draft, transfer, transferBase) => {
+        if (identity !== owner || epoch !== currentEpoch) throw Error("conflict");
+        if (transfer?.colors) {
+          await savePreferences({
+            base: transferBase,
+            draft: { ...transfer, layout: draft },
+            read: (key) => readKey(hass, key),
+            write: (key, value) => {
+              verifyOwner();
+              return writeKey(hass, key, value);
+            },
+            backup
+          });
+        } else {
+          await saveManager({ base, draft, read: () => read(hass), write: (value) => {
+            verifyOwner();
+            return writeKey(hass, MANAGER_KEY, value);
+          }, backup: (before) => backup({ layout: before }) });
+        }
+        config = clone(draft);
+        collapsed.clear();
+        refreshManager();
+      }
+    });
   }
   function attachManager(sidebar, onLayout) {
     instances.add(sidebar);
@@ -1044,7 +1452,7 @@
     if (!content) return;
     let button = content.querySelector("[data-sm-open]");
     if (!button) {
-      button = el3("button");
+      button = el4("button");
       button.dataset.smOpen = "";
       button.type = "button";
       button.style.cssText = "margin:8px 0;padding:10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--card-background-color);color:var(--primary-text-color);cursor:pointer";
@@ -1079,7 +1487,7 @@
     button.disabled = !loaded || [...editDialogs].some((dialog) => dialog.isConnected && (nativeGroupsDirty(dialog) || nativeGroupsBusy(dialog)));
   }
   function moveEntryButton(hass, key, label) {
-    const button = el3("button");
+    const button = el4("button");
     button.type = "button";
     button.dataset.smMove = key;
     button.dataset.smLabel = label || key;
@@ -1099,7 +1507,7 @@
     let title = row.querySelector("[data-sm-label]"), icon = row.querySelector("[data-sm-icon]");
     if (item?.title) {
       if (!title) {
-        title = el3("span");
+        title = el4("span");
         title.dataset.smLabel = "";
         title.className = "item-text";
         title.slot = "headline";
@@ -1113,7 +1521,7 @@
     }
     if (item?.icon) {
       if (!icon) {
-        icon = el3("ha-icon");
+        icon = el4("ha-icon");
         icon.dataset.smIcon = "";
         icon.slot = "start";
         row.prepend(icon);
@@ -1128,15 +1536,25 @@
   function applyLayout(sidebar) {
     const root = sidebar.shadowRoot, s = state.get(sidebar);
     if (!root || !s) return;
+    const active = appliedProfile?.backup;
+    if (active || s.profileNative) {
+      const native = active?.sidebar ?? personalNative;
+      if ("_panelOrder" in sidebar && "_hiddenPanels" in sidebar && native) {
+        if (stable(sidebar._panelOrder) !== stable(native.panelOrder)) sidebar._panelOrder = native.panelOrder;
+        if (stable(sidebar._hiddenPanels) !== stable(native.hiddenPanels)) sidebar._hiddenPanels = native.hiddenPanels;
+      }
+      s.profileNative = !!active;
+    }
+    const config2 = active?.layout ?? personalLayout();
     const slot = root.querySelector("slot[name=main-navigation]");
     if (!slot) return;
     if (!s.style) {
-      s.style = el3("style");
+      s.style = el4("style");
       s.style.textContent = `slot[name=main-navigation]{display:flex;flex-direction:column;min-height:100%}[data-sm-group]{width:calc(100% - 8px);margin:7px 4px 2px;border:0;border-top:1px solid var(--divider-color);padding:10px 12px;text-align:start;font:inherit;font-weight:600;background:var(--secondary-background-color);color:var(--primary-text-color);cursor:pointer;border-radius:6px}[data-sm-bottom]{margin-top:auto!important}[data-sm-hidden]{display:none!important}[data-sm-label][hidden],[slot=start][hidden],.item-text[hidden]{display:none!important}.sm-entry{min-height:40px;padding:0 12px;display:flex;align-items:center;gap:20px;color:var(--sidebar-text-color);text-decoration:none}.sm-entry:hover{background:var(--secondary-background-color)}.sm-entry ha-icon{color:var(--sidebar-icon-color)}:host(:not([expanded])) [data-sm-group]{font-size:0;padding:8px} :host(:not([expanded])) [data-sm-group]::after{content:'⋯';font-size:18px}:host(:not([expanded])) .sm-entry .item-text{display:none}`;
       root.append(s.style);
     }
     if (!s.iconStyle) {
-      s.iconStyle = el3("style");
+      s.iconStyle = el4("style");
       s.iconStyle.textContent = `
    [data-sm-group]{display:flex;align-items:center;gap:8px;border-top:0}
    :is([data-sm-group],.sm-entry) > ha-icon,[data-sm-icon]{
@@ -1161,18 +1579,18 @@
   `;
       root.append(s.iconStyle);
     }
-    for (const [id, node] of s.custom) if (!config.items[id]?.url) {
+    for (const [id, node] of s.custom) if (!config2.items[id]?.url) {
       node.remove();
       s.custom.delete(id);
     }
-    for (const [key, item] of Object.entries(config.items)) if (item.url) {
+    for (const [key, item] of Object.entries(config2.items)) if (item.url) {
       let row = s.custom.get(key);
       if (!row) {
-        row = el3("a");
+        row = el4("a");
         row.className = "sm-entry";
         row.dataset.smLink = "";
         row.id = "sidebar-panel-" + key;
-        row.append(el3("ha-icon"), el3("span"));
+        row.append(el4("ha-icon"), el4("span"));
         row.firstElementChild.slot = "start";
         row.lastElementChild.className = "item-text";
         row.lastElementChild.slot = "headline";
@@ -1193,29 +1611,29 @@
       if (row.lastElementChild.textContent !== item.title) row.lastElementChild.textContent = item.title;
       row.setAttribute("aria-label", item.title);
     }
-    const available = entries(sidebar), layout = layoutEntries(config, available), keep = /* @__PURE__ */ new Set();
+    const available = entries(sidebar), layout = layoutEntries(config2, available), keep = /* @__PURE__ */ new Set();
     let order = 0, bottomSeen = false;
     const rows = [...slot.querySelectorAll("[id^=sidebar-panel-]")];
     for (const row of rows) {
       const key = row.id.slice(14);
       row.style.removeProperty("order");
       row.removeAttribute("data-sm-bottom");
-      row.toggleAttribute("data-sm-hidden", !!config.items[key]?.hidden);
-      if (!row.hasAttribute("data-sm-link")) override(row, config.items[key]);
+      row.toggleAttribute("data-sm-hidden", !!config2.items[key]?.hidden);
+      if (!row.hasAttribute("data-sm-link")) override(row, config2.items[key]);
     }
     for (const entry of layout) {
       if (entry.kind === "group") {
         keep.add(entry.id);
         let head = s.headers.get(entry.id);
         if (!head) {
-          head = el3("button");
+          head = el4("button");
           head.type = "button";
           head.dataset.smGroup = entry.id;
-          const icon = el3("ha-icon"), label = el3("span");
+          const icon = el4("ha-icon"), label = el4("span");
           label.className = "sm-group-label";
           head.append(icon, label);
           head.onclick = () => {
-            const g = config.groups.find((g2) => g2.id === entry.id);
+            const g = config2.groups.find((g2) => g2.id === entry.id);
             collapsed.set(entry.id, !(collapsed.get(entry.id) ?? g?.collapsed));
             refreshManager();
           };
@@ -1237,7 +1655,7 @@
       } else if (entry.kind === "separator") {
         let line = s.separators.get(entry.id);
         if (!line) {
-          line = el3("div");
+          line = el4("div");
           line.dataset.smSeparator = entry.id;
           line.setAttribute("role", "separator");
           line.setAttribute("aria-orientation", "horizontal");
@@ -1248,13 +1666,13 @@
         line.style.height = entry.width + "px";
         line.style.backgroundColor = rgba(entry.color) || getComputedStyle(s.headers.get(entry.id).firstElementChild).color;
         line.style.order = String(order++);
-        const group = config.groups.find((g) => g.id === entry.id);
+        const group = config2.groups.find((g) => g.id === entry.id);
         line.toggleAttribute("data-sm-hidden", !!(collapsed.get(entry.id) ?? group?.collapsed));
       } else {
         const row = rows.find((r) => r.id === "sidebar-panel-" + entry.key);
         if (!row) continue;
         row.style.order = String(order++);
-        const g = config.groups.find((g2) => g2.id === entry.group);
+        const g = config2.groups.find((g2) => g2.id === entry.group);
         row.toggleAttribute("data-sm-hidden", !!entry.hidden || !!(g && (collapsed.get(g.id) ?? g.collapsed)));
         const bottom = g ? g.bottom : entry.bottom;
         row.toggleAttribute("data-sm-bottom", !!bottom && !bottomSeen);
@@ -1265,11 +1683,14 @@
       head.remove();
       s.headers.delete(id);
     }
-    for (const [id, line] of s.separators) if (!keep.has(id) || !config.groups.find((g) => g.id === id)?.separator) {
+    for (const [id, line] of s.separators) if (!keep.has(id) || !config2.groups.find((g) => g.id === id)?.separator) {
       line.remove();
       s.separators.delete(id);
     }
     s.onLayout?.();
+  }
+  function personalLayout() {
+    return config;
   }
 
   // src/web-panel.js
@@ -1290,6 +1711,7 @@
       this.attachShadow({ mode: "open" });
       this._generation = 0;
       this._record = null;
+      this._profileChanged = () => this._render();
     }
     set hass(value) {
       const changed2 = this._hass?.user?.id !== value?.user?.id || this._hass?.connection !== value?.connection;
@@ -1314,10 +1736,12 @@
       return this._route;
     }
     connectedCallback() {
+      this.ownerDocument.defaultView.addEventListener("ugso-sidebar-profile-changed", this._profileChanged);
       this._render();
       if (this._hass) this._connect();
     }
     disconnectedCallback() {
+      this.ownerDocument.defaultView.removeEventListener("ugso-sidebar-profile-changed", this._profileChanged);
       this._generation++;
       this._unsubscribe?.();
       this._unsubscribe = null;
@@ -1376,7 +1800,8 @@
       }
       let item = null;
       try {
-        if (this._record) item = frameItem(this._record, this._route?.path);
+        const record = sharedLayout(this._hass) ?? this._record;
+        if (record) item = frameItem(record, this._route?.path);
       } catch {
       }
       const title = root.querySelector("[data-title]"), link = root.querySelector("[data-open]"), hint = root.querySelector("[data-hint]");
@@ -1480,6 +1905,7 @@
   }
   function applyRecord(sidebar, record) {
     if (!sidebar.shadowRoot) return;
+    record = sharedColors() ?? record;
     for (const row of sidebar.shadowRoot.querySelectorAll("[id^=sidebar-panel-]")) {
       const key = row.id.slice("sidebar-panel-".length);
       const value = rgba(record.colors[key]);

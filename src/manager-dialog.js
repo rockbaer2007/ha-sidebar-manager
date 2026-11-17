@@ -1,16 +1,33 @@
 import {normalizeManager,newId,HA_SHORTCUTS,shortcutAvailable,findShortcut,addShortcut,isExternalUrl,separatorWidth} from './manager-model.js';
 import {clone,rgba} from './core.js';
 import {managerStrings} from './manager-i18n.js';
+import {makeBackup,parseBackup} from './sidebar-preferences.js';
+import {renderProfiles} from './sidebar-profiles-dialog.js';
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
 export class ManagerDialog extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});}
- show({hass,record,entries,save,focusKey,focusGroup}){
-  this.hass=hass;this.t=managerStrings(hass);this.draft=clone(normalizeManager(record));this.entries=entries;this.saveRecord=save;this.busy=false;this.render();
+ show({hass,record,entries,save,focusKey,focusGroup,readTransfer,profiles}){
+  this.hass=hass;this.t=managerStrings(hass);this.draft=clone(normalizeManager(record));this.entries=entries;this.saveRecord=save;this.readTransfer=readTransfer;this.profiles=profiles;this.busy=false;this.render();
   this.modal.showModal();this.modal.addEventListener('cancel',e=>{e.preventDefault();if(!this.busy)this.remove();});
   const target=[...this.shadowRoot.querySelectorAll('.row[data-key]')].find(row=>row.dataset.key===focusKey);
   if(target){target.style.outline='2px solid var(--primary-color,#03a9f4)';target.scrollIntoView({block:'center'});target.querySelector('select')?.focus();}
   const groupRow=[...this.shadowRoot.querySelectorAll('.cards:first-of-type .row')][this.draft.groups.findIndex(g=>g.id===focusGroup)];
   if(groupRow){groupRow.scrollIntoView({block:'center'});groupRow.querySelector('input')?.focus();}
+ }
+ async transferSnapshot(){
+  const base=await this.readTransfer();
+  return makeBackup(this.draft,this.transfer?.colors??base.colors,this.transfer?.sidebar??base.native);
+ }
+ async stageTransfer(backup){
+  const transfer=parseBackup(backup);
+  const base=transfer.colors?await this.readTransfer():undefined;
+  if(!this.isConnected)return;
+  this.transfer=transfer;this.transferBase=base;this.usePersonalOnSave=false;
+  this.draft=clone(transfer.layout);
+  this.renderBody();
+  this.status.textContent=this.t.backupPreview.replace('{groups}',transfer.layout.groups.length)
+   .replace('{links}',Object.values(transfer.layout.items).filter(item=>item.url).length)
+   .replace('{colors}',transfer.colors?Object.keys(transfer.colors.colors).length:'—');
  }
  button(label,fn,icon){const b=el('button',icon||label);b.type='button';b.title=label;b.setAttribute('aria-label',label);b.onclick=fn;return b;}
  input(label,value,change,type='text'){
@@ -82,9 +99,18 @@ export class ManagerDialog extends HTMLElement{
    items.append(row);
   });
   this.main.append(items,this.button(t.addLink,()=>{const key=newId('sm-link');this.draft.items[key]={title:t.newLink,icon:'mdi:link',url:'/home',openMode:'tab',group:'',bottom:false,hidden:false};this.renderBody();}));
-  const details=el('details');details.append(el('summary',t.import));const area=el('textarea');area.placeholder=t.importHint;area.setAttribute('aria-label',t.importHint);details.append(area,this.button(t.restore,()=>{try{const parsed=JSON.parse(area.value);if(parsed.format!=='sidebar-manager'||parsed.version!==1)throw Error();this.draft=normalizeManager(parsed.layout);this.renderBody();}catch{this.status.textContent=t.invalid;}}));this.main.append(details,el('p',t.source));
+  const details=el('details');details.append(el('summary',t.import));
+  const area=el('textarea');area.placeholder=t.importHint;area.setAttribute('aria-label',t.importHint);
+  const fileLabel=el('label',t.backupFile),file=el('input');
+  file.type='file';file.accept='.json,application/json';fileLabel.append(file);
+  const stage=async read=>{try{await this.stageTransfer(JSON.parse(await read()));}catch{this.status.textContent=t.invalid;}};
+  file.onchange=()=>{const selected=file.files?.[0];if(selected)void stage(()=>{if(selected.size>2_000_000)throw Error('invalid_backup');return selected.text();});};
+  details.append(fileLabel,area,this.button(t.restore,()=>stage(()=>area.value)));
+  this.main.append(details);
+  if(this.profiles)this.main.append(renderProfiles(this));
+  this.main.append(el('p',t.source));
   this.status=el('p');this.status.className='status';this.status.setAttribute('role','status');this.main.append(this.status);
-  this.foot.replaceChildren(this.button(t.export,()=>{const blob=new Blob([JSON.stringify({format:'sidebar-manager',version:1,layout:normalizeManager(this.draft)},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='sidebar-manager-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}),this.button(t.reset,()=>{this.draft=normalizeManager(null);this.renderBody();this.status.textContent=t.resetHint;}),this.button(t.cancel,()=>this.remove()));
-  const save=this.button(t.save,async()=>{try{this.busy=true;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=true;this.status.textContent=t.busy;await this.saveRecord(normalizeManager(this.draft));this.remove();}catch(e){this.status.textContent=e.message==='conflict'?t.conflict:e.message?.startsWith('invalid')?t.invalid:t.error;}finally{this.busy=false;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=false;}});save.className='primary';this.foot.append(save);
+  this.foot.replaceChildren(this.button(t.export,async()=>{try{const payload=await this.transferSnapshot();const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='sidebar-manager-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch{this.status.textContent=t.error;}}),this.button(t.reset,()=>{this.draft=normalizeManager(null);this.transfer=this.transferBase=undefined;this.renderBody();this.status.textContent=t.resetHint;}),this.button(t.cancel,()=>this.remove()));
+  const save=this.button(t.save,async()=>{try{this.busy=true;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=true;this.status.textContent=t.busy;await this.saveRecord(normalizeManager(this.draft),this.transfer,this.transferBase);if(this.usePersonalOnSave)await this.profiles.prefer(true);this.remove();}catch(e){this.status.textContent=e.message==='conflict'?t.conflict:e.message?.startsWith('invalid')?t.invalid:t.error;}finally{this.busy=false;for(const b of this.shadowRoot.querySelectorAll('button,input,select,textarea'))b.disabled=false;}});save.className='primary';this.foot.append(save);
  }
 }
