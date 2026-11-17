@@ -10,7 +10,7 @@ In **Edit sidebar → Sidebar profiles**, users can switch between their own sid
 
 In **Manage groups and links**, the trash icon removes saved customizations for a missing Home Assistant entry when you click **Save**.
 
-When a global profile is active, administrators can edit its groups directly. The **Refresh global profile** button reloads the template, and a notice appears when it changes.
+To enforce a template, open **Sidebar profiles → Manage profiles**, select it, enable **Enforce this profile for everyone**, and save. Administrators can edit its groups, visibility and order directly in **Edit sidebar**. A notice appears when the template changes. While enforcement is active, **Refresh global profile** is available to reload the saved version.
 
 Version 0.1.11 matches group and custom-link icons to Home Assistant's 24 px icons and centers them in the collapsed sidebar.
 

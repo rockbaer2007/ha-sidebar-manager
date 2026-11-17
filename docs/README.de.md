@@ -8,7 +8,7 @@ Unter **Seitenleiste bearbeiten → Sidebar-Profile** kannst du zwischen deiner 
 
 Unter **Gruppen und Links verwalten** entfernt der Papierkorb gespeicherte Anpassungen für einen fehlenden Home-Assistant-Eintrag. Die Änderung greift mit **Speichern**.
 
-Bei aktivem globalem Profil können Administratoren dessen Gruppen direkt bearbeiten. **Globales Profil aktualisieren** lädt die Vorlage erneut. Bei Änderungen erscheint ein Hinweis.
+Öffne als Administrator **Sidebar-Profile → Profile verwalten**, wähle eine Vorlage, aktiviere **Dieses Profil für alle verbindlich anwenden** und speichere. Die Gruppen, Sichtbarkeit und Reihenfolge der Vorlage lassen sich direkt unter **Seitenleiste bearbeiten** ändern. Bei einer Änderung erscheint ein Hinweis. Solange das globale Profil aktiv ist, lädt **Globales Profil aktualisieren** die gespeicherte Vorlage erneut.
 
 Version 0.1.11 passt Gruppen- und Link-Icons an die 24-Pixel-Größe von Home Assistant an und zentriert sie in der eingeklappten Seitenleiste.
 

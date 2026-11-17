@@ -8,7 +8,7 @@ Dans **Modifier la barre latérale → Profils de barre latérale**, choisissez 
 
 Dans **Gérer les groupes et les liens**, la corbeille supprime les réglages enregistrés pour une entrée Home Assistant absente après un clic sur **Enregistrer**.
 
-Lorsque le profil global est actif, les administrateurs peuvent modifier ses groupes directement. Le bouton **Actualiser le profil global** recharge le modèle. Un message s’affiche lorsqu’il change.
+En tant qu’administrateur, ouvrez **Profils de barre latérale → Gérer les profils**, choisissez un modèle, activez **Imposer ce profil à tous** et enregistrez. Dans **Modifier la barre latérale**, vous pouvez modifier les groupes, la visibilité et l’ordre du modèle. Un message s’affiche lorsqu’il change. Tant que le profil global est actif, **Actualiser le profil global** recharge le modèle enregistré.
 
 La version 0.1.11 aligne la taille des icônes des groupes et des liens sur celle de Home Assistant (24 px) et les centre dans la barre latérale réduite.
 
